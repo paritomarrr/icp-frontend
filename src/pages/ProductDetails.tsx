@@ -5,13 +5,17 @@ import { Button } from '@/components/ui/button';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Sparkles, Download, Edit } from 'lucide-react';
+import { icpWizardApi } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
 
 const ProductDetails = () => {
   const { slug, productId } = useParams();
   const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
   const [icpData, setIcpData] = useState<ICPData | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [enhancedData, setEnhancedData] = useState<any>(null);
 
   useEffect(() => {
     if (slug) {
@@ -37,25 +41,23 @@ const ProductDetails = () => {
     );
   }
 
-  // Get the latest enrichment version
-  const enrichment = icpData?.icpEnrichmentVersions;
+  // Get products from the workspace data and ICP enrichment versions
+  const rootProducts = Array.isArray(icpData?.products) ? icpData.products : [];
+  const enrichmentData = icpData?.icpEnrichmentVersions;
+  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
+  const productEnrichment = latestVersion && enrichmentData?.[latestVersion]?.products;
+  
   console.log('ProductDetails - icpData:', icpData);
-  console.log('ProductDetails - Enrichment:', enrichment);
-  
-  // Find the latest version by getting the last key
-  const latestVersionKey = enrichment ? Object.keys(enrichment).sort().pop() : null;
-  const latestVersion = latestVersionKey ? enrichment[latestVersionKey] : null;
-  
-  console.log('ProductDetails - Latest version key:', latestVersionKey);
-  console.log('ProductDetails - Latest version data:', latestVersion);
+  console.log('ProductDetails - Root products:', rootProducts);
+  console.log('ProductDetails - Product enrichment:', productEnrichment);
 
-  if (!latestVersion) {
+  if (!rootProducts.length) {
     return (
       <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
         <div className="max-w-7xl mx-auto">
           <div className="text-center text-slate-600 bg-slate-50 p-6 rounded-lg">
             <p className="text-lg font-semibold mb-2">No Product Data Available</p>
-            <p>Product enrichment data not found.</p>
+            <p>Product data not found.</p>
           </div>
         </div>
       </div>
@@ -63,39 +65,58 @@ const ProductDetails = () => {
   }
   
   // Parse product content to extract individual products
-  const parseProducts = (enrichment: any) => {
-    // If enrichment.products is an array of objects, use as is
-    if (Array.isArray(enrichment.products)) {
-      return enrichment.products.map((p: any, idx: number) => ({
-        id: idx + 1,
-        name: p.name || `Product ${idx + 1}`,
-        description: p.solution || '',
-        problems: p.problems || '',
-        features: p.features || '',
-        solution: p.solution || '',
-        usps: p.usp || '',
-        whyNow: p.whyNow || '',
-        valueProposition: enrichment.oneLiner || ''
-      }));
-    }
-    // If enrichment.products is an object with arrays
-    return [
-      {
-        id: 1,
-        name: workspace.name,
-        description: enrichment.products?.solution || '',
-        problems: enrichment.products?.problems || '',
-        features: enrichment.products?.features || '',
-        solution: enrichment.products?.solution || '',
-        usps: enrichment.products?.usp || '',
-        whyNow: enrichment.products?.whyNow || '',
-        valueProposition: enrichment.oneLiner || ''
-      }
-    ];
+  const parseProducts = () => {
+    return rootProducts.map((productName: string, idx: number) => ({
+      id: idx + 1,
+      name: productName,
+      description: `Core product offering for ${icpData?.companyName || 'Your Company'}`,
+      problems: productEnrichment?.problems || ['Skills gap in advanced manufacturing', 'Limited internal R&D capabilities'],
+      features: productEnrichment?.features || ['Custom technical training programs', 'Industry-academic research partnerships'],
+      solution: productEnrichment?.solution || 'End-to-end technical capability development',
+      usps: productEnrichment?.usp || ['Industry-validated curriculum', 'Hands-on project-based learning'],
+      whyNow: productEnrichment?.whyNow || ['Industry 4.0 acceleration', 'Post-pandemic digital transformation'],
+      valueProposition: latestVersion && enrichmentData?.[latestVersion]?.oneLiner || `${productName} - Core offering`
+    }));
   };
 
-  const products = parseProducts(latestVersion);
+  const products = parseProducts();
   const currentProduct = products.find(p => p.id === parseInt(productId || '1')) || products[0];
+
+  // Function to enhance product with Claude AI
+  const enhanceProductWithAI = async () => {
+    if (!icpData || !currentProduct) return;
+    
+    setIsEnhancing(true);
+    const companyData = {
+      companyName: icpData.companyName || workspace?.companyName,
+      products: icpData.products,
+      companyUrl: icpData.companyUrl || workspace?.companyUrl
+    };
+
+    try {
+      console.log(`Enhancing product: ${currentProduct.name}`);
+      const result = await icpWizardApi.generateProductDetails(currentProduct.name, companyData);
+      
+      if (result.success && result.data) {
+        setEnhancedData(result.data);
+        console.log('Enhanced product data:', result.data);
+      }
+    } catch (error) {
+      console.error('Error enhancing product:', error);
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  // Use enhanced data when available
+  const displayData = {
+    ...currentProduct,
+    problems: enhancedData?.problems || currentProduct.problems,
+    features: enhancedData?.features || currentProduct.features,
+    usps: enhancedData?.usps || currentProduct.usps,
+    useCases: enhancedData?.useCases || [],
+    benefits: enhancedData?.benefits || []
+  };
 
   return (
     <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
@@ -110,9 +131,32 @@ const ProductDetails = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">{currentProduct.name}</h1>
+              <h1 className="text-3xl font-bold text-slate-800">{displayData.name}</h1>
               <p className="text-lg text-slate-600 mt-1">{workspace.name}</p>
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+              onClick={enhanceProductWithAI}
+              disabled={isEnhancing}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
+            </Button>
+            {enhancedData && (
+              <Badge className="bg-purple-100 text-purple-700 text-xs">
+                <Sparkles className="w-3 h-3 mr-1" />
+                AI Enhanced
+              </Badge>
+            )}
           </div>
           
           <Link to={`/workspace/${slug}/icp-wizard`}>
@@ -136,7 +180,7 @@ const ProductDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-slate-700 whitespace-pre-wrap">
-                  {currentProduct.description || 'Product description and overview'}
+                  {displayData.description || 'Product description and overview'}
                 </div>
               </CardContent>
             </Card>
@@ -151,8 +195,18 @@ const ProductDetails = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {currentProduct.problems || 'Customer pain points and challenges that this product addresses'}
+                  <div className="space-y-2">
+                    {Array.isArray(displayData.problems) ? (
+                      displayData.problems.map((problem: string, idx: number) => (
+                        <div key={idx} className="text-sm text-slate-600 bg-slate-50 p-3 rounded">
+                          {problem}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
+                        {displayData.problems || 'Customer pain points and challenges that this product addresses'}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -166,7 +220,7 @@ const ProductDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {currentProduct.solution || 'How this product solves the identified problems'}
+                    {displayData.solution || 'How this product solves the identified problems'}
                   </div>
                 </CardContent>
               </Card>
@@ -179,8 +233,18 @@ const ProductDetails = () => {
                   <CardTitle>Key Features</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {currentProduct.features || 'Key features and capabilities of this product'}
+                  <div className="space-y-2">
+                    {Array.isArray(displayData.features) ? (
+                      displayData.features.map((feature: string, idx: number) => (
+                        <div key={idx} className="text-sm text-slate-600 bg-slate-50 p-3 rounded">
+                          {feature}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
+                        {displayData.features || 'Key features and capabilities of this product'}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -190,8 +254,18 @@ const ProductDetails = () => {
                   <CardTitle>Unique Selling Propositions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {currentProduct.usps || 'What makes this product unique and compelling'}
+                  <div className="space-y-2">
+                    {Array.isArray(displayData.usps) ? (
+                      displayData.usps.map((usp: string, idx: number) => (
+                        <div key={idx} className="text-sm text-slate-600 bg-slate-50 p-3 rounded">
+                          {usp}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
+                        {displayData.usps || 'What makes this product unique and compelling'}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

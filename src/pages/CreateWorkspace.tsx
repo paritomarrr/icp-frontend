@@ -59,7 +59,7 @@ const CreateWorkspace = () => {
         slug: data.slug,
         companyName: data.companyName,
         companyUrl: data.companyUrl,
-        creatorId: data.ownerId, // renamed
+        creatorId: data.creatorId || data.ownerId || user.id, // Use the correct field
         collaborators: data.collaborators || [],
         createdAt: data.createdAt || new Date().toISOString(),
         products: data.products || [],

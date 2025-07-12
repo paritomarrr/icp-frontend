@@ -1,155 +1,655 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
-
-const personaSummaries = [
-  {
-    title: 'Chief Marketing Officer',
-    summary: 'The Chief Marketing Officer drives revenue growth by orchestrating demand generation, brand strategy, and cross-functional alignment.',
-    created: 'Jun 18, 2025',
-  },
-  {
-    title: 'Vice President of Marketing',
-    summary: 'A senior marketing executive who owns the strategic direction and operational effectiveness of the marketing team.',
-    created: 'Jun 18, 2025',
-  },
-  {
-    title: 'Head of Content Strategy',
-    summary: 'This executive owns the strategic direction and operational effectiveness of an organization’s content marketing efforts.',
-    created: 'Jun 18, 2025',
-  },
-];
-
-const personaRows = [
-  'Segment',
-  'Department',
-  'Job Title',
-  'Value Proposition',
-  'Primary Responsibilities',
-  'OKRs',
-  'Pain Points',
-];
-
-const personaColumns = ['Decision Maker', 'Champion', 'End User'];
-
-const parsePersonaData = (segmentName: string) => {
-  const sampleData = {
-    'Decision Maker': {
-      'Segment': segmentName,
-      'Department': 'Executive Leadership',
-      'Job Title': 'CEO / CTO',
-      'Value Proposition': 'Strategic competitive advantage through technology',
-      'Primary Responsibilities': 'Strategic planning, budget allocation, technology roadmap',
-      'OKRs': 'Increase market share by 20%, reduce operational costs by 15%',
-      'Pain Points': 'Scaling challenges, technology debt, competitive pressure',
-    },
-    'Champion': {
-      'Segment': segmentName,
-      'Department': 'Sales / Marketing',
-      'Job Title': 'VP Sales / CMO',
-      'Value Proposition': 'Improved sales efficiency and customer acquisition',
-      'Primary Responsibilities': 'Revenue growth, team management, process optimization',
-      'OKRs': 'Increase conversion rates by 25%, reduce customer acquisition cost',
-      'Pain Points': 'Manual processes, data silos, attribution challenges',
-    },
-    'End User': {
-      'Segment': segmentName,
-      'Department': 'Operations / IT',
-      'Job Title': 'Sales Manager / Marketing Manager',
-      'Value Proposition': 'Daily workflow efficiency and data insights',
-      'Primary Responsibilities': 'Campaign execution, lead management, reporting',
-      'OKRs': 'Improve lead quality, increase team productivity by 30%',
-      'Pain Points': 'Tool fragmentation, manual reporting, data accuracy',
-    },
-  };
-  return sampleData;
-};
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { authService } from '@/lib/auth';
+import { storageService } from '@/lib/storage';
+import { ICPData } from '@/types';
+import { Users, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal, ChevronRight, Target, TrendingUp, Building2, User, Briefcase, Award, Clock, MapPin, Phone, Mail, Linkedin, Sparkles } from 'lucide-react';
+import { axiosInstance } from '@/lib/axios';
+import { icpWizardApi } from '@/lib/api';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const PersonaDetails = () => {
+  const { slug, personaId } = useParams();
   const navigate = useNavigate();
-  const { personaIndex } = useParams();
-  const idx = Number(personaIndex) || 0;
-  const persona = personaSummaries[idx];
+  const user = authService.getCurrentUser();
+  const workspace = slug ? storageService.getWorkspace(slug) : null;
+  const [icpData, setIcpData] = useState<ICPData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editedPersona, setEditedPersona] = useState<any>(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [enhancedData, setEnhancedData] = useState<any>(null);
+  const { canEdit, canView, getUserRole } = usePermissions();
+
+  useEffect(() => {
+    const fetchICPData = async () => {
+      if (!slug) return;
+      setLoading(true);
+      setError(null);
+      let data = storageService.getICPData(slug);
+      if (data) {
+        setIcpData(data);
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await axiosInstance.get(`/workspaces/slug/${slug}`);
+        if (res.data) {
+          storageService.saveICPData({ ...res.data, workspaceId: slug });
+          setIcpData({ ...res.data, workspaceId: slug });
+        } else {
+          setError('No ICP data found for this workspace.');
+        }
+      } catch (err: any) {
+        setError('Failed to fetch ICP data from backend.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchICPData();
+  }, [slug]);
+
+  if (!user || !workspace) {
+    return <Navigate to="/login" />;
+  }
+
+  if (!canView()) {
+    return (
+      <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">Access Restricted</h2>
+            <p className="text-slate-600">You don't have permission to view this workspace.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-lg text-slate-600">Loading persona details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center text-red-600 bg-red-50 p-6 rounded-lg">
+            <p className="text-lg font-semibold mb-2">Error Loading Data</p>
+            <p>{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!icpData) {
+    return (
+      <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">No ICP Data Found</h2>
+            <p className="text-slate-600">Please generate ICP data first.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Get personas from the workspace data and ICP enrichment versions
+  const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
+  const enrichmentData = icpData?.icpEnrichmentVersions;
+  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
+  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
+  
+  const personaIndex = personaId ? parseInt(personaId, 10) - 1 : 0;
+  const currentPersona = rootPersonas[personaIndex];
+
+  if (!currentPersona) {
+    return (
+      <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">Persona Not Found</h2>
+            <p className="text-slate-600">The requested persona could not be found.</p>
+            <Button 
+              onClick={() => navigate(`/workspace/${slug}/personas`)}
+              className="mt-4"
+            >
+              Back to Personas
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform persona data for display
+  const titleMatch = currentPersona.match(/^([^-]+)/);
+  const title = titleMatch ? titleMatch[1].trim() : `Persona ${personaIndex + 1}`;
+  
+  // Try to find matching enrichment data
+  const enrichmentMatch = personasTable.find((p: any) => 
+    p.title && title.toLowerCase().includes(p.title.toLowerCase())
+  );
+  
+  const personaData = {
+    id: personaIndex + 1,
+    name: title,
+    title: title,
+    description: currentPersona,
+    summary: currentPersona,
+    company: icpData?.companyName || 'Your Company',
+    industry: 'Technology',
+    role: enrichmentMatch?.title || title,
+    department: 'Leadership',
+    seniority: 'Senior',
+    reportingStructure: 'C-Level',
+    location: 'Global',
+    teamSize: '10-50',
+    budget: '$500K-2M',
+    decisionInfluence: enrichmentMatch?.influence || 'Decision Maker',
+    influence: enrichmentMatch?.influence || 'Decision Maker',
+    painPoints: enhancedData?.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
+    goals: enhancedData?.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
+    triggers: enhancedData?.triggers || enrichmentMatch?.triggers || ['Budget planning', 'Performance reviews', 'Strategic initiatives'],
+    channels: ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
+    objections: enhancedData?.objections || ['Budget constraints', 'Change resistance', 'ROI concerns'],
+    messaging: enhancedData?.messaging || `Tailored messaging for ${title} focused on business value and strategic outcomes`,
+    responsibilities: enhancedData?.responsibilities || ['Strategic planning', 'Budget allocation', 'Team leadership', 'Performance management'],
+    challenges: enhancedData?.challenges || ['Limited resources', 'Time constraints', 'Complex decision-making', 'Stakeholder alignment'],
+    created: 'Jul 12, 2025',
+    status: 'active',
+    priority: enrichmentMatch ? 'high' : 'medium',
+    contactInfo: {
+      email: 'persona@company.com',
+      phone: '+1 (555) 123-4567',
+      linkedin: 'linkedin.com/in/persona',
+      location: 'Global'
+    },
+    demographics: {
+      age: '35-50',
+      experience: '10+ years',
+      education: 'MBA or equivalent',
+      industry: 'Technology'
+    },
+    buyingBehavior: {
+      researchTime: '3-6 months',
+      decisionFactors: enhancedData?.decisionFactors || ['ROI', 'Ease of implementation', 'Vendor reputation'],
+      preferredChannels: ['LinkedIn', 'Industry events', 'Peer recommendations']
+    }
+  };
+
+  // Function to enhance persona with Claude AI
+  const enhancePersonaWithAI = async () => {
+    if (!icpData) return;
+    
+    setIsEnhancing(true);
+    const companyData = {
+      companyName: icpData.companyName || workspace?.companyName,
+      products: icpData.products,
+      companyUrl: icpData.companyUrl || workspace?.companyUrl
+    };
+
+    try {
+      console.log(`Enhancing persona: ${title}`);
+      const result = await icpWizardApi.generatePersonaDetails(title, companyData);
+      
+      if (result.success && result.data) {
+        setEnhancedData(result.data);
+        console.log('Enhanced persona data:', result.data);
+      }
+    } catch (error) {
+      console.error('Error enhancing persona:', error);
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setEditedPersona({ ...personaData });
+    setEditDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!editedPersona) return;
+    
+    try {
+      // Here you would typically save to backend
+      console.log('Saving persona:', editedPersona);
+      setEditDialogOpen(false);
+      setIsEditing(false);
+      // You could add a toast notification here
+    } catch (error) {
+      console.error('Error saving persona:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this persona?')) return;
+    
+    try {
+      // Here you would typically delete from backend
+      console.log('Deleting persona:', personaData.name);
+      navigate(`/workspace/${slug}/personas`);
+    } catch (error) {
+      console.error('Error deleting persona:', error);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-orange-100 text-orange-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getInfluenceColor = (influence: string) => {
+    switch (influence) {
+      case 'Decision Maker': return 'bg-purple-100 text-purple-800';
+      case 'Influencer': return 'bg-blue-100 text-blue-800';
+      case 'User': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-      <div className="max-w-5xl mx-auto">
-        <Button variant="outline" className="mb-6" onClick={() => navigate(-1)}>
-          &larr; Back to Personas
-        </Button>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
+          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
+          <ChevronRight className="w-3 h-3" />
+          <Link to={`/workspace/${slug}/personas`} className="hover:text-foreground transition-colors">Personas</Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-foreground font-medium">{personaData.name}</span>
+        </nav>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-800">{personaData.name}</h1>
+            <p className="text-sm text-slate-600 mt-1">Persona Details & Messaging</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {getUserRole() && (
+              <Badge variant="outline" className="text-xs">
+                {getUserRole() === 'owner' ? 'Owner' : getUserRole() === 'editor' ? 'Editor' : 'Viewer'}
+              </Badge>
+            )}
+            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+              onClick={enhancePersonaWithAI}
+              disabled={isEnhancing}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
+            </Button>
+            {canEdit() && (
+              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Persona
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Edit Persona: {personaData.name}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Persona Name</Label>
+                      <Input
+                        id="name"
+                        value={editedPersona?.name || ''}
+                        onChange={(e) => setEditedPersona({ ...editedPersona, name: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="summary">Summary</Label>
+                      <Textarea
+                        id="summary"
+                        value={editedPersona?.summary || ''}
+                        onChange={(e) => setEditedPersona({ ...editedPersona, summary: e.target.value })}
+                        className="mt-1"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="department">Department</Label>
+                      <Input
+                        id="department"
+                        value={editedPersona?.department || ''}
+                        onChange={(e) => setEditedPersona({ ...editedPersona, department: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSave}>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            {canEdit() && (
+              <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Side - 2/3 */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Persona Overview */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-blue-700 text-2xl">
-                  {persona.title}
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <User className="w-4 h-4 text-blue-600" />
+                  <span>Persona Overview</span>
                 </CardTitle>
-                <div className="text-slate-600 text-base mt-2 mb-1">{persona.summary}</div>
-                <div className="text-xs text-slate-400">Created: {persona.created}</div>
               </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="border border-slate-200 p-3 bg-slate-50 text-left font-semibold text-slate-700">
-                          Criteria
-                        </th>
-                        {personaColumns.map((column) => (
-                          <th key={column} className="border border-slate-200 p-3 bg-slate-50 text-left font-semibold text-slate-700">
-                            {column}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {personaRows.map((row) => {
-                        const personaData = parsePersonaData(persona.title);
-                        return (
-                          <tr key={row}>
-                            <td className="border border-slate-200 p-3 font-medium text-slate-700 bg-slate-25">
-                              {row}
-                            </td>
-                            {personaColumns.map((column) => (
-                              <td key={`${row}-${column}`} className="border border-slate-200 p-3 text-sm text-slate-600">
-                                {personaData[column as keyof typeof personaData][row as keyof typeof personaData.Champion] || 'Content'}
-                              </td>
-                            ))}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-slate-700 whitespace-pre-wrap">
+                  {personaData.summary}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className={`${getPriorityColor(personaData.priority)} text-xs`}>
+                    {personaData.priority} Priority
+                  </Badge>
+                  <Badge className={`${getStatusColor(personaData.status)} text-xs`}>
+                    {personaData.status}
+                  </Badge>
+                  <Badge className={`${getInfluenceColor(personaData.influence)} text-xs`}>
+                    {personaData.influence}
+                  </Badge>
+                  {enhancedData && (
+                    <Badge className="bg-purple-100 text-purple-700 text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      AI Enhanced
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Demographics & Contact */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <Briefcase className="w-4 h-4 text-purple-600" />
+                    <span>Demographics</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(personaData.demographics).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                        <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
+                        <span className="text-xs text-slate-600">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <Mail className="w-4 h-4 text-green-600" />
+                    <span>Contact Info</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(personaData.contactInfo).map(([key, value]) => (
+                      <div key={key} className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
+                        {key === 'email' && <Mail className="w-3 h-3 text-slate-500" />}
+                        {key === 'phone' && <Phone className="w-3 h-3 text-slate-500" />}
+                        {key === 'linkedin' && <Linkedin className="w-3 h-3 text-slate-500" />}
+                        {key === 'location' && <MapPin className="w-3 h-3 text-slate-500" />}
+                        <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
+                        <span className="text-xs text-slate-600 ml-auto">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pain Points & Goals */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <Target className="w-4 h-4 text-red-600" />
+                    <span>Pain Points</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {personaData.painPoints.map((point: string, idx: number) => (
+                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                        • {point}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span>Goals & Objectives</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {personaData.goals.map((goal: string, idx: number) => (
+                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                        • {goal}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Responsibilities & Challenges */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <Award className="w-4 h-4 text-blue-600" />
+                    <span>Responsibilities</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {personaData.responsibilities.map((resp: string, idx: number) => (
+                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                        • {resp}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <Clock className="w-4 h-4 text-orange-600" />
+                    <span>Challenges</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {personaData.challenges.map((challenge: string, idx: number) => (
+                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                        • {challenge}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Buying Behavior */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-base">Buying Behavior</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Decision Timeline</h4>
+                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
+                    Research Time: {personaData.buyingBehavior.researchTime}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Key Decision Factors</h4>
+                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
+                    {personaData.buyingBehavior.decisionFactors.map((factor: string, idx: number) => (
+                      <div key={idx}>• {factor}</div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Preferred Channels</h4>
+                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
+                    {personaData.buyingBehavior.preferredChannels.map((channel: string, idx: number) => (
+                      <div key={idx}>• {channel}</div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-          <div>
+
+          {/* Right Side - 1/3 */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <span className="text-2xl">📊</span>
-                  <span>Total Contacts</span>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <User className="w-4 h-4 text-purple-600" />
+                  <span>Quick Actions</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
+                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                    <Eye className="w-3 h-3 mr-2" />
+                    View Contacts
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                    <Copy className="w-3 h-3 mr-2" />
+                    Copy Persona
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                    <Download className="w-3 h-3 mr-2" />
+                    Export Data
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Related Pages */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <Building2 className="w-4 h-4 text-purple-600" />
+                  <span>Related Pages</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Link to={`/workspace/${slug}/segments`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                      <Target className="w-3 h-3 mr-2" />
+                      View Segments
+                    </Button>
+                  </Link>
+                  <Link to={`/workspace/${slug}/products`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                      <Building2 className="w-3 h-3 mr-2" />
+                      View Products
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Persona Metrics */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-base">Persona Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
                   {[
-                    { metric: 'Total Contacts Number', value: `${3847 - idx * 500}` },
-                    { metric: 'Contacts Reached', value: `${892 - idx * 150}` },
-                    { metric: 'Meetings Held', value: `${127 - idx * 20}` },
-                    { metric: 'Deals Open', value: `${23 - idx * 3}` }
+                    { metric: 'Total Contacts', value: '1,247' },
+                    { metric: 'Engagement Rate', value: '87%' },
+                    { metric: 'Meetings Held', value: '324' },
+                    { metric: 'Deals Influenced', value: '156' }
                   ].map((item) => (
                     <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
                       <div>
-                        <p className="text-sm font-medium text-slate-700">{item.metric}</p>
-                        <p className="text-lg font-bold text-slate-900">{item.value}</p>
+                        <p className="text-xs font-medium text-slate-700">{item.metric}</p>
+                        <p className="text-sm font-bold text-slate-900">{item.value}</p>
                       </div>
-                      <Button variant="outline" size="sm">
-                        <Download className="w-4 h-4 mr-1" />
-                        CSV
-                      </Button>
                     </div>
                   ))}
                 </div>

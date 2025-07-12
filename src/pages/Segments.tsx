@@ -188,15 +188,69 @@ const Segments = () => {
     });
   };
 
-  // Get enrichment from icpData.icpEnrichmentVersions (use latest version if multiple)
-  let enrichment;
-  if (icpData.icpEnrichmentVersions) {
-    const versionKeys = Object.keys(icpData.icpEnrichmentVersions);
-    const latestVersion = versionKeys[versionKeys.length - 1];
-    enrichment = icpData.icpEnrichmentVersions[latestVersion];
-  }
-  const currentVersionSegments = enrichment?.segments || [];
-  const allSegments = parseSegments(currentVersionSegments);
+  // Get segments from the workspace data and ICP enrichment versions
+  const rootSegments = Array.isArray(icpData?.segments) ? icpData.segments : [];
+  const enrichmentData = icpData?.icpEnrichmentVersions;
+  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
+  const segmentsEnrichment = latestVersion && enrichmentData?.[latestVersion]?.segments || [];
+  
+  console.log('Segments - Root segments:', rootSegments);
+  console.log('Segments - Enrichment data:', segmentsEnrichment);
+  
+  // Transform the segments array into the expected format
+  const allSegments = rootSegments.map((segmentDesc: string, index: number) => {
+    // Extract meaningful segment name from description
+    // Try to extract company type/industry from the description
+    let segmentName = `Segment ${index + 1}`;
+    
+    // Look for key patterns to extract segment names
+    if (segmentDesc.includes('manufacturing')) {
+      segmentName = 'Enterprise Manufacturing';
+    } else if (segmentDesc.includes('engineering firms')) {
+      segmentName = 'Mid-size Engineering Firms';
+    } else if (segmentDesc.includes('construction')) {
+      segmentName = 'Construction & Infrastructure';
+    } else if (segmentDesc.includes('technology startups') || segmentDesc.includes('startups')) {
+      segmentName = 'Technology Startups';
+    } else {
+      // Extract the first part before any size/region descriptors
+      const match = segmentDesc.match(/^([^(]+)/);
+      if (match) {
+        segmentName = match[1].trim();
+        // Clean up common prefixes
+        segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
+      }
+    }
+    
+    // Try to find matching enrichment data
+    const enrichmentMatch = segmentsEnrichment.find((s: any) => 
+      s.name && (segmentDesc.toLowerCase().includes(s.name.toLowerCase()) ||
+                 s.name.toLowerCase().includes(segmentName.toLowerCase()))
+    );
+    
+    return {
+      id: index + 1,
+      name: enrichmentMatch?.name || segmentName,
+      description: segmentDesc,
+      firmographics: [
+        { label: 'Size', value: enrichmentMatch?.size || '100-500 employees' },
+        { label: 'Region', value: enrichmentMatch?.region || 'Global' },
+        { label: 'Budget', value: enrichmentMatch?.budget || '$200K-500K' },
+        { label: 'Focus', value: enrichmentMatch?.focus || 'Growth' }
+      ],
+      benefits: `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
+      awarenessLevel: 'Solution',
+      priority: 'High',
+      status: 'active',
+      marketSize: '$500M - $2B',
+      growthRate: '12% YoY',
+      qualification: {
+        tier1Criteria: enrichmentMatch?.criteria?.split(',') || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
+        lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
+        disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
+      }
+    };
+  });
 
   // Filter segments based on search and filter
   const filteredSegments = allSegments.filter(segment => {
@@ -208,9 +262,8 @@ const Segments = () => {
 
   // Debug: Log the actual segment data to see what we're working with
   console.log('icpData:', icpData);
-  console.log('Enrichment:', enrichment);
-  console.log('Segments data:', currentVersionSegments);
-  console.log('Parsed segments:', allSegments);
+  console.log('Root segments:', rootSegments);
+  console.log('Transformed segments:', allSegments);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {

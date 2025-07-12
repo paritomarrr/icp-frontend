@@ -88,5 +88,47 @@ export const storageService = {
   getCollaborators: (workspaceId: string): Collaborator[] => {
     const all = JSON.parse(localStorage.getItem(COLLABORATORS_KEY) || '{}');
     return all[workspaceId] || [];
+  },
+
+  updateCollaborator: (workspaceId: string, email: string, updates: Partial<Collaborator>): void => {
+    const all = JSON.parse(localStorage.getItem(COLLABORATORS_KEY) || '{}');
+    if (!all[workspaceId]) return;
+    
+    const index = all[workspaceId].findIndex((c: Collaborator) => c.email === email);
+    if (index !== -1) {
+      all[workspaceId][index] = { ...all[workspaceId][index], ...updates };
+      localStorage.setItem(COLLABORATORS_KEY, JSON.stringify(all));
+    }
+  },
+
+  removeCollaborator: (workspaceId: string, email: string): void => {
+    const all = JSON.parse(localStorage.getItem(COLLABORATORS_KEY) || '{}');
+    if (!all[workspaceId]) return;
+    
+    all[workspaceId] = all[workspaceId].filter((c: Collaborator) => c.email !== email);
+    localStorage.setItem(COLLABORATORS_KEY, JSON.stringify(all));
+  },
+
+  getCollaboratorPermissions: (workspaceId: string, userEmail: string): Collaborator['permissions'] | null => {
+    const collaborators = storageService.getCollaborators(workspaceId);
+    const collaborator = collaborators.find(c => c.email === userEmail);
+    return collaborator ? collaborator.permissions : null;
+  },
+
+  canUserAccess: (workspaceId: string, userEmail: string, permission: keyof Collaborator['permissions']): boolean => {
+    // First check if user is the workspace owner
+    const workspace = storageService.getWorkspace(workspaceId);
+    if (workspace) {
+      // Get current user to check if they're the owner
+      const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+      if (currentUser && (workspace.creatorId === currentUser.id || workspace.ownerId === currentUser.id)) {
+        // Owner has all permissions
+        return true;
+      }
+    }
+    
+    // If not owner, check collaborator permissions
+    const permissions = storageService.getCollaboratorPermissions(workspaceId, userEmail);
+    return permissions ? permissions[permission] : false;
   }
 };

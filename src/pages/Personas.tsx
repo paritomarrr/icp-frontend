@@ -31,69 +31,38 @@ const Personas = () => {
     return <Navigate to="/login" />;
   }
 
-  // Get the latest enrichment version
-  const enrichment = icpData?.icpEnrichmentVersions;
-  console.log('icpData:', icpData);
-  console.log('Enrichment:', enrichment);
+  // Get personas from the workspace data and ICP enrichment versions
+  const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
+  const enrichmentData = icpData?.icpEnrichmentVersions;
+  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
+  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
   
-  // Find the latest version by getting the last key
-  const latestVersionKey = enrichment ? Object.keys(enrichment).sort().pop() : null;
-  const latestVersion = latestVersionKey ? enrichment[latestVersionKey] : null;
+  console.log('Personas - Root personas:', rootPersonas);
+  console.log('Personas - Enrichment data:', personasTable);
   
-  console.log('Latest version key:', latestVersionKey);
-  console.log('Latest version data:', latestVersion);
-
-  // Extract persona names from the persona content
-  const parsePersonaNames = (personaContent: string) => {
-    if (!personaContent) return [];
-    const lines = personaContent.split('\n');
-    const personas = [];
-    for (const line of lines) {
-      if (line.includes('Persona') && !line.includes('analysis')) {
-        personas.push(line.replace(/^\d+\.\s*/, '').trim());
-      }
-    }
-    return personas.length > 0 ? personas : ['Chief Marketing Officer', 'Vice President of Marketing', 'Head of Content Strategy'];
-  };
-
-  const personaNames = parsePersonaNames(latestVersion?.personas || '');
-
-  // Persona summary data for card display
-  const allPersonas = [
-    {
-      id: 1,
-      title: 'Chief Marketing Officer',
-      summary: 'The Chief Marketing Officer drives revenue growth by orchestrating demand generation, brand strategy, and cross-functional alignment.',
-      created: 'Jun 18, 2025',
+  // Transform the personas array into the expected format
+  const allPersonas = rootPersonas.map((personaDesc: string, index: number) => {
+    // Extract title from the persona description (everything before the first '-')
+    const titleMatch = personaDesc.match(/^([^-]+)/);
+    const title = titleMatch ? titleMatch[1].trim() : `Persona ${index + 1}`;
+    
+    // Try to find matching enrichment data
+    const enrichmentMatch = personasTable.find((p: any) => 
+      p.title && title.toLowerCase().includes(p.title.toLowerCase())
+    );
+    
+    return {
+      id: index + 1,
+      title: title,
+      summary: personaDesc,
+      created: 'Jul 12, 2025',
       status: 'active',
-      priority: 'high',
-      influence: 'Decision Maker',
-      painPoints: ['Revenue attribution', 'Cross-functional alignment', 'Budget optimization'],
-      goals: ['Increase pipeline velocity', 'Improve conversion rates', 'Scale demand generation']
-    },
-    {
-      id: 2,
-      title: 'Vice President of Marketing',
-      summary: 'A senior marketing executive who owns the strategic direction and operational effectiveness of the marketing team.',
-      created: 'Jun 18, 2025',
-      status: 'active',
-      priority: 'medium',
-      influence: 'Influencer',
-      painPoints: ['Team scaling', 'Technology stack integration', 'Performance measurement'],
-      goals: ['Optimize marketing operations', 'Improve team productivity', 'Enhance customer experience']
-    },
-    {
-      id: 3,
-      title: 'Head of Content Strategy',
-      summary: 'This executive owns the strategic direction and operational effectiveness of an organization\'s content marketing efforts.',
-      created: 'Jun 18, 2025',
-      status: 'active',
-      priority: 'medium',
-      influence: 'User',
-      painPoints: ['Content ROI measurement', 'Distribution strategy', 'Audience engagement'],
-      goals: ['Increase content engagement', 'Improve conversion rates', 'Scale content production']
-    },
-  ];
+      priority: enrichmentMatch ? 'high' : 'medium',
+      influence: enrichmentMatch?.influence || 'Decision Maker',
+      painPoints: enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
+      goals: enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience']
+    };
+  });
 
   // Filter personas based on search and filter
   const filteredPersonas = allPersonas.filter(persona => {
@@ -207,7 +176,7 @@ const Personas = () => {
             <Card
               key={persona.title}
               className={`cursor-pointer border-0 transition-all duration-200 group shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl`}
-              onClick={() => navigate(`/personas/${idx}`)}
+              onClick={() => navigate(`/workspace/${slug}/personas/${persona.id}`)}
             >
               <CardHeader className="pb-2">
                 {/* Colored header bar for persona role/title */}
@@ -215,16 +184,18 @@ const Personas = () => {
                   <span className="inline-block bg-sky-200 text-sky-800 text-xs font-semibold px-3 py-1 rounded-t-md rounded-b mb-1 tracking-wide">
                     {persona.title}
                   </span>
-                  <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <Eye className="w-3 h-3" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <MoreHorizontal className="w-3 h-3" />
-                    </Button>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 {/* Prominent persona name/title */}

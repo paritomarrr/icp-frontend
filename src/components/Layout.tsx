@@ -2,10 +2,12 @@
 import { Outlet, Link, useLocation, useParams, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
-import { Home, ShoppingBag, Building2, Users, Target } from 'lucide-react';
+import { Home, ShoppingBag, Building2, Users, Target, UserPlus, Crown, Eye, PenTool } from 'lucide-react';
 import { Workspace } from '@/types';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const WorkspaceLayout = () => {
   const { slug } = useParams();
@@ -13,6 +15,7 @@ const WorkspaceLayout = () => {
   const user = authService.getCurrentUser();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isOwner, getUserRole } = usePermissions();
 
   useEffect(() => {
     const loadWorkspace = async () => {
@@ -84,11 +87,40 @@ const WorkspaceLayout = () => {
     { icon: Building2, label: 'Segments', path: `/workspace/${slug}/segments` },
     { icon: Users, label: 'Personas', path: `/workspace/${slug}/personas` },
     { icon: Target, label: 'Pre-Sales Outbound Plays', path: `/workspace/${slug}/outbound-plays` },
+    { icon: UserPlus, label: 'Collaborators', path: `/workspace/${slug}/collaborators` },
   ];
 
   // Helper function to check if current path matches exactly
   const isActivePath = (itemPath: string) => {
     return location.pathname === itemPath;
+  };
+
+  const getUserRoleIcon = () => {
+    const role = getUserRole();
+    switch (role) {
+      case 'owner':
+        return <Crown className="w-3 h-3" />;
+      case 'editor':
+        return <PenTool className="w-3 h-3" />;
+      case 'viewer':
+        return <Eye className="w-3 h-3" />;
+      default:
+        return null;
+    }
+  };
+
+  const getUserRoleColor = () => {
+    const role = getUserRole();
+    switch (role) {
+      case 'owner':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'editor':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'viewer':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
 
   return (
@@ -107,6 +139,12 @@ const WorkspaceLayout = () => {
             <div className="mt-5">
               <h3 className="font-semibold text-sidebar-primary truncate text-sm">{workspace.name}</h3>
               <p className="text-xs text-sidebar-foreground truncate mt-1">{workspace.companyName}</p>
+              <div className="mt-2 flex items-center space-x-2">
+                <Badge className={`text-xs ${getUserRoleColor()}`}>
+                  {getUserRoleIcon()}
+                  <span className="ml-1 capitalize">{getUserRole()}</span>
+                </Badge>
+              </div>
             </div>
           )}
         </div>
