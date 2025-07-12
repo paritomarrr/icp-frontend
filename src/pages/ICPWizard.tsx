@@ -255,7 +255,7 @@ const ICPWizard = () => {
     }
 
     setIsGenerating(true);
-
+    
     try {
       const res = await fetch(
         `http://localhost:3000/api/workspaces/${workspace.slug}/icp`,
@@ -284,10 +284,11 @@ const ICPWizard = () => {
 
       toast({
         title: isEditing ? "ICP Updated!" : "ICP Created!",
-        description: "Saved successfully",
+        description: "Redirecting to workspace...",
       });
-
-      setTimeout(() => navigate(`/workspace/${updated.slug}/home`), 1000);
+      
+      // Immediately redirect to the workspace
+      navigate(`/workspace/${updated.slug}/home`);
     } catch (err) {
       console.error(err);
       toast({

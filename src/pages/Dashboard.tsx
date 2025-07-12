@@ -4,13 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/lib/auth';
+import { storageService } from '@/lib/storage';
 import { Workspace } from '@/types';
-import { Plus, Search, Calendar, Users, ExternalLink } from 'lucide-react';
+import { Plus, Search, Calendar, Users, ExternalLink, LogOut, Trash2, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState(() => authService.getCurrentUser());
+  const [deletingWorkspaceId, setDeletingWorkspaceId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,28 +31,33 @@ const Dashboard = () => {
     const controller = new AbortController();
 
     if (!user) {
-      console.warn('⚠️ Workspace not found, maybe still loading?');
-
-      // navigate('/login');
+      return;
     }
 
-    if (user) {
-      fetch(`http://localhost:3000/api/workspaces/user/${user.id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        signal: controller.signal,
+    fetch(`http://localhost:3000/api/workspaces/user/${user.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+      signal: controller.signal,
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
       })
-        .then(res => res.json())
-        .then(data => {
-          setWorkspaces(data);
-        })
-        .catch(err => {
-          if (err.name !== 'AbortError') {
-            console.error("Failed to fetch workspaces:", err);
-          }
+      .then(data => {
+        setWorkspaces(data);
+        // Store workspaces in localStorage for access in other components
+        data.forEach((workspace: any) => {
+          storageService.saveWorkspace(workspace.slug, workspace);
         });
-    }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error("Failed to fetch workspaces:", err);
+        }
+      });
     return () => controller.abort();
   }, [user, navigate]);
 
@@ -53,27 +67,57 @@ const Dashboard = () => {
     const hasIcpData = workspace.products?.length > 0 || workspace.personas?.length > 0;
     const workspaceSlug = workspace.slug;
 
-    if (hasIcpData) {
-      navigate(`/workspace/${workspaceSlug}/products`);
-    } else {
-      navigate(`/workspace/${workspaceSlug}/icp-wizard`);
+    try {
+      if (hasIcpData) {
+        navigate(`/workspace/${workspaceSlug}/products`);
+      } else {
+        navigate(`/workspace/${workspaceSlug}/icp-wizard`);
+      }
+    } catch (error) {
+      console.error('Error navigating to workspace:', error);
+      navigate(`/workspace/${workspaceSlug}`);
     }
   };
 
-  const handleDeleteWorkspace = (workspaceId: string, e: React.MouseEvent) => {
+  const handleDeleteWorkspace = async (workspace: Workspace, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this workspace?')) {
-      fetch(`http://localhost:3000/api/workspaces/${workspaceId}`, {
+    const isConfirmed = confirm(
+      `Are you sure you want to delete "${workspace.name}"?\n\nThis action cannot be undone and will permanently remove all workspace data.`
+    );
+    if (!isConfirmed) return;
+    setDeletingWorkspaceId(workspace._id);
+    try {
+      const response = await fetch(`http://localhost:3000/api/workspaces/${workspace._id}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${authService.getToken()}`,
         },
-      })
-        .then(() => {
-          setWorkspaces(prev => prev.filter(w => w._id !== workspaceId));
-        })
-        .catch(err => console.error("Failed to delete workspace:", err));
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete workspace');
+      }
+      setWorkspaces(prev => prev.filter(w => w._id !== workspace._id));
+      storageService.deleteWorkspace(workspace._id);
+      toast({
+        title: "Workspace deleted",
+        description: `"${workspace.name}" has been permanently deleted.`,
+      });
+    } catch (error) {
+      console.error('Failed to delete workspace:', error);
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete workspace. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingWorkspaceId(null);
     }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
   };
 
   const filteredWorkspaces = workspaces.filter(workspace =>
@@ -82,40 +126,47 @@ const Dashboard = () => {
   );
 
   if (!user) {
-    // navigate('/login');
-    console.warn('⚠️ Workspace not found, maybe still loading?');
-
     return null;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-4xl font-bold text-slate-800 mb-2">
+            <h1 className="text-2xl font-bold text-slate-800 mb-1">
               Welcome back, {user.name}
             </h1>
-            <p className="text-slate-600">
+            <p className="text-xs text-slate-600">
               Manage your ICP workspaces and generate insights
             </p>
           </div>
-          <Link to="/workspace/new">
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-              <Plus className="w-4 h-4 mr-2" />
-              New Workspace
+          <div className="flex items-center gap-3">
+            <Link to="/workspace/new">
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-xs">
+                <Plus className="w-3 h-3 mr-2" />
+                New Workspace
+              </Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs"
+            >
+              <LogOut className="w-3 h-3 mr-2" />
+              Logout
             </Button>
-          </Link>
+          </div>
         </div>
 
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3 h-3" />
             <Input
               placeholder="Search workspaces..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-8 text-xs"
             />
           </div>
         </div>
@@ -123,7 +174,6 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredWorkspaces.map((workspace) => {
             const hasIcpData = workspace.products?.length > 0 || workspace.personas?.length > 0;
-
             return (
               <Card 
                 key={workspace._id} 
@@ -133,38 +183,58 @@ const Dashboard = () => {
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-slate-800 mb-1">
+                      <CardTitle className="text-base font-semibold text-slate-800 mb-1">
                         {workspace.name}
                       </CardTitle>
-                      <p className="text-sm text-slate-600">{workspace.companyName}</p>
+                      <p className="text-xs text-slate-600">{workspace.companyName}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => handleDeleteWorkspace(workspace._id, e)}
-                      className="text-slate-400 hover:text-red-500 p-1"
-                    >
-                      ×
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-slate-400 hover:text-slate-600 p-1"
+                        >
+                          <MoreVertical className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => handleDeleteWorkspace(workspace, e)}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50 text-xs"
+                          disabled={deletingWorkspaceId === workspace._id}
+                        >
+                          {deletingWorkspaceId === workspace._id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600 mr-2"></div>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-3 h-3 mr-2" />
+                              Delete Workspace
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
-                    <div className="flex items-center text-sm text-slate-500">
-                      <ExternalLink className="w-4 h-4 mr-2" />
+                    <div className="flex items-center text-xs text-slate-500">
+                      <ExternalLink className="w-3 h-3 mr-2" />
                       <span className="truncate">{workspace.companyUrl}</span>
                     </div>
-                    
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Calendar className="w-4 h-4 mr-2" />
+                    <div className="flex items-center text-xs text-slate-500">
+                      <Calendar className="w-3 h-3 mr-2" />
                       <span>Created {new Date(workspace.createdAt).toLocaleDateString()}</span>
                     </div>
-                    
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Users className="w-4 h-4 mr-2" />
+                    <div className="flex items-center text-xs text-slate-500">
+                      <Users className="w-3 h-3 mr-2" />
                       <span>{workspace.collaborators?.length + 1 || 1} collaborator(s)</span>
                     </div>
-
                     <div className="pt-2 border-t">
                       <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                         hasIcpData 

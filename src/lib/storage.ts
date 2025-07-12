@@ -5,15 +5,14 @@ const ICP_DATA_KEY = 'icp_wizard_icp_data';
 const COLLABORATORS_KEY = 'icp_wizard_collaborators';
 
 export const storageService = {
-  // Fallback local creation (used only if not saving from backend)
+  // Create a workspace locally if not saving from backend
   createWorkspace: (workspace: Omit<Workspace, 'id' | 'createdAt'>): Workspace => {
     const workspaces = JSON.parse(localStorage.getItem(WORKSPACES_KEY) || '[]');
     const newWorkspace: Workspace = {
       ...workspace,
-      _id: Math.random().toString(36).substr(2, 9), // temporary id
+      _id: Math.random().toString(36).substr(2, 9), // Temporary id
       createdAt: new Date().toISOString(),
     };
-    
     workspaces.push(newWorkspace);
     localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces));
     return newWorkspace;
@@ -21,11 +20,9 @@ export const storageService = {
 
   saveWorkspace: (slug: string, workspace: Workspace): void => {
     const existing = JSON.parse(localStorage.getItem(WORKSPACES_KEY) || '[]');
-  
     const updated = Array.isArray(existing)
       ? [...existing.filter(w => w.slug !== slug), workspace]
-      : [workspace]; // fallback if previous format was object
-  
+      : [workspace]; // Fallback if previous format was object
     localStorage.setItem(WORKSPACES_KEY, JSON.stringify(updated));
   },
 
@@ -39,33 +36,28 @@ export const storageService = {
   getWorkspace: (idOrSlug: string): Workspace | null => {
     const raw = localStorage.getItem(WORKSPACES_KEY);
     if (!raw) return null;
-  
     let data;
     try {
       data = JSON.parse(raw);
     } catch {
       return null;
     }
-  
     if (Array.isArray(data)) {
       return data.find((w: Workspace) => w._id === idOrSlug || w.slug === idOrSlug) || null;
     } else {
       return data[idOrSlug] || null;
     }
-  }
-  ,
-  
+  },
 
   deleteWorkspace: (id: string): void => {
     const workspaces = JSON.parse(localStorage.getItem(WORKSPACES_KEY) || '[]');
     const filtered = workspaces.filter((w: Workspace) => w._id !== id);
     localStorage.setItem(WORKSPACES_KEY, JSON.stringify(filtered));
-
-    // Cleanup related data
+    // Remove related ICP data
     const allICPData = JSON.parse(localStorage.getItem(ICP_DATA_KEY) || '{}');
     delete allICPData[id];
     localStorage.setItem(ICP_DATA_KEY, JSON.stringify(allICPData));
-
+    // Remove related collaborators
     const allCollaborators = JSON.parse(localStorage.getItem(COLLABORATORS_KEY) || '{}');
     delete allCollaborators[id];
     localStorage.setItem(COLLABORATORS_KEY, JSON.stringify(allCollaborators));

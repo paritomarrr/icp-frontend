@@ -16,11 +16,10 @@ export interface Workspace {
   collaborators: string[];
   createdAt: string;
 
-  // Optional ICP data
+  // ICP data fields (optional)
   products?: string[];
   personas?: string[];
 }
-
 
 export interface ICPData {
   workspaceId: string;
