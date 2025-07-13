@@ -34,7 +34,7 @@ const SegmentCard: React.FC<SegmentCardProps> = ({ segment }) => {
   return (
     <Card 
       className="w-full shadow-xl border-0 bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-      onClick={() => navigate(`/workspace/${slug}/segments/${segment._id}`)}
+      onClick={() => navigate(`/workspace/${slug}/segments/${segment._id?.$oid || segment._id || segment.id}`)}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">

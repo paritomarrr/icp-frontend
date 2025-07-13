@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Building2, Users, Target, TrendingUp, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal, ChevronRight, Sparkles } from 'lucide-react';
+import { Building2, Users, Target, TrendingUp, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal, ChevronRight, Sparkles, Briefcase, Award, CheckCircle } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -125,6 +125,9 @@ const SegmentDetails = () => {
   const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
   const segmentsEnrichment = latestVersion && enrichmentData?.[latestVersion]?.segments || [];
   
+  // Debug: Log segmentId and available segment IDs
+  console.log('segmentId from URL:', segmentId);
+  console.log('Available segment IDs:', rootSegments.map(s => typeof s._id === 'object' && s._id.$oid ? s._id.$oid : s._id));
   // Find segment by _id instead of array index
   const currentSegment = rootSegments.find((segment: any) => {
     if (typeof segment === 'string') {
@@ -353,31 +356,7 @@ const SegmentDetails = () => {
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-              onClick={enhanceSegmentWithAI}
-              disabled={isEnhancing}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
-            </Button>
-            {canEdit() && (
-              <Button 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleEdit}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Segment
-              </Button>
-            )}
-            {canEdit() && (
-              <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            )}
+            {/* Add Enhance with AI, Edit, Delete as needed */}
           </div>
         </div>
 
@@ -404,12 +383,6 @@ const SegmentDetails = () => {
                   <Badge className={`${getStatusColor(segmentData.status)} text-xs`}>
                     {segmentData.status}
                   </Badge>
-                  {enhancedData && (
-                    <Badge className="bg-purple-100 text-purple-700 text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      AI Enhanced
-                    </Badge>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -418,85 +391,133 @@ const SegmentDetails = () => {
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-base">
-                  <Target className="w-4 h-4 text-purple-600" />
+                  <Briefcase className="w-4 h-4 text-purple-600" />
                   <span>Firmographics</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {segmentData.firmographics.map((firmo: any, idx: number) => (
-                    <div key={idx} className="space-y-2">
-                      <h4 className="text-sm font-semibold text-slate-700">{firmo.label}</h4>
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                        {firmo.value}
-                      </div>
+                <div className="space-y-3">
+                  {segmentData.firmographics?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                      <span className="text-xs font-medium text-slate-700 capitalize">{item.label}</span>
+                      <span className="text-xs text-slate-600">{item.value}</span>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Benefits & Awareness */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Benefits</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {segmentData.benefits}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Pain Points */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <Target className="w-4 h-4 text-red-600" />
+                  <span>Pain Points</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {segmentData.painPoints?.map((point: string, idx: number) => (
+                    <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                      • {point}
+                    </div>
+                  )) || <div className="text-xs text-slate-500">No pain points defined</div>}
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base">Awareness Level</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {['Unaware', 'Problem', 'Solution', 'Product', 'Most Aware'].map((level) => (
-                      <div key={level} className={`p-2 rounded text-xs ${level === segmentData.awarenessLevel ? 'bg-blue-100 text-blue-800' : 'bg-slate-50'}`}>
-                        {level}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Benefits */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <Award className="w-4 h-4 text-green-600" />
+                  <span>Benefits</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                  {segmentData.benefits}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Qualification Criteria */}
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-base">Qualification Criteria</CardTitle>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                  <span>Qualification Criteria</span>
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Ideal Criteria</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {segmentData.qualification.idealCriteria?.map((criteria: string, idx: number) => (
-                      <div key={idx}>• {criteria}</div>
-                    )) || <div>No criteria defined</div>}
+              <CardContent>
+                <div className="space-y-2">
+                  <div>
+                    <span className="font-semibold text-xs">Ideal Criteria:</span>
+                    <ul className="list-disc ml-5">
+                      {segmentData.qualification?.idealCriteria?.map((c: string, idx: number) => (
+                        <li key={idx} className="text-xs text-slate-600">{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-xs">Lookalike Companies:</span>
+                    <ul className="list-disc ml-5">
+                      {segmentData.qualification?.lookalikeCompanies?.map((c: string, idx: number) => (
+                        <li key={idx} className="text-xs text-slate-600">{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-xs">Disqualifying Criteria:</span>
+                    <ul className="list-disc ml-5">
+                      {segmentData.qualification?.disqualifyingCriteria?.map((c: string, idx: number) => (
+                        <li key={idx} className="text-xs text-slate-600">{c}</li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Lookalike Companies</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {segmentData.qualification.lookalikeCompanies?.map((company: string, idx: number) => (
-                      <div key={idx}>• {company}</div>
-                    )) || <div>No companies defined</div>}
-                  </div>
+              </CardContent>
+            </Card>
+
+            {/* Characteristics */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <Award className="w-4 h-4 text-orange-600" />
+                  <span>Characteristics</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {segmentData.characteristics?.map((char: string, idx: number) => (
+                    <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                      • {char}
+                    </div>
+                  )) || <div className="text-xs text-slate-500">No characteristics defined</div>}
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Disqualifying Criteria</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {segmentData.qualification.disqualifyingCriteria?.map((criteria: string, idx: number) => (
-                      <div key={idx}>• {criteria}</div>
-                    )) || <div>No disqualifying criteria defined</div>}
-                  </div>
+              </CardContent>
+            </Card>
+
+            {/* Metrics */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-base">Segment Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { metric: 'Market Size', value: segmentData.marketSize },
+                    { metric: 'Growth Rate', value: segmentData.growthRate },
+                    { metric: 'Total Companies', value: segmentData.customerCount || 'N/A' },
+                    { metric: 'Accounts Reached', value: '324' }
+                  ].map((item) => (
+                    <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                      <div>
+                        <p className="text-xs font-medium text-slate-700">{item.metric}</p>
+                        <p className="text-sm font-bold text-slate-900">{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -508,7 +529,7 @@ const SegmentDetails = () => {
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-base">
-                  <Target className="w-4 h-4 text-purple-600" />
+                  <Building2 className="w-4 h-4 text-purple-600" />
                   <span>Quick Actions</span>
                 </CardTitle>
               </CardHeader>
@@ -516,7 +537,7 @@ const SegmentDetails = () => {
                 <div className="space-y-3">
                   <Button variant="outline" size="sm" className="w-full justify-start text-xs">
                     <Eye className="w-3 h-3 mr-2" />
-                    View Companies
+                    View Accounts
                   </Button>
                   <Button variant="outline" size="sm" className="w-full justify-start text-xs">
                     <Copy className="w-3 h-3 mr-2" />
@@ -552,30 +573,6 @@ const SegmentDetails = () => {
                       View Personas
                     </Button>
                   </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Segment Metrics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Segment Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { metric: 'Market Size', value: segmentData.marketSize },
-                    { metric: 'Growth Rate', value: segmentData.growthRate },
-                    { metric: 'Total Companies', value: '1,247' },
-                    { metric: 'Accounts Reached', value: '324' }
-                  ].map((item) => (
-                    <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <div>
-                        <p className="text-xs font-medium text-slate-700">{item.metric}</p>
-                        <p className="text-sm font-bold text-slate-900">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </CardContent>
             </Card>
