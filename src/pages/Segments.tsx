@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,13 @@ import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
 import { Building2, Users, Download, ArrowRight, Target, TrendingUp, Search, Filter, Plus, MoreHorizontal, Eye, Copy, Trash2, ChevronRight, BarChart3, Users2, Globe } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
+import { AddSegmentModal } from '@/components/modals';
+import { icpWizardApi, SegmentData } from '@/lib/api';
+import SegmentCard from '@/components/SegmentCard';
 
 const Segments = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
   const [icpData, setIcpData] = useState<ICPData | null>(null);
@@ -20,6 +24,7 @@ const Segments = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [addSegmentModalOpen, setAddSegmentModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchICPData = async () => {
@@ -51,6 +56,29 @@ const Segments = () => {
     };
     fetchICPData();
   }, [slug]);
+
+  const handleAddSegment = async (segmentData: SegmentData) => {
+    if (!slug) return;
+    
+    try {
+      const result = await icpWizardApi.addSegment(slug, segmentData);
+      
+      if (result.success) {
+        console.log('Segment added successfully:', result.segment);
+        // Refresh the ICP data to show the new segment
+        const data = storageService.getICPData(slug);
+        if (data) {
+          setIcpData({ ...data }); // Force re-render
+        }
+        // You might want to add a toast notification here
+      } else {
+        console.error('Failed to add segment:', result.error);
+        // You might want to show an error message to the user
+      }
+    } catch (error) {
+      console.error('Error adding segment:', error);
+    }
+  };
 
   if (!user || !workspace) {
     return <Navigate to="/login" />;
@@ -106,11 +134,17 @@ const Segments = () => {
     
     return segmentsData.map((segment, index) => {
       try {
-        console.log(`parseSegments: Processing segment ${index}:`, segment);
-        const segmentName = segment.name || segment.title || `Segment ${index + 1}`;
-        const revenue = segment.revenue || segment.criteria || '';
+
+        
+        // Handle both old string format and new object format
+        const segmentDesc = typeof segment === 'string' ? segment : segment.name;
+        const segmentData = typeof segment === 'string' ? {} : segment;
+        
+        const segmentName = segmentData.name || segmentData.title || `Segment ${index + 1}`;
+        const revenue = segmentData.revenue || segmentData.criteria || '';
+        
         // Ensure characteristics is an array and handle different data types
-        let characteristics = segment.characteristics || [];
+        let characteristics = segmentData.characteristics || [];
         if (!Array.isArray(characteristics)) {
           // If characteristics is a string, split it into an array
           if (typeof characteristics === 'string') {
@@ -123,45 +157,67 @@ const Segments = () => {
           }
         }
         
-        const priority = segment.priority || 'Medium';
-        const firmographics = [];
-        if (revenue) {
-          firmographics.push({ label: 'Revenue', value: revenue });
-        }
-        if (segment.employees) {
-          firmographics.push({ label: 'Employees', value: segment.employees });
-        }
-        if (characteristics.length > 0) {
-          characteristics.forEach((char: string) => {
-            firmographics.push({ label: 'Characteristic', value: char });
-          });
-        }
+        const priority = segmentData.priority || 'Medium';
+        const firmographics = segmentData.firmographics || [];
+        
+        // Add default firmographics if none exist
         if (firmographics.length === 0) {
-          firmographics.push(
-            { label: 'Revenue', value: '$10M - $100M ARR' },
-            { label: 'Industry', value: 'B2B Technology' },
-            { label: 'Employees', value: '50 - 500 employees' }
-          );
+          if (revenue) {
+            firmographics.push({ label: 'Revenue', value: revenue });
+          }
+          if (segmentData.employees) {
+            firmographics.push({ label: 'Employees', value: segmentData.employees });
+          }
+          if (characteristics && characteristics.length > 0) {
+            characteristics.forEach((char: string) => {
+              firmographics.push({ label: 'Characteristic', value: char });
+            });
+          }
+          if (firmographics.length === 0) {
+            firmographics.push(
+              { label: 'Revenue', value: '$10M - $100M ARR' },
+              { label: 'Industry', value: 'B2B Technology' },
+              { label: 'Employees', value: '50 - 500 employees' }
+            );
+          }
         }
         return {
-          id: index + 1,
+          id: segmentData._id || index + 1,
           name: segmentName,
-          description: `Target segment for ${workspace.name}`,
+          description: segmentData.description || `Target segment for ${workspace.name}`,
           firmographics: firmographics,
-          benefits: `High-value customers with proven need for ${workspace.name} solutions`,
-          awarenessLevel: 'Solution',
-          priority: priority,
-          status: 'active',
-          marketSize: '$500M - $2B',
-          growthRate: '12% YoY',
-          qualification: {
-            tier1Criteria: ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
+          benefits: segmentData.benefits || `High-value customers with proven need for ${workspace.name} solutions`,
+          awarenessLevel: segmentData.awarenessLevel || 'Solution',
+          priority: segmentData.priority || priority,
+          status: segmentData.status || 'active',
+          marketSize: segmentData.marketSize || '$500M - $2B',
+          growthRate: segmentData.growthRate || '12% YoY',
+          qualification: segmentData.qualification || {
+            idealCriteria: ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
             lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
             disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
-          }
+          },
+          size: segmentData.size || '',
+          region: segmentData.region || '',
+          budget: segmentData.budget || '',
+          focus: segmentData.focus || '',
+          industry: segmentData.industry || '',
+          companySize: segmentData.companySize || '',
+          revenue: segmentData.revenue || '',
+          geography: segmentData.geography || '',
+          employees: segmentData.employees || '',
+          customerCount: segmentData.customerCount || '',
+          competitiveIntensity: segmentData.competitiveIntensity || '',
+          characteristics: characteristics,
+          industries: segmentData.industries || [],
+          companySizes: segmentData.companySizes || [],
+          technologies: segmentData.technologies || [],
+          qualificationCriteria: segmentData.qualificationCriteria || [],
+          painPoints: segmentData.painPoints || [],
+          buyingProcesses: segmentData.buyingProcesses || []
         };
       } catch (error) {
-        console.error(`Error processing segment ${index}:`, error, segment);
+
         // Return a fallback segment object
         return {
           id: index + 1,
@@ -198,27 +254,33 @@ const Segments = () => {
   console.log('Segments - Enrichment data:', segmentsEnrichment);
   
   // Transform the segments array into the expected format
-  const allSegments = rootSegments.map((segmentDesc: string, index: number) => {
+  const allSegments = rootSegments.map((segment: any, index: number) => {
+    // Handle both old string format and new object format
+    const segmentDesc = typeof segment === 'string' ? segment : segment.name;
+    const segmentData = typeof segment === 'string' ? {} : segment;
+    
     // Extract meaningful segment name from description
     // Try to extract company type/industry from the description
-    let segmentName = `Segment ${index + 1}`;
+    let segmentName = segmentData.name || `Segment ${index + 1}`;
     
-    // Look for key patterns to extract segment names
-    if (segmentDesc.includes('manufacturing')) {
-      segmentName = 'Enterprise Manufacturing';
-    } else if (segmentDesc.includes('engineering firms')) {
-      segmentName = 'Mid-size Engineering Firms';
-    } else if (segmentDesc.includes('construction')) {
-      segmentName = 'Construction & Infrastructure';
-    } else if (segmentDesc.includes('technology startups') || segmentDesc.includes('startups')) {
-      segmentName = 'Technology Startups';
-    } else {
-      // Extract the first part before any size/region descriptors
-      const match = segmentDesc.match(/^([^(]+)/);
-      if (match) {
-        segmentName = match[1].trim();
-        // Clean up common prefixes
-        segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
+    // If no name in segmentData, try to extract from description
+    if (!segmentData.name && typeof segmentDesc === 'string') {
+      if (segmentDesc.includes('manufacturing')) {
+        segmentName = 'Enterprise Manufacturing';
+      } else if (segmentDesc.includes('engineering firms')) {
+        segmentName = 'Mid-size Engineering Firms';
+      } else if (segmentDesc.includes('construction')) {
+        segmentName = 'Construction & Infrastructure';
+      } else if (segmentDesc.includes('technology startups') || segmentDesc.includes('startups')) {
+        segmentName = 'Technology Startups';
+      } else {
+        // Extract the first part before any size/region descriptors
+        const match = segmentDesc.match(/^([^(]+)/);
+        if (match) {
+          segmentName = match[1].trim();
+          // Clean up common prefixes
+          segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
+        }
       }
     }
     
@@ -229,26 +291,44 @@ const Segments = () => {
     );
     
     return {
-      id: index + 1,
+      id: segmentData._id || index + 1,
       name: enrichmentMatch?.name || segmentName,
-      description: segmentDesc,
-      firmographics: [
-        { label: 'Size', value: enrichmentMatch?.size || '100-500 employees' },
-        { label: 'Region', value: enrichmentMatch?.region || 'Global' },
-        { label: 'Budget', value: enrichmentMatch?.budget || '$200K-500K' },
-        { label: 'Focus', value: enrichmentMatch?.focus || 'Growth' }
+      description: segmentData.description || segmentDesc,
+      firmographics: segmentData.firmographics || [
+        { label: 'Size', value: enrichmentMatch?.size || segmentData.size || '100-500 employees' },
+        { label: 'Region', value: enrichmentMatch?.region || segmentData.region || 'Global' },
+        { label: 'Budget', value: enrichmentMatch?.budget || segmentData.budget || '$200K-500K' },
+        { label: 'Focus', value: enrichmentMatch?.focus || segmentData.focus || 'Growth' }
       ],
-      benefits: `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
-      awarenessLevel: 'Solution',
-      priority: 'High',
-      status: 'active',
-      marketSize: '$500M - $2B',
-      growthRate: '12% YoY',
-      qualification: {
-        tier1Criteria: enrichmentMatch?.criteria?.split(',') || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
-        lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
-        disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
-      }
+      benefits: segmentData.benefits || `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
+      awarenessLevel: segmentData.awarenessLevel || 'Solution',
+      priority: segmentData.priority || 'High',
+      status: segmentData.status || 'active',
+      marketSize: segmentData.marketSize || '$500M - $2B',
+      growthRate: segmentData.growthRate || '12% YoY',
+                qualification: segmentData.qualification || {
+            idealCriteria: enrichmentMatch?.criteria?.split(',') || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
+            lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
+            disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
+          },
+      size: segmentData.size || '',
+      region: segmentData.region || '',
+      budget: segmentData.budget || '',
+      focus: segmentData.focus || '',
+      industry: segmentData.industry || '',
+      companySize: segmentData.companySize || '',
+      revenue: segmentData.revenue || '',
+      geography: segmentData.geography || '',
+      employees: segmentData.employees || '',
+      customerCount: segmentData.customerCount || '',
+      competitiveIntensity: segmentData.competitiveIntensity || '',
+      characteristics: segmentData.characteristics || [],
+      industries: segmentData.industries || [],
+      companySizes: segmentData.companySizes || [],
+      technologies: segmentData.technologies || [],
+      qualificationCriteria: segmentData.qualificationCriteria || [],
+      painPoints: segmentData.painPoints || [],
+      buyingProcesses: segmentData.buyingProcesses || []
     };
   });
 
@@ -284,173 +364,94 @@ const Segments = () => {
   };
 
   return (
-    <div className="p-8 bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
-          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-foreground font-medium">Segments</span>
-        </nav>
+    <>
+      <div className="p-8 bg-background min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
+            <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-foreground font-medium">Segments</span>
+          </nav>
 
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-foreground mb-1">Market Segments</h1>
-            <p className="text-xs text-muted-foreground">Segment your audience and craft targeted messages</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
-              <Download className="w-3 h-3 mr-2" />
-              Export
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-primary hover:bg-primary/90 text-xs"
-              onClick={() => {
-                // For now, just show an alert. In a real app, this would open a modal or go to a specific wizard step
-                alert('Add Segment functionality - This would typically open a modal or go to a specific step in the ICP Wizard');
-              }}
-            >
-              <Plus className="w-3 h-3 mr-2" />
-              Add Segment
-            </Button>
-          </div>
-        </div>
-
-        {/* Search and Filter Bar */}
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
-            <Input
-              placeholder="Search segments..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 text-xs"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-medium text-foreground">Filter:</span>
-            <Button
-              variant={selectedFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('all')}
-            >
-              All Segments
-            </Button>
-            <Button
-              variant={selectedFilter === 'high' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('high')}
-            >
-              High Priority
-            </Button>
-            <Button
-              variant={selectedFilter === 'medium' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('medium')}
-            >
-              Medium Priority
-            </Button>
-            <Button
-              variant={selectedFilter === 'low' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('low')}
-            >
-              Low Priority
-            </Button>
-          </div>
-        </div>
-
-        {/* Segments Cards */}
-        <div className="space-y-6">
-          {/* Horizontal Scrollable Segment Cards */}
-          <div className="overflow-x-auto">
-            <div className="flex space-x-4 pb-4" style={{ minWidth: 'max-content' }}>
-              {filteredSegments.map((segment) => (
-                <Card 
-                  key={segment.id} 
-                  className="w-96 flex-shrink-0 shadow-xl border-0 bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-                  onClick={() => window.location.href = `/workspace/${slug}/segments/${segment.id}`}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <CardTitle className="text-base font-semibold text-slate-800">{segment.name}</CardTitle>
-                      </div>
-                      <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Eye className="w-3 h-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <MoreHorizontal className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Badge className={`${getPriorityColor(segment.priority)} text-xs`}>
-                        {segment.priority} Priority
-                      </Badge>
-                      <Badge className={`${getStatusColor(segment.status)} text-xs`}>
-                        {segment.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div className="text-xs text-slate-600 line-clamp-2">
-                        {segment.description || 'Segment description and overview'}
-                      </div>
-                      
-                      {/* Key Metrics */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="text-center p-2 bg-slate-50 rounded">
-                          <div className="text-xs text-slate-500 mb-1">Market Size</div>
-                          <div className="text-xs font-semibold text-slate-800">{segment.marketSize}</div>
-                        </div>
-                        <div className="text-center p-2 bg-slate-50 rounded">
-                          <div className="text-xs text-slate-500 mb-1">Growth Rate</div>
-                          <div className="text-xs font-semibold text-slate-800">{segment.growthRate}</div>
-                        </div>
-                      </div>
-
-                      {/* Firmographics */}
-                      <div className="space-y-2">
-                        <div className="text-xs font-medium text-slate-700">Key Characteristics</div>
-                        <div className="flex flex-wrap gap-1">
-                          {segment.firmographics.slice(0, 3).map((firmo: any, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {firmo.value}
-                            </Badge>
-                          ))}
-                          {segment.firmographics.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{segment.firmographics.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Qualification Criteria: {segment.qualification.tier1Criteria.length}</span>
-                        <ArrowRight className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-xl font-bold text-foreground mb-1">Market Segments</h1>
+              <p className="text-xs text-muted-foreground">Segment your audience and craft targeted messages</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
+                <Download className="w-3 h-3 mr-2" />
+                Export
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-primary hover:bg-primary/90 text-xs"
+                onClick={() => setAddSegmentModalOpen(true)}
+              >
+                <Plus className="w-3 h-3 mr-2" />
+                Add Segment
+              </Button>
             </div>
           </div>
 
+          {/* Search and Filter Bar */}
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
+              <Input
+                placeholder="Search segments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 text-xs"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-medium text-foreground">Filter:</span>
+              <Button
+                variant={selectedFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setSelectedFilter('all')}
+              >
+                All Segments
+              </Button>
+              <Button
+                variant={selectedFilter === 'high' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setSelectedFilter('high')}
+              >
+                High Priority
+              </Button>
+              <Button
+                variant={selectedFilter === 'medium' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setSelectedFilter('medium')}
+              >
+                Medium Priority
+              </Button>
+              <Button
+                variant={selectedFilter === 'low' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setSelectedFilter('low')}
+              >
+                Low Priority
+              </Button>
+            </div>
+          </div>
+
+          {/* Segment Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSegments.map((segment) => (
+              <SegmentCard key={segment._id?.$oid || segment._id || segment.id} segment={segment} />
+            ))}
+          </div>
+
           {/* Enhanced Metrics Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
             {/* Segment Overview */}
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -527,7 +528,14 @@ const Segments = () => {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Add Segment Modal */}
+      <AddSegmentModal
+        open={addSegmentModalOpen}
+        onOpenChange={setAddSegmentModalOpen}
+        onSave={handleAddSegment}
+      />
+    </>
   );
 };
 

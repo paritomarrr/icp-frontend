@@ -34,7 +34,6 @@ const ICPViewer = () => {
   }, [id]);
 
   if (!user || !workspace) {
-    console.log("⛔ User not authenticated or workspace not found, redirecting to login");
     return <Navigate to="/login" />;
   }
 

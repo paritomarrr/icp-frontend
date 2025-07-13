@@ -9,6 +9,8 @@ import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
 import { Users, Download, ArrowRight, Search, Plus, MoreHorizontal, Eye, Copy, ChevronRight, Users2, Target, TrendingUp, Building2 } from 'lucide-react';
+import { AddPersonaModal } from '@/components/modals';
+import { icpWizardApi, PersonaData } from '@/lib/api';
 
 const Personas = () => {
   const { slug } = useParams();
@@ -16,9 +18,10 @@ const Personas = () => {
   const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
   const [icpData, setIcpData] = useState<ICPData | null>(null);
-  const [selectedIndex] = useState(0); // not used for details panel anymore
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [addPersonaModalOpen, setAddPersonaModalOpen] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -26,6 +29,29 @@ const Personas = () => {
       setIcpData(data);
     }
   }, [slug]);
+
+  const handleAddPersona = async (personaData: PersonaData) => {
+    if (!slug) return;
+    
+    try {
+      const result = await icpWizardApi.addPersona(slug, personaData);
+      
+      if (result.success) {
+        console.log('Persona added successfully:', result.persona);
+        // Refresh the ICP data to show the new persona
+        const data = storageService.getICPData(slug);
+        if (data) {
+          setIcpData({ ...data }); // Force re-render
+        }
+        // You might want to add a toast notification here
+      } else {
+        console.error('Failed to add persona:', result.error);
+        // You might want to show an error message to the user
+      }
+    } catch (error) {
+      console.error('Error adding persona:', error);
+    }
+  };
 
   if (!user || !workspace) {
     return <Navigate to="/login" />;
@@ -41,10 +67,14 @@ const Personas = () => {
   console.log('Personas - Enrichment data:', personasTable);
   
   // Transform the personas array into the expected format
-  const allPersonas = rootPersonas.map((personaDesc: string, index: number) => {
+  const allPersonas = rootPersonas.map((persona: any, index: number) => {
+    // Handle both old string format and new object format
+    const personaDesc = typeof persona === 'string' ? persona : persona.name;
+    const personaData = typeof persona === 'string' ? {} : persona;
+    
     // Extract title from the persona description (everything before the first '-')
     const titleMatch = personaDesc.match(/^([^-]+)/);
-    const title = titleMatch ? titleMatch[1].trim() : `Persona ${index + 1}`;
+    const title = titleMatch ? titleMatch[1].trim() : personaData.title || `Persona ${index + 1}`;
     
     // Try to find matching enrichment data
     const enrichmentMatch = personasTable.find((p: any) => 
@@ -52,15 +82,27 @@ const Personas = () => {
     );
     
     return {
-      id: index + 1,
+      id: personaData._id || index + 1,
       title: title,
       summary: personaDesc,
-      created: 'Jul 12, 2025',
-      status: 'active',
-      priority: enrichmentMatch ? 'high' : 'medium',
-      influence: enrichmentMatch?.influence || 'Decision Maker',
-      painPoints: enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
-      goals: enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience']
+      created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+      status: personaData.status || 'active',
+      priority: personaData.priority || (enrichmentMatch ? 'high' : 'medium'),
+      influence: personaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
+      painPoints: personaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
+      goals: personaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
+      department: personaData.department || '',
+      seniority: personaData.seniority || '',
+      industry: personaData.industry || '',
+      company: personaData.company || '',
+      location: personaData.location || '',
+      description: personaData.description || '',
+      budget: personaData.budget || '',
+      teamSize: personaData.teamSize || '',
+      channels: personaData.channels || [],
+      objections: personaData.objections || [],
+      responsibilities: personaData.responsibilities || [],
+      challenges: personaData.challenges || []
     };
   });
 
@@ -123,7 +165,7 @@ const Personas = () => {
               <Download className="w-3 h-3 mr-2" />
               Export
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs">
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs" onClick={() => setAddPersonaModalOpen(true)}>
               <Plus className="w-3 h-3 mr-2" />
               Add Persona
             </Button>
@@ -219,7 +261,7 @@ const Personas = () => {
                   {/* Metrics row */}
                   <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                     <div className="flex items-center space-x-2">
-                      <span className="flex items-center"><Target className="w-3 h-3 text-blue-500 mr-1" />Pain Points: {persona.painPoints.length}</span>
+                      <span className="flex items-center"><Target className="w-3 h-3 text-blue-500 mr-1" />Pain Points: {(persona.painPoints || []).length}</span>
                       <span className="flex items-center"><TrendingUp className="w-3 h-3 text-green-500 mr-1" />Goals</span>
                     </div>
                     <ArrowRight className="w-3 h-3 text-slate-400" />
@@ -308,6 +350,13 @@ const Personas = () => {
           </Card>
         </div>
       </div>
+
+      {/* Add Persona Modal */}
+      <AddPersonaModal
+        open={addPersonaModalOpen}
+        onOpenChange={setAddPersonaModalOpen}
+        onSave={handleAddPersona}
+      />
     </div>
   );
 };

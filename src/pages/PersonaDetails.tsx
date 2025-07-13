@@ -14,6 +14,7 @@ import { Users, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal
 import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
+import { EditPersonaModal } from '@/components/modals';
 
 const PersonaDetails = () => {
   const { slug, personaId } = useParams();
@@ -124,8 +125,13 @@ const PersonaDetails = () => {
   const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
   const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
   
-  const personaIndex = personaId ? parseInt(personaId, 10) - 1 : 0;
-  const currentPersona = rootPersonas[personaIndex];
+  // Find persona by _id instead of array index
+  const currentPersona = rootPersonas.find((persona: any) => {
+    if (typeof persona === 'string') {
+      return false; // Skip string personas, we need object personas with _id
+    }
+    return persona._id === personaId;
+  });
 
   if (!currentPersona) {
     return (
@@ -147,9 +153,13 @@ const PersonaDetails = () => {
     );
   }
 
-  // Transform persona data for display
-  const titleMatch = currentPersona.match(/^([^-]+)/);
-  const title = titleMatch ? titleMatch[1].trim() : `Persona ${personaIndex + 1}`;
+  // Handle both old string format and new object format
+  const personaDesc = typeof currentPersona === 'string' ? currentPersona : currentPersona.name;
+  const currentPersonaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
+  
+  // Extract title from the persona description (everything before the first '-')
+  const titleMatch = personaDesc.match(/^([^-]+)/);
+  const title = titleMatch ? titleMatch[1].trim() : currentPersonaData.title || `Persona ${personaId}`;
   
   // Try to find matching enrichment data
   const enrichmentMatch = personasTable.find((p: any) => 
@@ -157,46 +167,46 @@ const PersonaDetails = () => {
   );
   
   const personaData = {
-    id: personaIndex + 1,
+    id: currentPersonaData._id || personaId,
     name: title,
     title: title,
-    description: currentPersona,
-    summary: currentPersona,
-    company: icpData?.companyName || 'Your Company',
-    industry: 'Technology',
+    description: currentPersonaData.description || personaDesc,
+    summary: currentPersonaData.description || personaDesc,
+    company: currentPersonaData.company || icpData?.companyName || 'Your Company',
+    industry: currentPersonaData.industry || 'Technology',
     role: enrichmentMatch?.title || title,
-    department: 'Leadership',
-    seniority: 'Senior',
+    department: currentPersonaData.department || 'Leadership',
+    seniority: currentPersonaData.seniority || 'Senior',
     reportingStructure: 'C-Level',
-    location: 'Global',
-    teamSize: '10-50',
-    budget: '$500K-2M',
-    decisionInfluence: enrichmentMatch?.influence || 'Decision Maker',
-    influence: enrichmentMatch?.influence || 'Decision Maker',
-    painPoints: enhancedData?.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
-    goals: enhancedData?.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
-    triggers: enhancedData?.triggers || enrichmentMatch?.triggers || ['Budget planning', 'Performance reviews', 'Strategic initiatives'],
-    channels: ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
-    objections: enhancedData?.objections || ['Budget constraints', 'Change resistance', 'ROI concerns'],
-    messaging: enhancedData?.messaging || `Tailored messaging for ${title} focused on business value and strategic outcomes`,
-    responsibilities: enhancedData?.responsibilities || ['Strategic planning', 'Budget allocation', 'Team leadership', 'Performance management'],
-    challenges: enhancedData?.challenges || ['Limited resources', 'Time constraints', 'Complex decision-making', 'Stakeholder alignment'],
-    created: 'Jul 12, 2025',
-    status: 'active',
-    priority: enrichmentMatch ? 'high' : 'medium',
-    contactInfo: {
+    location: currentPersonaData.location || 'Global',
+    teamSize: currentPersonaData.teamSize || '10-50',
+    budget: currentPersonaData.budget || '$500K-2M',
+    decisionInfluence: currentPersonaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
+    influence: currentPersonaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
+    painPoints: enhancedData?.painPoints || currentPersonaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
+    goals: enhancedData?.goals || currentPersonaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
+    triggers: enhancedData?.triggers || currentPersonaData.triggers || enrichmentMatch?.triggers || ['Budget planning', 'Performance reviews', 'Strategic initiatives'],
+    channels: currentPersonaData.channels || ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
+    objections: enhancedData?.objections || currentPersonaData.objections || ['Budget constraints', 'Change resistance', 'ROI concerns'],
+    messaging: enhancedData?.messaging || currentPersonaData.messaging || `Tailored messaging for ${title} focused on business value and strategic outcomes`,
+    responsibilities: enhancedData?.responsibilities || currentPersonaData.responsibilities || ['Strategic planning', 'Budget allocation', 'Team leadership', 'Performance management'],
+    challenges: enhancedData?.challenges || currentPersonaData.challenges || ['Limited resources', 'Time constraints', 'Complex decision-making', 'Stakeholder alignment'],
+    created: currentPersonaData.createdAt ? new Date(currentPersonaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+    status: currentPersonaData.status || 'active',
+    priority: currentPersonaData.priority || (enrichmentMatch ? 'high' : 'medium'),
+    contactInfo: currentPersonaData.contactInfo || {
       email: 'persona@company.com',
       phone: '+1 (555) 123-4567',
       linkedin: 'linkedin.com/in/persona',
       location: 'Global'
     },
-    demographics: {
+    demographics: currentPersonaData.demographics || {
       age: '35-50',
       experience: '10+ years',
       education: 'MBA or equivalent',
       industry: 'Technology'
     },
-    buyingBehavior: {
+    buyingBehavior: currentPersonaData.buyingBehavior || {
       researchTime: '3-6 months',
       decisionFactors: enhancedData?.decisionFactors || ['ROI', 'Ease of implementation', 'Vendor reputation'],
       preferredChannels: ['LinkedIn', 'Industry events', 'Peer recommendations']
@@ -234,17 +244,35 @@ const PersonaDetails = () => {
     setEditDialogOpen(true);
   };
 
-  const handleSave = async () => {
-    if (!editedPersona) return;
+  const handleSave = async (updatedPersonaData: any) => {
+    if (!icpData || !workspace || !personaData || !slug) return;
     
     try {
-      // Here you would typically save to backend
-      console.log('Saving persona:', editedPersona);
-      setEditDialogOpen(false);
-      setIsEditing(false);
-      // You could add a toast notification here
+      // Call the API to update the persona
+      const response = await icpWizardApi.updatePersona(slug, personaData.id.toString(), updatedPersonaData);
+      
+      if (response.success && response.persona) {
+        // Update local state
+        const updatedICPData = {
+          ...icpData,
+          personas: icpData.personas.map((p: any) => 
+            p.id === personaData.id ? response.persona : p
+          )
+        };
+        
+        setIcpData(updatedICPData);
+        storageService.saveICPData(updatedICPData);
+        setEditDialogOpen(false);
+        setIsEditing(false);
+        
+        // Show success message (you can add a toast here)
+        console.log('Persona updated successfully');
+      } else {
+        throw new Error(response.error || 'Failed to update persona');
+      }
     } catch (error) {
       console.error('Error saving persona:', error);
+      // Show error message (you can add a toast here)
     }
   };
 
@@ -326,58 +354,14 @@ const PersonaDetails = () => {
               {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
             </Button>
             {canEdit() && (
-              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Persona
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Edit Persona: {personaData.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Persona Name</Label>
-                      <Input
-                        id="name"
-                        value={editedPersona?.name || ''}
-                        onChange={(e) => setEditedPersona({ ...editedPersona, name: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="summary">Summary</Label>
-                      <Textarea
-                        id="summary"
-                        value={editedPersona?.summary || ''}
-                        onChange={(e) => setEditedPersona({ ...editedPersona, summary: e.target.value })}
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="department">Department</Label>
-                      <Input
-                        id="department"
-                        value={editedPersona?.department || ''}
-                        onChange={(e) => setEditedPersona({ ...editedPersona, department: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSave}>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleEdit}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Persona
+              </Button>
             )}
             {canEdit() && (
               <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
@@ -479,11 +463,11 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.painPoints.map((point: string, idx: number) => (
+                    {personaData.painPoints?.map((point: string, idx: number) => (
                       <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
                         • {point}
                       </div>
-                    ))}
+                    )) || <div className="text-xs text-slate-500">No pain points defined</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -497,11 +481,11 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.goals.map((goal: string, idx: number) => (
+                    {personaData.goals?.map((goal: string, idx: number) => (
                       <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
                         • {goal}
                       </div>
-                    ))}
+                    )) || <div className="text-xs text-slate-500">No goals defined</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -518,11 +502,11 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.responsibilities.map((resp: string, idx: number) => (
+                    {personaData.responsibilities?.map((resp: string, idx: number) => (
                       <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
                         • {resp}
                       </div>
-                    ))}
+                    )) || <div className="text-xs text-slate-500">No responsibilities defined</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -536,11 +520,11 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.challenges.map((challenge: string, idx: number) => (
+                    {personaData.challenges?.map((challenge: string, idx: number) => (
                       <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
                         • {challenge}
                       </div>
-                    ))}
+                    )) || <div className="text-xs text-slate-500">No challenges defined</div>}
                   </div>
                 </CardContent>
               </Card>
@@ -561,17 +545,17 @@ const PersonaDetails = () => {
                 <div>
                   <h4 className="text-sm font-semibold text-slate-700 mb-2">Key Decision Factors</h4>
                   <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {personaData.buyingBehavior.decisionFactors.map((factor: string, idx: number) => (
+                    {personaData.buyingBehavior.decisionFactors?.map((factor: string, idx: number) => (
                       <div key={idx}>• {factor}</div>
-                    ))}
+                    )) || <div>No decision factors defined</div>}
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-slate-700 mb-2">Preferred Channels</h4>
                   <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {personaData.buyingBehavior.preferredChannels.map((channel: string, idx: number) => (
+                    {personaData.buyingBehavior.preferredChannels?.map((channel: string, idx: number) => (
                       <div key={idx}>• {channel}</div>
-                    ))}
+                    )) || <div>No preferred channels defined</div>}
                   </div>
                 </div>
               </CardContent>
@@ -658,6 +642,14 @@ const PersonaDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Persona Modal */}
+      <EditPersonaModal
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleSave}
+        personaData={editedPersona}
+      />
     </div>
   );
 };

@@ -9,14 +9,6 @@ export const usePermissions = () => {
   const isOwner = () => {
     if (!slug || !user) return false;
     const workspace = storageService.getWorkspace(slug);
-    console.log('🔍 Permission Debug:', {
-      slug,
-      userId: user.id,
-      workspaceCreatorId: workspace?.creatorId,
-      workspaceOwnerId: workspace?.ownerId,
-      isOwner: workspace?.creatorId === user.id || workspace?.ownerId === user.id,
-      workspace
-    });
     return workspace?.creatorId === user.id || workspace?.ownerId === user.id;
   };
 

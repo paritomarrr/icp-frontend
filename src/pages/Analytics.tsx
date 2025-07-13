@@ -26,15 +26,10 @@ const Analytics = () => {
 
   // Get the latest enrichment version
   const enrichment = icpData?.icpEnrichmentVersions;
-  console.log('Analytics - icpData:', icpData);
-  console.log('Analytics - Enrichment:', enrichment);
   
   // Find the latest version by getting the last key
   const latestVersionKey = enrichment ? Object.keys(enrichment).sort().pop() : null;
   const latestVersion = latestVersionKey ? enrichment[latestVersionKey] : null;
-  
-  console.log('Analytics - Latest version key:', latestVersionKey);
-  console.log('Analytics - Latest version data:', latestVersion);
 
   return (
     <div className="p-8 bg-background min-h-screen">

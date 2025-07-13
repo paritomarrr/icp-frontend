@@ -17,8 +17,127 @@ export interface Workspace {
   createdAt: string;
 
   // ICP data fields (optional)
-  products?: string[];
-  personas?: string[];
+  products?: Product[];
+  personas?: Persona[];
+  segments?: Segment[];
+  useCases?: string[];
+  differentiation?: string;
+  competitors?: Array<{
+    name: string;
+    url: string;
+    _id?: string;
+  }>;
+  icpEnrichmentVersions?: {
+    [key: number]: any;
+  };
+}
+
+export interface Product {
+  _id?: string;
+  name: string;
+  description?: string;
+  category?: string;
+  targetAudience?: string;
+  valueProposition?: string;
+  problems?: string[];
+  features?: string[];
+  benefits?: string[];
+  useCases?: string[];
+  competitors?: string[];
+  uniqueSellingPoints?: string[];
+  usps?: string[];
+  solution?: string;
+  whyNow?: string[];
+  pricing?: string;
+  status?: 'active' | 'draft' | 'archived';
+  priority?: 'high' | 'medium' | 'low';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Persona {
+  _id?: string;
+  name: string;
+  title?: string;
+  department?: string;
+  seniority?: string;
+  industry?: string;
+  company?: string;
+  location?: string;
+  description?: string;
+  painPoints?: string[];
+  goals?: string[];
+  responsibilities?: string[];
+  challenges?: string[];
+  decisionInfluence?: 'Decision Maker' | 'Influencer' | 'User' | 'Gatekeeper';
+  budget?: string;
+  teamSize?: string;
+  channels?: string[];
+  objections?: string[];
+  triggers?: string[];
+  messaging?: string;
+  status?: 'active' | 'draft' | 'archived';
+  priority?: 'high' | 'medium' | 'low';
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    location?: string;
+  };
+  demographics?: {
+    age?: string;
+    experience?: string;
+    education?: string;
+    industry?: string;
+  };
+  buyingBehavior?: {
+    researchTime?: string;
+    decisionFactors?: string[];
+    preferredChannels?: string[];
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Segment {
+  _id?: string;
+  name: string;
+  description?: string;
+  size?: string;
+  region?: string;
+  budget?: string;
+  focus?: string;
+  industry?: string;
+  companySize?: string;
+  revenue?: string;
+  geography?: string;
+  employees?: string;
+  marketSize?: string;
+  growthRate?: string;
+  customerCount?: string;
+  competitiveIntensity?: string;
+  characteristics?: string[];
+  industries?: string[];
+  companySizes?: string[];
+  technologies?: string[];
+  qualificationCriteria?: string[];
+  painPoints?: string[];
+  buyingProcesses?: string[];
+  firmographics?: Array<{
+    label: string;
+    value: string;
+  }>;
+  benefits?: string;
+  awarenessLevel?: 'Problem' | 'Solution' | 'Product' | 'Brand';
+  priority?: 'high' | 'medium' | 'low';
+  status?: 'active' | 'draft' | 'archived';
+  qualification?: {
+    idealCriteria?: string[];
+    lookalikeCompanies?: string[];
+    disqualifyingCriteria?: string[];
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ICPData {
@@ -29,10 +148,10 @@ export interface ICPData {
   companyUrl?: string;
   ownerId?: string;
   slug?: string;
-  products?: string[];
-  personas?: string[];
+  products?: Product[];
+  personas?: Persona[];
+  segments?: Segment[];
   useCases?: string[];
-  segments?: string[];
   competitors?: Array<{
     name: string;
     url: string;

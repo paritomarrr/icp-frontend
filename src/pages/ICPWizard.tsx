@@ -273,9 +273,12 @@ const ICPWizard = () => {
         <>
           <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-2xl px-8 py-8 flex flex-col items-center min-w-[280px] max-w-xs border border-slate-200">
+            <div className="bg-white rounded-xl shadow-2xl px-8 py-8 flex flex-col items-center min-w-[320px] max-w-sm border border-slate-200">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
-              <div className="text-base font-semibold text-slate-700">Generating ICP...</div>
+              <div className="text-base font-semibold text-slate-700 mb-2">Generating ICP...</div>
+              <div className="text-sm text-slate-500 text-center">
+                Enriching products, personas, and segments with AI-generated details
+              </div>
             </div>
           </div>
         </>
@@ -437,7 +440,7 @@ const ICPWizard = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating ICP...
+                    Generating & Enriching ICP...
                   </>
                 ) : (
                   <>

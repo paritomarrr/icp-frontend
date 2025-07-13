@@ -21,9 +21,6 @@ const WorkspaceLayout = () => {
     const loadWorkspace = async () => {
       if (!slug) return;
 
-      // Retrieve workspace from localStorage first
-      // If not in localStorage, fetch from API
-      // Save to localStorage for future use
       let workspaceData = storageService.getWorkspace(slug);
 
       if (!workspaceData) {
@@ -36,7 +33,6 @@ const WorkspaceLayout = () => {
 
           if (response.ok) {
             workspaceData = await response.json();
-            // Save to localStorage for future use
             storageService.saveWorkspace(slug, workspaceData);
           } else {
             console.error("Failed to fetch workspace from API");
@@ -53,9 +49,7 @@ const WorkspaceLayout = () => {
     loadWorkspace();
   }, [slug]);
 
-  
   if (!user) {
-    console.log("User not authenticated, redirecting to login");
     return <Navigate to="/login" />;
   }
   
@@ -71,13 +65,11 @@ const WorkspaceLayout = () => {
   }
   
   if (slug && !workspace) {
-    console.log("Workspace not found, redirecting to dashboard");
     return <Navigate to="/dashboard" />;
   }
 
   const handleLogout = () => {
     authService.logout();
-    console.log("User logged out, redirecting to login page");
     window.location.href = '/login';
   };
 
@@ -90,7 +82,6 @@ const WorkspaceLayout = () => {
     { icon: UserPlus, label: 'Collaborators', path: `/workspace/${slug}/collaborators` },
   ];
 
-  // Helper function to check if current path matches exactly
   const isActivePath = (itemPath: string) => {
     return location.pathname === itemPath;
   };
@@ -99,11 +90,11 @@ const WorkspaceLayout = () => {
     const role = getUserRole();
     switch (role) {
       case 'owner':
-        return <Crown className="w-3 h-3" />;
+        return <Crown className="w-4 h-4" />;
       case 'editor':
-        return <PenTool className="w-3 h-3" />;
+        return <PenTool className="w-4 h-4" />;
       case 'viewer':
-        return <Eye className="w-3 h-3" />;
+        return <Eye className="w-4 h-4" />;
       default:
         return null;
     }
@@ -176,7 +167,7 @@ const WorkspaceLayout = () => {
               <p className="text-sm font-semibold text-sidebar-primary truncate">{user.fullName}</p>
               <p className="text-xs text-sidebar-foreground truncate mt-1" title={user.email}>{user.email}</p>
             </div>
-            <Button
+            <Button 
               variant="ghost"
               size="sm"
               onClick={handleLogout}

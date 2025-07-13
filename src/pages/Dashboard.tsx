@@ -34,7 +34,7 @@ const Dashboard = () => {
       return;
     }
 
-    fetch(`http://localhost:3000/api/workspaces/user/${user.id}`, {
+    fetch(`http://localhost:3000/api/workspaces`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
       },

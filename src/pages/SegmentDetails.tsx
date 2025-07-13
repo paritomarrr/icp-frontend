@@ -14,6 +14,7 @@ import { Building2, Users, Target, TrendingUp, Download, Edit, Save, X, Plus, Tr
 import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
+import { EditSegmentModal } from '@/components/modals';
 
 const SegmentDetails = () => {
   const { slug, segmentId } = useParams();
@@ -124,8 +125,15 @@ const SegmentDetails = () => {
   const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
   const segmentsEnrichment = latestVersion && enrichmentData?.[latestVersion]?.segments || [];
   
-  const segIndex = segmentId ? parseInt(segmentId, 10) - 1 : 0;
-  const currentSegment = rootSegments[segIndex];
+  // Find segment by _id instead of array index
+  const currentSegment = rootSegments.find((segment: any) => {
+    if (typeof segment === 'string') {
+      return false; // Skip string segments, we need object segments with _id
+    }
+    // Support both string and object _id (MongoDB $oid)
+    const segId = typeof segment._id === 'object' && segment._id.$oid ? segment._id.$oid : segment._id;
+    return segId === segmentId;
+  });
 
   if (!currentSegment) {
     return (
@@ -147,57 +155,81 @@ const SegmentDetails = () => {
     );
   }
 
-  // Extract meaningful segment name from description
-  let segmentName = `Segment ${segIndex + 1}`;
+  // Handle both old string format and new object format
+  const segmentDesc = typeof currentSegment === 'string' ? currentSegment : currentSegment.name;
+  const currentSegmentData = typeof currentSegment === 'string' ? {} : currentSegment as any;
   
-  // Look for key patterns to extract segment names
-  if (currentSegment.includes('manufacturing')) {
-    segmentName = 'Enterprise Manufacturing';
-  } else if (currentSegment.includes('engineering firms')) {
-    segmentName = 'Mid-size Engineering Firms';
-  } else if (currentSegment.includes('construction')) {
-    segmentName = 'Construction & Infrastructure';
-  } else if (currentSegment.includes('technology startups') || currentSegment.includes('startups')) {
-    segmentName = 'Technology Startups';
-  } else {
-    // Extract the first part before any size/region descriptors
-    const match = currentSegment.match(/^([^(]+)/);
-    if (match) {
-      segmentName = match[1].trim();
-      // Clean up common prefixes
-      segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
+  // Extract meaningful segment name from description
+  let segmentName = currentSegmentData.name || `Segment ${segmentId}`;
+  
+  // If no name in segmentData, try to extract from description
+  if (!currentSegmentData.name && typeof segmentDesc === 'string') {
+    if (segmentDesc.includes('manufacturing')) {
+      segmentName = 'Enterprise Manufacturing';
+    } else if (segmentDesc.includes('engineering firms')) {
+      segmentName = 'Mid-size Engineering Firms';
+    } else if (segmentDesc.includes('construction')) {
+      segmentName = 'Construction & Infrastructure';
+    } else if (segmentDesc.includes('technology startups') || segmentDesc.includes('startups')) {
+      segmentName = 'Technology Startups';
+    } else {
+      // Extract the first part before any size/region descriptors
+      const match = segmentDesc.match(/^([^(]+)/);
+      if (match) {
+        segmentName = match[1].trim();
+        // Clean up common prefixes
+        segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
+      }
     }
   }
 
   // Try to find matching enrichment data
   const enrichmentMatch = segmentsEnrichment.find((s: any) => 
-    s.name && (currentSegment.toLowerCase().includes(s.name.toLowerCase()) ||
+    s.name && (segmentDesc.toLowerCase().includes(s.name.toLowerCase()) ||
                s.name.toLowerCase().includes(segmentName.toLowerCase()))
   );
 
   // Transform segment data for display
   const segmentData = {
-    id: segIndex + 1,
+    id: currentSegmentData._id || segmentId,
     name: enrichmentMatch?.name || segmentName,
-    description: currentSegment,
-    firmographics: [
-      { label: 'Size', value: enrichmentMatch?.size || '100-500 employees' },
-      { label: 'Region', value: enrichmentMatch?.region || 'Global' },
-      { label: 'Budget', value: enrichmentMatch?.budget || '$200K-500K' },
-      { label: 'Focus', value: enrichmentMatch?.focus || 'Growth' },
-      { label: 'Employees', value: '50 - 500 employees' }
+    description: currentSegmentData.description || segmentDesc,
+    firmographics: currentSegmentData.firmographics || [
+      { label: 'Size', value: enrichmentMatch?.size || currentSegmentData.size || '100-500 employees' },
+      { label: 'Region', value: enrichmentMatch?.region || currentSegmentData.region || 'Global' },
+      { label: 'Budget', value: enrichmentMatch?.budget || currentSegmentData.budget || '$200K-500K' },
+      { label: 'Focus', value: enrichmentMatch?.focus || currentSegmentData.focus || 'Growth' },
+      { label: 'Employees', value: currentSegmentData.employees || '50 - 500 employees' }
     ],
-    benefits: `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
-    awarenessLevel: 'Solution',
-    priority: 'Medium',
-    status: 'active',
-    marketSize: enhancedData?.marketSize || '$500M - $2B',
-    growthRate: enhancedData?.growthRate || '12% YoY',
-    qualification: {
-      tier1Criteria: enhancedData?.qualification?.idealCriteria || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
+    benefits: currentSegmentData.benefits || `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
+    awarenessLevel: currentSegmentData.awarenessLevel || 'Solution',
+    priority: currentSegmentData.priority || 'Medium',
+    status: currentSegmentData.status || 'active',
+    marketSize: enhancedData?.marketSize || currentSegmentData.marketSize || '$500M - $2B',
+    growthRate: enhancedData?.growthRate || currentSegmentData.growthRate || '12% YoY',
+    qualification: currentSegmentData.qualification || {
+      idealCriteria: enhancedData?.qualification?.idealCriteria || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
       lookalikeCompanies: enhancedData?.qualification?.lookalikeCompanies || ['salesforce.com', 'hubspot.com', 'slack.com'],
       disqualifyingCriteria: enhancedData?.qualification?.disqualifyingCriteria || ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
-    }
+    },
+    size: currentSegmentData.size || '',
+    region: currentSegmentData.region || '',
+    budget: currentSegmentData.budget || '',
+    focus: currentSegmentData.focus || '',
+    industry: currentSegmentData.industry || '',
+    companySize: currentSegmentData.companySize || '',
+    revenue: currentSegmentData.revenue || '',
+    geography: currentSegmentData.geography || '',
+    employees: currentSegmentData.employees || '',
+    customerCount: currentSegmentData.customerCount || '',
+    competitiveIntensity: currentSegmentData.competitiveIntensity || '',
+    characteristics: currentSegmentData.characteristics || [],
+    industries: currentSegmentData.industries || [],
+    companySizes: currentSegmentData.companySizes || [],
+    technologies: currentSegmentData.technologies || [],
+    qualificationCriteria: currentSegmentData.qualificationCriteria || [],
+    painPoints: currentSegmentData.painPoints || [],
+    buyingProcesses: currentSegmentData.buyingProcesses || []
   };
 
   // Function to enhance segment with Claude AI
@@ -212,8 +244,8 @@ const SegmentDetails = () => {
     };
 
     try {
-      console.log(`Enhancing segment: ${currentSegment}`);
-      const result = await icpWizardApi.generateSegmentDetails(currentSegment, companyData);
+      console.log(`Enhancing segment: ${segmentDesc}`);
+      const result = await icpWizardApi.generateSegmentDetails(segmentDesc, companyData);
       
       if (result.success && result.data) {
         setEnhancedData(result.data);
@@ -231,18 +263,35 @@ const SegmentDetails = () => {
     setEditDialogOpen(true);
   };
 
-  const handleSave = async () => {
-    if (!editedSegment) return;
+  const handleSave = async (updatedSegmentData: any) => {
+    if (!icpData || !workspace || !segmentData || !slug) return;
     
     try {
-      // Here you would typically save to backend
-      // For now, we'll just update the local state
-      console.log('Saving segment:', editedSegment);
-      setEditDialogOpen(false);
-      setIsEditing(false);
-      // You could add a toast notification here
+      // Call the API to update the segment
+      const response = await icpWizardApi.updateSegment(slug, segmentData.id.toString(), updatedSegmentData);
+      
+      if (response.success && response.segment) {
+        // Update local state
+        const updatedICPData = {
+          ...icpData,
+          segments: icpData.segments.map((s: any) => 
+            s.id === segmentData.id ? response.segment : s
+          )
+        };
+        
+        setIcpData(updatedICPData);
+        storageService.saveICPData(updatedICPData);
+        setEditDialogOpen(false);
+        setIsEditing(false);
+        
+        // Show success message (you can add a toast here)
+        console.log('Segment updated successfully');
+      } else {
+        throw new Error(response.error || 'Failed to update segment');
+      }
     } catch (error) {
       console.error('Error saving segment:', error);
+      // Show error message (you can add a toast here)
     }
   };
 
@@ -315,72 +364,14 @@ const SegmentDetails = () => {
               {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
             </Button>
             {canEdit() && (
-              <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Segment
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Edit Segment: {segmentData.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Segment Name</Label>
-                      <Input
-                        id="name"
-                        value={editedSegment?.name || ''}
-                        onChange={(e) => setEditedSegment({ ...editedSegment, name: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={editedSegment?.description || ''}
-                        onChange={(e) => setEditedSegment({ ...editedSegment, description: e.target.value })}
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="benefits">Benefits</Label>
-                      <Textarea
-                        id="benefits"
-                        value={editedSegment?.benefits || ''}
-                        onChange={(e) => setEditedSegment({ ...editedSegment, benefits: e.target.value })}
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Label htmlFor="priority">Priority</Label>
-                      <select
-                        id="priority"
-                        value={editedSegment?.priority || 'medium'}
-                        onChange={(e) => setEditedSegment({ ...editedSegment, priority: e.target.value })}
-                        className="border rounded px-3 py-2"
-                      >
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
-                      </select>
-                    </div>
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSave}>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleEdit}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Segment
+              </Button>
             )}
             {canEdit() && (
               <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
@@ -484,27 +475,27 @@ const SegmentDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Tier 1 Criteria</h4>
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Ideal Criteria</h4>
                   <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {segmentData.qualification.tier1Criteria.map((criteria: string, idx: number) => (
+                    {segmentData.qualification.idealCriteria?.map((criteria: string, idx: number) => (
                       <div key={idx}>• {criteria}</div>
-                    ))}
+                    )) || <div>No criteria defined</div>}
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-slate-700 mb-2">Lookalike Companies</h4>
                   <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {segmentData.qualification.lookalikeCompanies.map((company: string, idx: number) => (
+                    {segmentData.qualification.lookalikeCompanies?.map((company: string, idx: number) => (
                       <div key={idx}>• {company}</div>
-                    ))}
+                    )) || <div>No companies defined</div>}
                   </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-slate-700 mb-2">Disqualifying Criteria</h4>
                   <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {segmentData.qualification.disqualifyingCriteria.map((criteria: string, idx: number) => (
+                    {segmentData.qualification.disqualifyingCriteria?.map((criteria: string, idx: number) => (
                       <div key={idx}>• {criteria}</div>
-                    ))}
+                    )) || <div>No disqualifying criteria defined</div>}
                   </div>
                 </div>
               </CardContent>
@@ -591,6 +582,14 @@ const SegmentDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Segment Modal */}
+      <EditSegmentModal
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSave={handleSave}
+        segmentData={editedSegment}
+      />
     </div>
   );
 };

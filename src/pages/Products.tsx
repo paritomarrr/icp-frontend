@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,12 @@ import { ICPData } from '@/types';
 import { ChevronLeft, ChevronRight, Building2, Users, Edit, ArrowRight, Search, Filter, Download, Plus, MoreHorizontal, Eye, Copy, Trash2, TrendingUp, Target, Zap, Lock } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { usePermissions } from '@/hooks/use-permissions';
+import { AddProductModal, EditProductModal } from '@/components/modals';
+import { icpWizardApi, ProductData } from '@/lib/api';
 
 const Products = () => {
   const { slug } = useParams();
+  const navigate = useNavigate(); // <-- add this line
   const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
   const [icpData, setIcpData] = useState<ICPData | null>(null);
@@ -21,6 +24,9 @@ const Products = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [addProductModalOpen, setAddProductModalOpen] = useState(false);
+  const [editProductModalOpen, setEditProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const { canEdit, canView, getUserRole } = usePermissions();
 
   useEffect(() => {
@@ -50,6 +56,63 @@ const Products = () => {
     };
     fetchICPData();
   }, [slug]);
+
+  const handleAddProduct = async (productData: ProductData) => {
+    if (!slug) return;
+    
+    try {
+      const result = await icpWizardApi.addProduct(slug, productData);
+      
+      if (result.success) {
+        console.log('Product added successfully:', result.product);
+        // Refresh the ICP data to show the new product
+        const data = storageService.getICPData(slug);
+        if (data) {
+          setIcpData({ ...data }); // Force re-render
+        }
+        // You might want to add a toast notification here
+      } else {
+        console.error('Failed to add product:', result.error);
+        // You might want to show an error message to the user
+      }
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setEditProductModalOpen(true);
+  };
+
+  const handleUpdateProduct = async (updatedProductData: ProductData) => {
+    if (!slug || !editingProduct) return;
+    
+    try {
+      const response = await icpWizardApi.updateProduct(slug, editingProduct.id.toString(), updatedProductData);
+      
+      if (response.success && response.product) {
+        // Update local state
+        const updatedICPData = {
+          ...icpData!,
+          products: icpData!.products.map((p: any) => 
+            p.id === editingProduct.id ? response.product : p
+          )
+        };
+        
+        setIcpData(updatedICPData);
+        storageService.saveICPData(updatedICPData);
+        setEditProductModalOpen(false);
+        setEditingProduct(null);
+        
+        console.log('Product updated successfully');
+      } else {
+        throw new Error(response.error || 'Failed to update product');
+      }
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
+  };
 
   if (!user || !workspace) {
     return <Navigate to="/login" />;
@@ -108,21 +171,31 @@ const Products = () => {
   console.log('Products - Product enrichment:', productEnrichment);
 
   // Transform the products array into the expected format
-  const transformedProducts = products.map((product: string, index: number) => {
+  const transformedProducts = products.map((product: any, index: number) => {
+    // Handle both old string format and new object format
+    const productName = typeof product === 'string' ? product : product.name;
+    const productData = typeof product === 'string' ? {} : product;
+    
+    // Ensure consistent ID handling - use string IDs for MongoDB compatibility
+    const productId = productData._id || productData.id || (index + 1).toString();
+    
     return {
-      id: index + 1,
-      name: product,
-      description: `Core product offering for ${icpData?.companyName || 'Your Company'}`,
-      category: 'Product',
-      targetAudience: 'B2B',
+      id: productId,
+      name: productName,
+      description: productData.description || `Core product offering for ${icpData?.companyName || 'Your Company'}`,
+      category: productData.category || 'Product',
+      targetAudience: productData.targetAudience || 'B2B',
       company: icpData?.companyName || 'Your Company',
-      problems: [],
-      features: [],
-      usp: [],
-      useCases: [],
-      benefits: [],
-      status: 'active',
-      priority: 'high'
+      problems: productData.problems || [],
+      features: productData.features || [],
+      usps: productData.usps || productData.uniqueSellingPoints || [],
+      useCases: productData.useCases || [],
+      benefits: productData.benefits || [],
+      status: productData.status || 'active',
+      priority: productData.priority || 'high',
+      valueProposition: productData.valueProposition || '',
+      solution: productData.solution || '',
+      pricing: productData.pricing || ''
     };
   });
 
@@ -130,6 +203,9 @@ const Products = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  console.log('Products - Transformed products:', transformedProducts);
+  console.log('Products - Filtered products:', filteredProducts);
 
   const userRole = getUserRole();
 
@@ -163,7 +239,7 @@ const Products = () => {
               Export
             </Button>
             {canEdit() && (
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs" onClick={() => setAddProductModalOpen(true)}>
                 <Plus className="w-3 h-3 mr-2" />
                 Add Product
               </Button>
@@ -194,6 +270,10 @@ const Products = () => {
             <Card
               key={product.name}
               className="cursor-pointer border-0 transition-all duration-200 group shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl"
+              onClick={() => {
+                console.log('Navigating to product:', product.id, 'for product:', product.name);
+                navigate(`/workspace/${slug}/products/${product.id}`);
+              }}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between mb-2">
@@ -208,7 +288,15 @@ const Products = () => {
                       <Copy className="w-3 h-3" />
                     </Button>
                     {canEdit() && (
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProduct(product);
+                        }}
+                      >
                         <Edit className="w-3 h-3" />
                       </Button>
                     )}
@@ -241,7 +329,12 @@ const Products = () => {
                     <span>{product.company || 'Your Company'}</span>
                   </div>
                   {canEdit() && (
-                    <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs h-6 px-2"
+                      onClick={() => handleEditProduct(product)}
+                    >
                       <Edit className="w-3 h-3 mr-1" />
                       Edit
                     </Button>
@@ -268,6 +361,21 @@ const Products = () => {
           </div>
         )}
       </div>
+
+      {/* Add Product Modal */}
+      <AddProductModal
+        open={addProductModalOpen}
+        onOpenChange={setAddProductModalOpen}
+        onSave={handleAddProduct}
+      />
+
+      {/* Edit Product Modal */}
+      <EditProductModal
+        open={editProductModalOpen}
+        onOpenChange={setEditProductModalOpen}
+        onSave={handleUpdateProduct}
+        productData={editingProduct}
+      />
     </div>
   );
 };
