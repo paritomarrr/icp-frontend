@@ -16,7 +16,6 @@ export interface StepData {
 
 export interface StepResponse {
   success: boolean;
-  airtableRecordId?: string;
   suggestions?: any;
   nextStep?: number;
   error?: string;
@@ -108,67 +107,6 @@ export interface SegmentData {
 }
 
 export const icpWizardApi = {
-  async submitStep(stepData: StepData, currentStep: number, workspaceSlug: string, airtableRecordId?: string): Promise<StepResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/icp-wizard/step`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authService.getToken()}`,
-        },
-        body: JSON.stringify({
-          stepData,
-          currentStep,
-          workspaceSlug,
-          airtableRecordId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit step');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Step submission error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  },
-
-  async updateStep(recordId: string, stepData: StepData, currentStep: number, isComplete: boolean): Promise<StepResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/icp-wizard/step/${recordId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authService.getToken()}`,
-        },
-        body: JSON.stringify({
-          stepData,
-          currentStep,
-          isComplete,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update step');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Step update error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  },
-
   async generateSuggestions(currentStep: number, formData: StepData, companyName: string): Promise<StepResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/icp-wizard/generate-suggestions`, {

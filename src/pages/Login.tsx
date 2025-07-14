@@ -56,7 +56,7 @@ const Login = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-[#0C0D0E]">
-          Log in to GTM Lens
+          Log in to ICP Model
           </CardTitle>
           <CardDescription className="text-[#6B787A]">
           Your personalized customer profile and strategy workspace          </CardDescription>

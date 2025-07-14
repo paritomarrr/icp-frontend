@@ -57,7 +57,7 @@ const SignUp = () => {
           </div>
         </div>
         <CardTitle className="text-2xl font-bold text-[#0C0D0E]">
-          Create your GTM Lens account
+          Create your ICP Model account
         </CardTitle>
         <CardDescription className="text-[#6B787A]">
           Start building better customer profiles today

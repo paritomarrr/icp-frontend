@@ -84,7 +84,6 @@ const ICPWizard = () => {
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [airtableRecordId, setAirtableRecordId] = useState<string | null>(null);
   const [icpInputs, setIcpInputs] = useState<ICPWizardInputs>({
     companyUrl: "",
     products: [],
@@ -253,18 +252,6 @@ const ICPWizard = () => {
         segments: icpInputs.segments,
         competitors: icpInputs.competitors,
       };
-      // Submit to Airtable (and get/update recordId)
-      const result = await icpWizardApi.submitStep(stepData, fieldConfigs.length - 1, slug!, airtableRecordId);
-      if (!result.success) {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to submit to Airtable',
-          variant: 'destructive',
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      setAirtableRecordId(result.airtableRecordId);
       // Submit to MongoDB
       const API_BASE = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
       const res = await fetch(
