@@ -25,7 +25,8 @@ const WorkspaceLayout = () => {
 
       if (!workspaceData) {
         try {
-          const response = await fetch(`http://localhost:3000/api/workspaces/slug/${slug}`, {
+          const API_BASE = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
+          const response = await fetch(`${API_BASE}/workspaces/slug/${slug}`, {
             headers: {
               Authorization: `Bearer ${authService.getToken()}`,
             },

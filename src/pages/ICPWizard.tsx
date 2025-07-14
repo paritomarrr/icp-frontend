@@ -103,6 +103,24 @@ const ICPWizard = () => {
   const [compName, setCompName] = useState("");
   const [compUrl, setCompUrl] = useState("");
 
+  const loadingMessages = [
+    "Analyzing your go-to-market data...",
+    "Identifying key market segments...",
+    "Profiling ideal customer personas...",
+    "Mapping competitive landscape...",
+    "Synthesizing actionable insights..."
+  ];
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (!isSubmitting) return;
+    setLoadingMsgIdx(0); // Reset to first message on new submit
+    const interval = setInterval(() => {
+      setLoadingMsgIdx(idx => (idx + 1) % loadingMessages.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isSubmitting]);
+
   useEffect(() => {
     const fetchWorkspace = async () => {
       try {
@@ -112,8 +130,9 @@ const ICPWizard = () => {
           return;
         }
         setUser(currentUser);
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
         const res = await fetch(
-          `http://localhost:3000/api/workspaces/slug/${slug}`,
+          `${API_BASE}/workspaces/slug/${slug}`,
           {
             headers: {
               Authorization: `Bearer ${authService.getToken()}`,
@@ -145,6 +164,12 @@ const ICPWizard = () => {
       setSuggestionsLoading(false);
       if (res.success && res.suggestions) {
         setSuggestions(res.suggestions);
+      } else if (res.error) {
+        toast({
+          title: 'AI Suggestion Error',
+          description: res.error,
+          variant: 'destructive',
+        });
       }
     };
     if (workspace && activeField) fetchSuggestions();
@@ -241,8 +266,9 @@ const ICPWizard = () => {
       }
       setAirtableRecordId(result.airtableRecordId);
       // Submit to MongoDB
+      const API_BASE = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
       const res = await fetch(
-        `http://localhost:3000/api/workspaces/${workspace.slug}/icp`,
+        `${API_BASE}/workspaces/${workspace.slug}/icp`,
         {
           method: "PUT",
           headers: {
@@ -290,7 +316,7 @@ const ICPWizard = () => {
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
               <div className="text-base font-semibold text-slate-700 mb-2">Generating ICP...</div>
               <div className="text-sm text-slate-500 text-center">
-                Enriching products, personas, and segments with AI-generated details
+                {loadingMessages[loadingMsgIdx]}
               </div>
             </div>
           </div>

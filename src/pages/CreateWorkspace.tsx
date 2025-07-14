@@ -30,7 +30,8 @@ const CreateWorkspace = () => {
     setIsLoading(true);
   
     try {
-      const res = await fetch("http://localhost:3000/api/workspaces", {
+      const API_BASE = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
+      const res = await fetch(`${API_BASE}/workspaces`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
