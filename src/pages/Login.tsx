@@ -47,20 +47,19 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-[#F4F6F6] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border border-[#D6DBDB] bg-[#F4F6F6]">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
               <Target className="w-7 h-7 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Log in to ICP Wizard
+          <CardTitle className="text-2xl font-bold text-[#0C0D0E]">
+          Log in to GTM Lens
           </CardTitle>
-          <CardDescription>
-            Access your customer profile workspace
-          </CardDescription>
+          <CardDescription className="text-[#6B787A]">
+          Your personalized customer profile and strategy workspace          </CardDescription>
         </CardHeader>
         
         <form onSubmit={handleSubmit}>
@@ -75,7 +74,7 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="border-slate-200 focus:border-blue-500"
+                className="border-[#BBC2C3] focus:border-[#3C4344] focus:ring-0"
               />
             </div>
             
@@ -89,7 +88,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="border-slate-200 focus:border-blue-500"
+                className="border-[#BBC2C3] focus:border-[#3C4344] focus:ring-0"
               />
             </div>
           </CardContent>
@@ -97,7 +96,7 @@ const Login = () => {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className="w-full bg-[#3C4344] hover:bg-[#0C0D0E] text-white"
               disabled={isLoading}
             >
               {isLoading ? 'Logging in...' : 'Login'}
@@ -105,7 +104,7 @@ const Login = () => {
             
             <p className="text-sm text-center text-slate-600">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-blue-600 hover:underline font-medium">
+              <Link to="/signup" className="text-[#3C4344] hover:underline font-medium">
                 Sign up
               </Link>
             </p>
