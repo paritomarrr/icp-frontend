@@ -1,7 +1,7 @@
 // lib/api.ts
 import { authService } from './auth';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
 
 export interface StepData {
   companyName: string;

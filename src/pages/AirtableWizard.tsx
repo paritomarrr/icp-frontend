@@ -36,7 +36,8 @@ export default function AirtableWizard() {
       setError(null);
       try {
         // Fetch workspace data
-        const res = await fetch(`http://localhost:3000/api/workspaces/slug/${slug}`);
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://icp-backend-e3fk.onrender.com/api';
+        const res = await fetch(`${API_BASE}/workspaces/slug/${slug}`);
         if (!res.ok) throw new Error('Failed to fetch workspace');
         const workspace = await res.json();
         // Use the first enrichment version (or latest)
