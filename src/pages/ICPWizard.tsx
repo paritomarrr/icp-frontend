@@ -158,8 +158,16 @@ const ICPWizard = () => {
 
   const handleAcceptSuggestions = (acceptedSuggestions: any) => {
     let processedValue = acceptedSuggestions;
-    if (activeField === 'competitors' && Array.isArray(acceptedSuggestions)) {
-      processedValue = acceptedSuggestions.map((item: any) => {
+    // Merge for array fields
+    if (["products", "personas", "useCases", "segments"].includes(activeField)) {
+      const prev = icpInputs[activeField] || [];
+      const acceptedArr = Array.isArray(acceptedSuggestions) ? acceptedSuggestions : [acceptedSuggestions];
+      // Merge and dedupe
+      processedValue = Array.from(new Set([...(prev as string[]), ...acceptedArr]));
+    } else if (activeField === 'competitors' && Array.isArray(acceptedSuggestions)) {
+      const prev = icpInputs.competitors || [];
+      // Normalize accepted suggestions to objects
+      const acceptedArr = acceptedSuggestions.map((item: any) => {
         if (typeof item === 'string') {
           const match = item.match(/^(.+?)\s*\((.+?)\)$/);
           if (match) {
@@ -170,11 +178,16 @@ const ICPWizard = () => {
         }
         return item;
       });
-    }
-    if (["products", "personas", "useCases", "segments"].includes(activeField) && !Array.isArray(acceptedSuggestions)) {
-      processedValue = [acceptedSuggestions];
-    }
-    if (["companyUrl", "differentiation"].includes(activeField)) {
+      // Merge and dedupe by name+url
+      const merged = [...prev, ...acceptedArr];
+      const seen = new Set();
+      processedValue = merged.filter((item) => {
+        const key = item.name + '|' + item.url;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    } else if (["companyUrl", "differentiation"].includes(activeField)) {
       if (Array.isArray(acceptedSuggestions)) {
         processedValue = acceptedSuggestions[0] || '';
       } else if (typeof acceptedSuggestions === 'string') {

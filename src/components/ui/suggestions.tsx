@@ -91,10 +91,11 @@ export const Suggestions: React.FC<SuggestionsProps> = ({
     }
 
     if (type === 'array') {
+      const safeSuggestions = Array.isArray(suggestions) ? suggestions : [];
       return (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {suggestions.map((item: string, index: number) => (
+            {safeSuggestions.map((item: string, index: number) => (
               <Badge
                 key={index}
                 variant={selectedItems.includes(item) ? "default" : "outline"}
@@ -126,10 +127,11 @@ export const Suggestions: React.FC<SuggestionsProps> = ({
     }
 
     if (type === 'competitors') {
+      const safeSuggestions = Array.isArray(suggestions) ? suggestions : [];
       return (
         <div className="space-y-3">
           <div className="space-y-2">
-            {suggestions.map((item: any, index: number) => (
+            {safeSuggestions.map((item: any, index: number) => (
               <div
                 key={index}
                 className={cn(
