@@ -59,7 +59,7 @@ const CreateWorkspace = () => {
         slug: data.slug,
         companyName: data.companyName,
         companyUrl: data.companyUrl,
-        creatorId: data.ownerId, // renamed
+        creatorId: data.creatorId || data.ownerId || user.id, // Use the correct field
         collaborators: data.collaborators || [],
         createdAt: data.createdAt || new Date().toISOString(),
         products: data.products || [],
@@ -107,14 +107,14 @@ const CreateWorkspace = () => {
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Target className="w-7 h-7 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+              <Target className="w-5 h-5 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Create New Workspace
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Set up a new ICP project for your client
           </CardDescription>
         </CardHeader>
@@ -122,7 +122,7 @@ const CreateWorkspace = () => {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Workspace Name</Label>
+              <Label htmlFor="name" className="text-xs">Workspace Name</Label>
               <Input
                 id="name"
                 name="name"
@@ -131,12 +131,12 @@ const CreateWorkspace = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="border-slate-200 focus:border-blue-500"
+                className="border-slate-200 focus:border-blue-500 text-xs"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="clientCompany">Client Company Name</Label>
+              <Label htmlFor="clientCompany" className="text-xs">Client Company Name</Label>
               <Input
                 id="clientCompany"
                 name="clientCompany"
@@ -145,12 +145,12 @@ const CreateWorkspace = () => {
                 value={formData.clientCompany}
                 onChange={handleChange}
                 required
-                className="border-slate-200 focus:border-blue-500"
+                className="border-slate-200 focus:border-blue-500 text-xs"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="clientWebsite">Client Website</Label>
+              <Label htmlFor="clientWebsite" className="text-xs">Client Website</Label>
               <Input
                 id="clientWebsite"
                 name="clientWebsite"
@@ -158,7 +158,7 @@ const CreateWorkspace = () => {
                 placeholder="https://example.com"
                 value={formData.clientWebsite}
                 onChange={handleChange}
-                className="border-slate-200 focus:border-blue-500"
+                className="border-slate-200 focus:border-blue-500 text-xs"
               />
             </div>
           </CardContent>
@@ -166,7 +166,7 @@ const CreateWorkspace = () => {
           <CardContent className="flex flex-col space-y-4 pt-0">
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-xs"
               disabled={isLoading}
             >
               {isLoading ? 'Creating Workspace...' : 'Create Workspace'}
@@ -176,9 +176,9 @@ const CreateWorkspace = () => {
               type="button"
               variant="outline"
               onClick={() => navigate('/dashboard')}
-              className="w-full border-slate-200 hover:bg-slate-50"
+              className="w-full border-slate-200 hover:bg-slate-50 text-xs"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-3 h-3 mr-2" />
               Back to Dashboard
             </Button>
           </CardContent>

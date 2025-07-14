@@ -100,14 +100,14 @@ const OutboundPlays = () => {
     <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-slate-800">Pre-Sales Outbound Plays</h1>
-          <p className="text-slate-600">Strategic outbound plays categorized by warmth and signal strength</p>
+          <h1 className="text-xl font-bold text-slate-800">Pre-Sales Outbound Plays</h1>
+          <p className="text-xs text-slate-600">Strategic outbound plays categorized by warmth and signal strength</p>
         </div>
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Outbound Strategy Playbook</CardTitle>
-            <p className="text-sm text-slate-600">
+            <CardTitle className="text-base">Outbound Strategy Playbook</CardTitle>
+            <p className="text-xs text-slate-600">
               The list is the strategy. Each play has specific tools, relevance scoring, and how-to guidance.
             </p>
           </CardHeader>
@@ -116,32 +116,32 @@ const OutboundPlays = () => {
               {plays.map((category, categoryIndex) => (
                 <div key={categoryIndex}>
                   <div className={`${category.color} px-4 py-2 rounded-lg mb-3`}>
-                    <h3 className="font-bold text-slate-800">{category.category}</h3>
+                    <h3 className="font-bold text-slate-800 text-sm">{category.category}</h3>
                   </div>
                   
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse border border-slate-200">
                       <thead>
                         <tr className="bg-slate-50">
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700">Play Name</th>
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700">Tools</th>
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700">Relevant</th>
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700">How-to</th>
+                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">Play Name</th>
+                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">Tools</th>
+                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">Relevant</th>
+                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">How-to</th>
                         </tr>
                       </thead>
                       <tbody>
                         {category.items.map((item, itemIndex) => (
                           <tr key={itemIndex} className="hover:bg-slate-25">
-                            <td className="border border-slate-200 p-3 text-sm text-slate-700">
+                            <td className="border border-slate-200 p-3 text-xs text-slate-700">
                               {item.name}
                             </td>
-                            <td className="border border-slate-200 p-3 text-sm text-slate-600">
+                            <td className="border border-slate-200 p-3 text-xs text-slate-600">
                               {item.tools}
                             </td>
                             <td className="border border-slate-200 p-3 text-center">
                               <Checkbox checked={item.relevant} disabled />
                             </td>
-                            <td className="border border-slate-200 p-3 text-sm text-slate-600">
+                            <td className="border border-slate-200 p-3 text-xs text-slate-600">
                               {item.howTo}
                             </td>
                           </tr>

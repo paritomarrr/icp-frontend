@@ -1,20 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
+import { Suggestions } from "@/components/ui/suggestions";
 import { authService } from "@/lib/auth";
 import { storageService } from "@/lib/storage";
-import { supabase } from "@/integrations/supabase/client";
+import { icpWizardApi, StepData } from "@/lib/api";
 import { ICPData } from "@/types";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import LoadingPage from "@/components/LoadingPage";
 
@@ -28,46 +23,95 @@ interface ICPWizardInputs {
   competitors: { name: string; url: string }[];
 }
 
+const fieldConfigs = [
+  {
+    key: "companyUrl",
+    label: "Company Website",
+    placeholder: "Enter your company website URL (e.g., company.com)",
+    type: "input",
+    required: true,
+  },
+  {
+    key: "products",
+    label: "Products & Services",
+    placeholder: "What products or services do you offer?",
+    type: "array",
+    required: true,
+  },
+  {
+    key: "personas",
+    label: "Target Personas",
+    placeholder: "Who are your ideal customers?",
+    type: "array",
+    required: true,
+  },
+  {
+    key: "useCases",
+    label: "Use Cases",
+    placeholder: "How do customers use your products?",
+    type: "array",
+    required: true,
+  },
+  {
+    key: "differentiation",
+    label: "Differentiation",
+    placeholder: "What makes your company unique?",
+    type: "input",
+    required: true,
+  },
+  {
+    key: "segments",
+    label: "Market Segments",
+    placeholder: "What markets do you target?",
+    type: "array",
+    required: true,
+  },
+  {
+    key: "competitors",
+    label: "Competitors",
+    placeholder: "Who are your main competitors?",
+    type: "competitors",
+    required: true,
+  },
+];
+
 const ICPWizard = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [user, setUser] = useState(null);
   const [workspace, setWorkspace] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [airtableRecordId, setAirtableRecordId] = useState<string | null>(null);
+  const [icpInputs, setIcpInputs] = useState<ICPWizardInputs>({
+    companyUrl: "",
+    products: [],
+    personas: [],
+    useCases: [],
+    differentiation: "",
+    segments: [],
+    competitors: [],
+  });
+  const [activeField, setActiveField] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<any>(null);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+  // For array/competitor field input
+  const [inputValue, setInputValue] = useState("");
   const [compName, setCompName] = useState("");
   const [compUrl, setCompUrl] = useState("");
-
-  const [icpInputs, setIcpInputs] = useState<ICPWizardInputs>({
-    companyUrl: "https://mirakl.com",
-    products: ["Marketplace Platform"],
-    personas: ["VP of Product"],
-    useCases: ["Launch B2B marketplace"],
-    differentiation: "Mirakl is the fastest to launch",
-    segments: ["Enterprise", "Retail"],
-    competitors: [{ "name": "VTEX", "url": "https://vtex.com" }],
-  });
-
-  const [activeSection, setActiveSection] = useState(0);
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
-  const totalSections = 7;
 
   useEffect(() => {
     const fetchWorkspace = async () => {
       try {
         const currentUser = authService.getCurrentUser();
-        console.log("🧠 ICPWizard → currentUser:", currentUser);
         if (!currentUser) {
-          console.log("⛔ No user found, redirecting to login");
           navigate("/login");
           return;
         }
         setUser(currentUser);
-
         const res = await fetch(
           `http://localhost:3000/api/workspaces/slug/${slug}`,
           {
@@ -76,187 +120,127 @@ const ICPWizard = () => {
             },
           }
         );
-
         if (!res.ok) throw new Error("Workspace not found");
-
         const data = await res.json();
         setWorkspace(data);
         storageService.saveWorkspace(data.slug, data);
         setLoading(false);
-        console.log("🧠 Retrieved workspace:", data);
       } catch (err) {
-        console.error("Failed to fetch workspace", err);
         setLoading(false);
         navigate("/login");
       }
     };
-
     fetchWorkspace();
   }, [slug]);
 
-  if (loading) return null;
+  // Fetch suggestions for the active field (except the first field)
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!activeField || activeField === "companyUrl") return;
+      setSuggestionsLoading(true);
+      setSuggestions(null);
+      const fieldIndex = fieldConfigs.findIndex(f => f.key === activeField);
+      if (fieldIndex === -1) return;
+      const res = await icpWizardApi.generateSuggestions(fieldIndex, { companyName: workspace.companyName, ...icpInputs }, workspace.companyName);
+      setSuggestionsLoading(false);
+      if (res.success && res.suggestions) {
+        setSuggestions(res.suggestions);
+      }
+    };
+    if (workspace && activeField) fetchSuggestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeField, workspace]);
 
+  if (loading) return null;
   if (!user || !workspace) {
-    console.log("⛔ User or workspace not found, redirecting to login");
     return <Navigate to="/login" />;
   }
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setIcpInputs({ ...icpInputs, [name]: value });
-
-    // Clear validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors({ ...validationErrors, [name]: "" });
-    }
-  };
-
-  const validateSection = (section: number): boolean => {
-    const sectionMap = [
-      { key: "companyUrl", label: "Company URL" },
-      { key: "products", label: "Products" },
-      { key: "personas", label: "Personas" },
-      { key: "useCases", label: "Use Cases" },
-      { key: "differentiation", label: "Differentiation" },
-      { key: "segments", label: "Segments" },
-      { key: "competitors", label: "Competitors" },
-    ];
-
-    const { key, label } = sectionMap[section];
-    const value = icpInputs[key as keyof ICPWizardInputs];
-
-    if (key === "competitors") {
-      const competitors = value as { name: string; url: string }[];
-      if (
-        !Array.isArray(competitors) ||
-        competitors.length === 0 ||
-        competitors.some((c) => !c.name.trim() || !c.url.trim())
-      ) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          [key]: "Please add valid competitors with name and URL",
-        }));
-        return false;
+  const handleAcceptSuggestions = (acceptedSuggestions: any) => {
+    let processedValue = acceptedSuggestions;
+    // Merge for array fields
+    if (["products", "personas", "useCases", "segments"].includes(activeField)) {
+      const prev = icpInputs[activeField] || [];
+      const acceptedArr = Array.isArray(acceptedSuggestions) ? acceptedSuggestions : [acceptedSuggestions];
+      // Merge and dedupe
+      processedValue = Array.from(new Set([...(prev as string[]), ...acceptedArr]));
+    } else if (activeField === 'competitors' && Array.isArray(acceptedSuggestions)) {
+      const prev = icpInputs.competitors || [];
+      // Normalize accepted suggestions to objects
+      const acceptedArr = acceptedSuggestions.map((item: any) => {
+        if (typeof item === 'string') {
+          const match = item.match(/^(.+?)\s*\((.+?)\)$/);
+          if (match) {
+            return { name: match[1].trim(), url: match[2].trim() };
+          } else {
+            return { name: item, url: '' };
+          }
+        }
+        return item;
+      });
+      // Merge and dedupe by name+url
+      const merged = [...prev, ...acceptedArr];
+      const seen = new Set();
+      processedValue = merged.filter((item) => {
+        const key = item.name + '|' + item.url;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    } else if (["companyUrl", "differentiation"].includes(activeField)) {
+      if (Array.isArray(acceptedSuggestions)) {
+        processedValue = acceptedSuggestions[0] || '';
+      } else if (typeof acceptedSuggestions === 'string') {
+        processedValue = acceptedSuggestions;
       }
     }
-
-    if (
-      value === undefined ||
-      (typeof value === "string" && value.trim().length === 0) ||
-      (Array.isArray(value) && value.length === 0)
-    ) {
-      setValidationErrors({
-        ...validationErrors,
-        [key]: `${label} is required`,
-      });
-      return false;
-    }
-
-    if (
-      key === "companyUrl" &&
-      typeof value === "string" &&
-      !isValidUrl(value)
-    ) {
-      setValidationErrors({
-        ...validationErrors,
-        [key]: "Please enter a valid URL",
-      });
-      return false;
-    }
-
-    return true;
+    setIcpInputs(prev => ({
+      ...prev,
+      [activeField]: processedValue
+    }));
+    setSuggestions(null);
   };
 
-  const isValidUrl = (string: string) => {
-    try {
-      new URL(string.startsWith("http") ? string : `https://${string}`);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  };
-
-  const handleNext = () => {
-    if (validateSection(activeSection)) {
-      setActiveSection((prev) => Math.min(prev + 1, totalSections - 1));
-    } else {
-      toast({
-        title: "Required Field",
-        description: "Please fill in all required fields before continuing.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCompetitorAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (compName.trim() && compUrl.trim()) {
-        setIcpInputs((prev) => ({
-          ...prev,
-          competitors: [
-            ...(prev.competitors || []),
-            { name: compName.trim(), url: compUrl.trim() },
-          ],
-        }));
-        setCompName("");
-        setCompUrl("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Validate all required fields
+    for (const config of fieldConfigs) {
+      const value = icpInputs[config.key as keyof ICPWizardInputs];
+      if (config.required && (!value || (Array.isArray(value) && value.length === 0))) {
+        toast({
+          title: 'Field Required',
+          description: `Please fill in or accept a suggestion for "${config.label}" before submitting.`,
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
       }
     }
-  };
-
-  const handlePrev = () => {
-    setActiveSection((prev) => Math.max(prev - 1, 0));
-  };
-
-  const sectionLabels = [
-    "Company URL",
-    "Products",
-    "Personas",
-    "Use Cases",
-    "Differentiation",
-    "Segments",
-    "Competitors",
-  ];
-
-  const handleSubmit = async () => {
-    if (!slug) return;
-
-    // 🛠️ If competitor input fields are non-empty, add them manually
-    const trimmedName = compName.trim();
-    const trimmedUrl = compUrl.trim();
-    if (trimmedName && trimmedUrl) {
-      setIcpInputs((prev) => ({
-        ...prev,
-        competitors: [
-          ...prev.competitors,
-          { name: trimmedName, url: trimmedUrl },
-        ],
-      }));
-      setCompName("");
-      setCompUrl("");
-      return; // 🔁 retry submit after state update
-    }
-
-    let hasErrors = false;
-    for (let i = 0; i < totalSections; i++) {
-      if (!validateSection(i)) hasErrors = true;
-    }
-
-    if (hasErrors) {
-      toast({
-        title: "Validation Error",
-        description: "Please complete all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-
     try {
+      const stepData: StepData = {
+        companyName: workspace.companyName,
+        companyUrl: icpInputs.companyUrl,
+        products: icpInputs.products,
+        personas: icpInputs.personas,
+        useCases: icpInputs.useCases,
+        differentiation: icpInputs.differentiation,
+        segments: icpInputs.segments,
+        competitors: icpInputs.competitors,
+      };
+      // Submit to Airtable (and get/update recordId)
+      const result = await icpWizardApi.submitStep(stepData, fieldConfigs.length - 1, slug!, airtableRecordId);
+      if (!result.success) {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to submit to Airtable',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      setAirtableRecordId(result.airtableRecordId);
+      // Submit to MongoDB
       const res = await fetch(
         `http://localhost:3000/api/workspaces/${workspace.slug}/icp`,
         {
@@ -268,303 +252,219 @@ const ICPWizard = () => {
           body: JSON.stringify(icpInputs),
         }
       );
-
-      if (!res.ok) throw new Error("Failed to save ICP");
-
+      if (!res.ok) {
+        toast({
+          title: 'Error',
+          description: 'Failed to save ICP to database',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
       const updated = await res.json();
-
-      console.log("💾 Saving workspace under slug:", updated.slug);
-
       storageService.saveWorkspace(updated.slug, updated);
-      console.log("🔐 Saved in localStorage:", updated.slug, updated);
-
-
-      console.log("💾 ICPWizard → Saved workspace slug:", updated.slug);
-      console.log("💾 ICPWizard → Full saved workspace:", updated);
-
       toast({
-        title: isEditing ? "ICP Updated!" : "ICP Created!",
-        description: "Saved successfully",
+        title: "ICP Created!",
+        description: "Redirecting to workspace...",
       });
-
-      setTimeout(() => navigate(`/workspace/${updated.slug}/home`), 1000);
+      navigate(`/workspace/${workspace.slug}/home`);
     } catch (err) {
-      console.error(err);
       toast({
-        title: "Error",
-        description: "Could not save ICP",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Could not save ICP',
+        variant: 'destructive',
       });
     } finally {
-      setIsGenerating(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (isGenerating) {
-    return <LoadingPage onComplete={() => setIsGenerating(false)} />;
-  }
-
-  const renderFormSection = () => {
-    const section = [
-      {
-        title: "Company Information",
-        field: "companyUrl",
-        placeholder: "Enter Company Website URL (e.g., company.com)",
-        type: "input",
-      },
-      {
-        title: "Products & Services",
-        field: "products",
-        placeholder: "Type a product and press Enter",
-        type: "tags",
-      },
-      {
-        title: "Target Personas",
-        field: "personas",
-        placeholder: "Type a persona and press Enter",
-        type: "tags",
-      },
-      {
-        title: "Use Cases",
-        field: "useCases",
-        placeholder: "Type a use case and press Enter",
-        type: "tags",
-      },
-      {
-        title: "Differentiation",
-        field: "differentiation",
-        placeholder: "What makes the company different?",
-        type: "textarea",
-      },
-      {
-        title: "Market Segments",
-        field: "segments",
-        placeholder: "Type a segment and press Enter",
-        type: "tags",
-      },
-      {
-        title: "Competitors",
-        field: "competitors",
-        placeholder: "Enter competitor name + URL",
-        type: "competitors",
-      },
-    ][activeSection];
-
-    const key = section.field as keyof ICPWizardInputs;
-    const hasError = validationErrors[section.field];
-
-    if (section.type === "tags") {
-      return (
-        <div className="space-y-3">
-          <label className="font-semibold">{section.title}</label>
-          <Input
-            placeholder={section.placeholder}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                const val = e.currentTarget.value.trim();
-                if (val && !(icpInputs[key] as string[]).includes(val)) {
-                  setIcpInputs({
-                    ...icpInputs,
-                    [key]: [...(icpInputs[key] as string[]), val],
-                  });
-                  e.currentTarget.value = "";
-                }
-              }
-            }}
-            onBlur={(e) => {
-              const val = e.currentTarget.value.trim();
-              if (val && !(icpInputs[key] as string[]).includes(val)) {
-                setIcpInputs({
-                  ...icpInputs,
-                  [key]: [...(icpInputs[key] as string[]), val],
-                });
-                e.currentTarget.value = "";
-              }
-            }}
-          />
-
-          <div className="flex flex-wrap gap-2">
-            {(icpInputs[key] as string[]).map((tag, i) => (
-              <span
-                key={i}
-                className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center"
-              >
-                {tag}
-                <button
-                  className="ml-1 text-xs"
-                  onClick={() => {
-                    const updated = [...(icpInputs[key] as string[])];
-                    updated.splice(i, 1);
-                    setIcpInputs({ ...icpInputs, [key]: updated });
-                  }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // 🔹 Competitor Input (name + url)
-    if (section.type === "competitors") {
-      return (
-        <div className="space-y-3">
-          <label className="font-semibold">{section.title}</label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g. Shopify"
-              value={compName}
-              onChange={(e) => setCompName(e.target.value)}
-            />
-
-            <Input
-              placeholder="https://competitor.com"
-              value={compUrl}
-              onChange={(e) => setCompUrl(e.target.value)}
-              onKeyDown={handleCompetitorAdd}
-              onBlur={(e) => {
-                const trimmedName = compName.trim();
-                const trimmedUrl = compUrl.trim();
-                if (trimmedName && trimmedUrl) {
-                  setIcpInputs((prev) => ({
-                    ...prev,
-                    competitors: [
-                      ...prev.competitors,
-                      { name: trimmedName, url: trimmedUrl },
-                    ],
-                  }));
-                  setCompName("");
-                  setCompUrl("");
-                }
-              }}
-            />
-          </div>
-          <div className="space-y-1">
-            {icpInputs.competitors.map((comp, i) => (
-              <div
-                key={i}
-                className="text-sm flex items-center justify-between"
-              >
-                <span>
-                  {comp.name} —{" "}
-                  <a
-                    href={comp.url}
-                    className="text-blue-600 underline"
-                    target="_blank"
-                  >
-                    {comp.url}
-                  </a>
-                </span>
-                <button
-                  className="text-xs text-red-600"
-                  onClick={() => {
-                    const updated = [...icpInputs.competitors];
-                    updated.splice(i, 1);
-                    setIcpInputs({ ...icpInputs, competitors: updated });
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    // 🔹 Normal Input / Textarea
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <h3 className="text-lg font-semibold text-slate-700">
-            {section.title}
-          </h3>
-          {hasError && <AlertCircle className="w-4 h-4 text-red-500" />}
-        </div>
-        {section.type === "input" ? (
-          <Input
-            type="url"
-            name={section.field}
-            placeholder={section.placeholder}
-            value={icpInputs[key] as string}
-            onChange={handleChange}
-            className={hasError ? "border-red-500" : ""}
-          />
-        ) : (
-          <Textarea
-            name={section.field}
-            placeholder={section.placeholder}
-            value={icpInputs[key] as string}
-            onChange={handleChange}
-            className={`min-h-[120px] ${hasError ? "border-red-500" : ""}`}
-          />
-        )}
-        {hasError && (
-          <p className="text-sm text-red-500 flex items-center">
-            <AlertCircle className="w-4 h-4 mr-1" />
-            {hasError}
-          </p>
-        )}
-      </div>
-    );
-  };
-
+  // Render all fields in a single card
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-      <div className="max-w-3xl mx-auto">
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">
-              {isEditing
-                ? `Edit ICP: ${workspace.name}`
-                : `ICP Wizard: ${workspace.name}`}
-            </CardTitle>
-            <p className="text-slate-600">
-              {isEditing
-                ? "Update your inputs to regenerate the ICP analysis"
-                : "Complete all sections to generate your ICP analysis"}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Progress
-              value={(activeSection + 1) * (100 / totalSections)}
-              className="h-2"
-            />
-            <div className="flex items-center justify-between text-sm text-slate-500">
-              <span>
-                Section {activeSection + 1} of {totalSections}
-              </span>
-              <span>{sectionLabels[activeSection]}</span>
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center py-8 px-2">
+      {isSubmitting && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-2xl px-8 py-8 flex flex-col items-center min-w-[320px] max-w-sm border border-slate-200">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
+              <div className="text-base font-semibold text-slate-700 mb-2">Generating ICP...</div>
+              <div className="text-sm text-slate-500 text-center">
+                Enriching products, personas, and segments with AI-generated details
+              </div>
             </div>
-
-            {renderFormSection()}
-
-            <div className="flex justify-between">
+          </div>
+        </>
+      )}
+      <div className="w-full max-w-2xl mx-auto">
+        <form onSubmit={handleSubmit}>
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-0 sm:p-0">
+            <div className="border-b border-slate-100 px-8 pt-8 pb-4 text-center">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1 tracking-tight">Create ICP: {workspace.name}</h1>
+              <p className="text-slate-500 text-xs">Fill out all fields below. AI suggestions will appear as you focus on each field.</p>
+            </div>
+            <div className="px-8 pt-6 pb-2">
+              {fieldConfigs.map((config, idx) => {
+                const value = icpInputs[config.key as keyof ICPWizardInputs];
+                return (
+                  <div key={config.key} className="mb-6">
+                    <label className="block font-medium text-slate-700 mb-1 text-sm" htmlFor={config.key}>{config.label}</label>
+                    <div className="text-slate-400 text-xs mb-1">{config.placeholder}</div>
+                    {config.type === "input" ? (
+                      <Textarea
+                        id={config.key}
+                        placeholder={config.placeholder}
+                        value={value as string}
+                        onFocus={() => setActiveField(config.key)}
+                        onChange={e => setIcpInputs(prev => ({ ...prev, [config.key]: e.target.value }))}
+                        className="min-h-[60px] text-sm border-slate-200 focus:border-blue-400"
+                      />
+                    ) : null}
+                    {config.type === "array" ? (
+                      <div>
+                        <div className="flex gap-2 mb-1">
+                          <Input
+                            placeholder="Add item..."
+                            value={activeField === config.key ? inputValue : ""}
+                            onFocus={() => setActiveField(config.key)}
+                            onChange={e => setInputValue(e.target.value)}
+                            onKeyPress={e => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                if (inputValue.trim() && !(value as string[]).includes(inputValue.trim())) {
+                                  setIcpInputs(prev => ({
+                                    ...prev,
+                                    [config.key]: [...(value as string[]), inputValue.trim()]
+                                  }));
+                                  setInputValue("");
+                                }
+                              }
+                            }}
+                            className="flex-1 text-sm border-slate-200 focus:border-blue-400"
+                          />
+                          <Button type="button" onClick={() => {
+                            if (inputValue.trim() && !(value as string[]).includes(inputValue.trim())) {
+                              setIcpInputs(prev => ({
+                                ...prev,
+                                [config.key]: [...(value as string[]), inputValue.trim()]
+                              }));
+                              setInputValue("");
+                            }
+                          }} size="sm" className="text-xs">Add</Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(value as string[]).map((item, index) => (
+                            <span
+                              key={index}
+                              className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs flex items-center gap-2 border border-blue-100"
+                            >
+                              {item}
+                              <button
+                                type="button"
+                                onClick={() => setIcpInputs(prev => ({
+                                  ...prev,
+                                  [config.key]: (value as string[]).filter((_, i) => i !== index)
+                                }))}
+                                className="text-blue-500 hover:text-blue-700 text-xs"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {config.type === "competitors" ? (
+                      <div>
+                        <div className="flex gap-2 mb-1">
+                          <Input
+                            placeholder="Competitor name"
+                            value={activeField === config.key ? compName : ""}
+                            onFocus={() => setActiveField(config.key)}
+                            onChange={e => setCompName(e.target.value)}
+                            className="flex-1 text-sm border-slate-200 focus:border-blue-400"
+                          />
+                          <Input
+                            placeholder="Website URL"
+                            value={activeField === config.key ? compUrl : ""}
+                            onFocus={() => setActiveField(config.key)}
+                            onChange={e => setCompUrl(e.target.value)}
+                            className="flex-1 text-sm border-slate-200 focus:border-blue-400"
+                          />
+                          <Button type="button" onClick={() => {
+                            if (compName.trim() && compUrl.trim()) {
+                              setIcpInputs(prev => ({
+                                ...prev,
+                                competitors: [...prev.competitors, { name: compName.trim(), url: compUrl.trim() }]
+                              }));
+                              setCompName("");
+                              setCompUrl("");
+                            }
+                          }} size="sm" className="text-xs">Add</Button>
+                        </div>
+                        <div className="space-y-1">
+                          {(value as any[]).map((comp, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-slate-100">
+                              <div>
+                                <p className="font-medium text-xs">{comp.name}</p>
+                                <p className="text-xs text-gray-500">{comp.url}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setIcpInputs(prev => ({
+                                  ...prev,
+                                  competitors: prev.competitors.filter((_, i) => i !== index)
+                                }))}
+                                className="text-red-500 hover:text-red-700 text-xs"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {/* Suggestions for active field (not companyUrl) */}
+                    {activeField === config.key && config.key !== "companyUrl" && (
+                      <div className="mt-3">
+                        {suggestionsLoading ? (
+                          <div className="text-blue-500 text-xs">Loading suggestions...</div>
+                        ) : suggestions ? (
+                          <Suggestions
+                            suggestions={suggestions}
+                            onAccept={handleAcceptSuggestions}
+                            type={config.type === "input" ? "string" : (config.type as "array" | "competitors")}
+                            title={`AI Suggestions for ${config.label}`}
+                            description="Claude has analyzed your previous answers and generated these suggestions. You can accept, edit, or skip them."
+                          />
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex flex-col sm:flex-row justify-end items-center gap-4 px-8 pt-2 pb-8 border-t border-slate-100">
               <Button
-                variant="outline"
-                onClick={handlePrev}
-                disabled={activeSection === 0}
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto text-sm font-semibold"
               >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating & Enriching ICP...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Generate ICP
+                  </>
+                )}
               </Button>
-              {activeSection === totalSections - 1 ? (
-                <Button onClick={handleSubmit}>
-                  {isEditing ? "Regenerate ICP" : "Generate ICP"}
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={handleNext}>
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </form>
       </div>
     </div>
   );

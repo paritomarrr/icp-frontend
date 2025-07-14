@@ -1,24 +1,67 @@
 
 import { Outlet, Link, useLocation, useParams, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
-import { Home, ShoppingBag, Building2, Users, Target } from 'lucide-react';
+import { Home, ShoppingBag, Building2, Users, Target, UserPlus, Crown, Eye, PenTool } from 'lucide-react';
+import { Workspace } from '@/types';
+import { usePermissions } from '@/hooks/use-permissions';
 
 const WorkspaceLayout = () => {
   const { slug } = useParams();
   const location = useLocation();
-  // const { id } = useParams();
   const user = authService.getCurrentUser();
-  const workspace = slug ? storageService.getWorkspace(slug) : null;
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { isOwner, getUserRole } = usePermissions();
 
-  console.log("🧭 WorkspaceLayout → slug:", slug);
-console.log("🧭 WorkspaceLayout → workspace from storage:", workspace);
+  useEffect(() => {
+    const loadWorkspace = async () => {
+      if (!slug) return;
 
-  
+      let workspaceData = storageService.getWorkspace(slug);
+
+      if (!workspaceData) {
+        try {
+          const response = await fetch(`http://localhost:3000/api/workspaces/slug/${slug}`, {
+            headers: {
+              Authorization: `Bearer ${authService.getToken()}`,
+            },
+          });
+
+          if (response.ok) {
+            workspaceData = await response.json();
+            storageService.saveWorkspace(slug, workspaceData);
+          } else {
+            console.error("Failed to fetch workspace from API");
+          }
+        } catch (error) {
+          console.error("Error fetching workspace:", error);
+        }
+      }
+
+      setWorkspace(workspaceData);
+      setLoading(false);
+    };
+
+    loadWorkspace();
+  }, [slug]);
+
   if (!user) {
-    console.log("⛔ User not authenticated, redirecting to login");
     return <Navigate to="/login" />;
+  }
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading workspace...</p>
+        </div>
+      </div>
+    );
   }
   
   if (slug && !workspace) {
@@ -27,7 +70,6 @@ console.log("🧭 WorkspaceLayout → workspace from storage:", workspace);
 
   const handleLogout = () => {
     authService.logout();
-    console.log("🔒 User logged out, redirecting to login page");
     window.location.href = '/login';
   };
 
@@ -37,72 +79,109 @@ console.log("🧭 WorkspaceLayout → workspace from storage:", workspace);
     { icon: Building2, label: 'Segments', path: `/workspace/${slug}/segments` },
     { icon: Users, label: 'Personas', path: `/workspace/${slug}/personas` },
     { icon: Target, label: 'Pre-Sales Outbound Plays', path: `/workspace/${slug}/outbound-plays` },
+    { icon: UserPlus, label: 'Collaborators', path: `/workspace/${slug}/collaborators` },
   ];
 
-  // Helper function to check if current path matches exactly
   const isActivePath = (itemPath: string) => {
     return location.pathname === itemPath;
   };
 
+  const getUserRoleIcon = () => {
+    const role = getUserRole();
+    switch (role) {
+      case 'owner':
+        return <Crown className="w-4 h-4" />;
+      case 'editor':
+        return <PenTool className="w-4 h-4" />;
+      case 'viewer':
+        return <Eye className="w-4 h-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getUserRoleColor = () => {
+    const role = getUserRole();
+    switch (role) {
+      case 'owner':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'editor':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'viewer':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white/80 backdrop-blur-sm border-r border-slate-200 min-h-screen">
-          <div className="p-6 border-b border-slate-200">
-            <Link to="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-white" />
+    <div className="h-screen bg-background flex">
+      {/* Sidebar - Fixed height, non-scrollable */}
+      <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+        {/* Header */}
+        <div className="p-6 border-b border-sidebar-border flex-shrink-0">
+          <Link to="/dashboard" className="flex items-center space-x-3">
+            <div className="w-9 h-9 bg-gradient-to-r from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-sm">
+              <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="font-semibold text-sidebar-primary text-base">ICP Wizard</span>
+          </Link>
+          {workspace && (
+            <div className="mt-5">
+              <h3 className="font-semibold text-sidebar-primary truncate text-sm">{workspace.name}</h3>
+              <p className="text-xs text-sidebar-foreground truncate mt-1">{workspace.companyName}</p>
+              <div className="mt-2 flex items-center space-x-2">
+                <Badge className={`text-xs ${getUserRoleColor()}`}>
+                  {getUserRoleIcon()}
+                  <span className="ml-1 capitalize">{getUserRole()}</span>
+                </Badge>
               </div>
-              <span className="font-bold text-slate-800">ICP Wizard</span>
-            </Link>
-            {workspace && (
-              <div className="mt-4">
-                <h3 className="font-semibold text-slate-800 truncate">{workspace.name}</h3>
-                <p className="text-sm text-slate-600 truncate">{workspace.companyName}</p>
-              </div>
-            )}
-          </div>
-          
-          <nav className="p-4">
+            </div>
+          )}
+        </div>
+        
+        {/* Navigation - Flexible, will shrink if needed */}
+        <nav className="p-4 flex-1 overflow-hidden">
+          <div className="space-y-2">
             {sidebarItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
+                className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
                   isActivePath(item.path)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
               </Link>
             ))}
-          </nav>
-          
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-slate-700 truncate">{user.fullName}</p>
-                <p className="text-xs text-slate-500 truncate" title={user.email}>{user.email}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-slate-600 hover:text-slate-800 ml-2 flex-shrink-0"
-              >
-                Logout
-              </Button>
+          </div>
+        </nav>
+        
+        {/* User Info - Fixed at bottom */}
+        <div className="p-4 border-t border-sidebar-border flex-shrink-0">
+          <div className="flex items-center justify-between p-3 bg-sidebar-accent rounded-xl">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-sidebar-primary truncate">{user.fullName}</p>
+              <p className="text-xs text-sidebar-foreground truncate mt-1" title={user.email}>{user.email}</p>
             </div>
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-sidebar-foreground hover:text-sidebar-primary ml-2 flex-shrink-0 text-xs"
+            >
+              Logout
+            </Button>
           </div>
         </div>
-        
-        {/* Main Content */}
-        <div className="flex-1">
-          <Outlet />
-        </div>
+      </div>
+      
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-auto bg-background">
+        <Outlet />
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ export const authService = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        name: fullName, // make sure 'name' is sent, not 'fullName'
+        name: fullName, // ensure 'name' is sent, not 'fullName'
         email,
         password,
       }),

@@ -1,19 +1,27 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Users, Download } from 'lucide-react';
+import { Users, Download, ArrowRight, Search, Plus, MoreHorizontal, Eye, Copy, ChevronRight, Users2, Target, TrendingUp, Building2 } from 'lucide-react';
+import { AddPersonaModal } from '@/components/modals';
+import { icpWizardApi, PersonaData } from '@/lib/api';
 
 const Personas = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
   const [icpData, setIcpData] = useState<ICPData | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [addPersonaModalOpen, setAddPersonaModalOpen] = useState(false);
 
   useEffect(() => {
     if (slug) {
@@ -22,181 +30,333 @@ const Personas = () => {
     }
   }, [slug]);
 
+  const handleAddPersona = async (personaData: PersonaData) => {
+    if (!slug) return;
+    
+    try {
+      const result = await icpWizardApi.addPersona(slug, personaData);
+      
+      if (result.success) {
+        console.log('Persona added successfully:', result.persona);
+        // Refresh the ICP data to show the new persona
+        const data = storageService.getICPData(slug);
+        if (data) {
+          setIcpData({ ...data }); // Force re-render
+        }
+        // You might want to add a toast notification here
+      } else {
+        console.error('Failed to add persona:', result.error);
+        // You might want to show an error message to the user
+      }
+    } catch (error) {
+      console.error('Error adding persona:', error);
+    }
+  };
+
   if (!user || !workspace) {
     return <Navigate to="/login" />;
   }
 
-  const currentVersionData = icpData?.versions[icpData.currentVersion || 1];
+  // Get personas from the workspace data and ICP enrichment versions
+  const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
+  const enrichmentData = icpData?.icpEnrichmentVersions;
+  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
+  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
+  
+  console.log('Personas - Root personas:', rootPersonas);
+  console.log('Personas - Enrichment data:', personasTable);
+  
+  // Transform the personas array into the expected format
+  const allPersonas = rootPersonas.map((persona: any, index: number) => {
+    // Handle both old string format and new object format
+    const personaDesc = typeof persona === 'string' ? persona : persona.name;
+    const personaData = typeof persona === 'string' ? {} : persona;
+    
+    // Extract title from the persona description (everything before the first '-')
+    const titleMatch = personaDesc.match(/^([^-]+)/);
+    const title = titleMatch ? titleMatch[1].trim() : personaData.title || `Persona ${index + 1}`;
+    
+    // Try to find matching enrichment data
+    const enrichmentMatch = personasTable.find((p: any) => 
+      p.title && title.toLowerCase().includes(p.title.toLowerCase())
+    );
+    
+    return {
+      id: personaData._id || index + 1,
+      title: title,
+      summary: personaDesc,
+      created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+      status: personaData.status || 'active',
+      priority: personaData.priority || (enrichmentMatch ? 'high' : 'medium'),
+      influence: personaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
+      painPoints: personaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
+      goals: personaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
+      department: personaData.department || '',
+      seniority: personaData.seniority || '',
+      industry: personaData.industry || '',
+      company: personaData.company || '',
+      location: personaData.location || '',
+      description: personaData.description || '',
+      budget: personaData.budget || '',
+      teamSize: personaData.teamSize || '',
+      channels: personaData.channels || [],
+      objections: personaData.objections || [],
+      responsibilities: personaData.responsibilities || [],
+      challenges: personaData.challenges || []
+    };
+  });
 
-  // Parse segment data to extract meaningful segment names
-  const parseSegmentNames = (segmentContent: string) => {
-    const lines = segmentContent?.split('\n') || [];
-    const segments = [];
-    
-    for (const line of lines) {
-      if (line.includes('Segment') && !line.includes('analysis')) {
-        segments.push(line.replace(/^\d+\.\s*/, '').trim());
-      }
+  // Filter personas based on search and filter
+  const filteredPersonas = allPersonas.filter(persona => {
+    const matchesSearch = persona.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         persona.summary.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = selectedFilter === 'all' || persona.priority === selectedFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-orange-100 text-orange-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-    
-    return segments.length > 0 ? segments : ['Enterprise SaaS Companies', 'Mid-Market Technology Firms', 'SMB Digital Agencies'];
   };
 
-  const segmentNames = parseSegmentNames(currentVersionData?.segments || '');
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
 
-  const personaRows = [
-    'Segment',
-    'Department', 
-    'Job Title',
-    'Value Proposition',
-    'Primary Responsibilities',
-    'OKRs',
-    'Pain Points'
-  ];
-
-  const personaColumns = ['Decision Maker', 'Champion', 'End User'];
-
-  // Parse persona data for each segment
-  const parsePersonaData = (personaContent: string, segmentName: string) => {
-    const sampleData = {
-      'Decision Maker': {
-        'Segment': segmentName,
-        'Department': 'Executive Leadership',
-        'Job Title': 'CEO / CTO',
-        'Value Proposition': 'Strategic competitive advantage through technology',
-        'Primary Responsibilities': 'Strategic planning, budget allocation, technology roadmap',
-        'OKRs': 'Increase market share by 20%, reduce operational costs by 15%',
-        'Pain Points': 'Scaling challenges, technology debt, competitive pressure'
-      },
-      'Champion': {
-        'Segment': segmentName,
-        'Department': 'Sales / Marketing',
-        'Job Title': 'VP Sales / CMO',
-        'Value Proposition': 'Improved sales efficiency and customer acquisition',
-        'Primary Responsibilities': 'Revenue growth, team management, process optimization',
-        'OKRs': 'Increase conversion rates by 25%, reduce customer acquisition cost',
-        'Pain Points': 'Manual processes, data silos, attribution challenges'
-      },
-      'End User': {
-        'Segment': segmentName,
-        'Department': 'Operations / IT',
-        'Job Title': 'Sales Manager / Marketing Manager',
-        'Value Proposition': 'Daily workflow efficiency and data insights',
-        'Primary Responsibilities': 'Campaign execution, lead management, reporting',
-        'OKRs': 'Improve lead quality, increase team productivity by 30%',
-        'Pain Points': 'Tool fragmentation, manual reporting, data accuracy'
-      }
-    };
-
-    return sampleData;
+  const getInfluenceColor = (influence: string) => {
+    switch (influence) {
+      case 'Decision Maker': return 'bg-purple-100 text-purple-800';
+      case 'Influencer': return 'bg-blue-100 text-blue-800';
+      case 'User': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <div className="p-8 bg-background min-h-screen">
       <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
+          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-foreground font-medium">Personas</span>
+        </nav>
+
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-slate-800">
-            Personas by Segment
-          </h1>
+          <div>
+            <h1 className="text-xl font-bold text-foreground mb-1">
+              Buyer Personas
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Understand your target audience and their decision-making process
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
+              <Download className="w-3 h-3 mr-2" />
+              Export
+            </Button>
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs" onClick={() => setAddPersonaModalOpen(true)}>
+              <Plus className="w-3 h-3 mr-2" />
+              Add Persona
+            </Button>
+          </div>
         </div>
 
-        <Tabs defaultValue="segment-0" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            {segmentNames.slice(0, 3).map((segment, index) => (
-              <TabsTrigger key={index} value={`segment-${index}`}>
-                {segment.length > 30 ? `${segment.substring(0, 30)}...` : segment}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {/* Search and Filter Bar */}
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
+            <Input
+              placeholder="Search personas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 text-xs"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-medium text-foreground">Filter:</span>
+            <Button
+              variant={selectedFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs"
+              onClick={() => setSelectedFilter('all')}
+            >
+              All Personas
+            </Button>
+            <Button
+              variant={selectedFilter === 'high' ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs"
+              onClick={() => setSelectedFilter('high')}
+            >
+              High Priority
+            </Button>
+            <Button
+              variant={selectedFilter === 'medium' ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs"
+              onClick={() => setSelectedFilter('medium')}
+            >
+              Medium Priority
+            </Button>
+          </div>
+        </div>
 
-          {segmentNames.slice(0, 3).map((segment, segmentIndex) => {
-            const personaData = parsePersonaData(currentVersionData?.personas || '', segment);
-            
-            return (
-              <TabsContent key={segmentIndex} value={`segment-${segmentIndex}`} className="mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  {/* Left Side - 3/4 */}
-                  <div className="lg:col-span-3">
-                    <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <span className="text-2xl">🧾</span>
-                          <span>Persona Matrix - {segment}</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr>
-                                <th className="border border-slate-200 p-3 bg-slate-50 text-left font-semibold text-slate-700">
-                                  Criteria
-                                </th>
-                                {personaColumns.map((column) => (
-                                  <th key={column} className="border border-slate-200 p-3 bg-slate-50 text-left font-semibold text-slate-700">
-                                    {column}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {personaRows.map((row) => (
-                                <tr key={row}>
-                                  <td className="border border-slate-200 p-3 font-medium text-slate-700 bg-slate-25">
-                                    {row}
-                                  </td>
-                                  {personaColumns.map((column) => (
-                                    <td key={`${row}-${column}`} className="border border-slate-200 p-3 text-sm text-slate-600">
-                                      {personaData[column as keyof typeof personaData][row as keyof typeof personaData.Champion] || 'Content'}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Right Side - 1/4 */}
-                  <div>
-                    <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <span className="text-2xl">📊</span>
-                          <span>Total Contacts</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {[
-                            { metric: 'Total Contacts Number', value: `${3847 - segmentIndex * 500}` },
-                            { metric: 'Contacts Reached', value: `${892 - segmentIndex * 150}` },
-                            { metric: 'Meetings Held', value: `${127 - segmentIndex * 20}` },
-                            { metric: 'Deals Open', value: `${23 - segmentIndex * 3}` }
-                          ].map((item) => (
-                            <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                              <div>
-                                <p className="text-sm font-medium text-slate-700">{item.metric}</p>
-                                <p className="text-lg font-bold text-slate-900">{item.value}</p>
-                              </div>
-                              <Button variant="outline" size="sm">
-                                <Download className="w-4 h-4 mr-1" />
-                                CSV
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+        {/* Persona Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
+          {filteredPersonas.map((persona, idx) => (
+            <Card
+              key={persona.title}
+              className={`cursor-pointer border-0 transition-all duration-200 group shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl`}
+              onClick={() => navigate(`/workspace/${slug}/personas/${persona.id}`)}
+            >
+              <CardHeader className="pb-2">
+                {/* Colored header bar for persona role/title */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="inline-block bg-sky-200 text-sky-800 text-xs font-semibold px-3 py-1 rounded-t-md rounded-b mb-1 tracking-wide">
+                    {persona.title}
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreHorizontal className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+                {/* Prominent persona name/title */}
+                <CardTitle className="text-base font-bold text-slate-900 mb-1 truncate">
+                  {persona.title}
+                </CardTitle>
+                {/* Pill-shaped, color-coded badges in a single row */}
+                <div className="flex items-center space-x-2 mt-1 mb-1">
+                  <Badge className={`${getPriorityColor(persona.priority)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.priority} Priority</Badge>
+                  <Badge className={`${getStatusColor(persona.status)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.status}</Badge>
+                  <Badge className={`${getInfluenceColor(persona.influence)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.influence}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="text-xs text-slate-600 mb-2 line-clamp-2">
+                    {persona.summary}
+                  </div>
+                  {/* Divider before metrics */}
+                  <div className="border-t border-slate-100 my-2"></div>
+                  {/* Metrics row */}
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="flex items-center"><Target className="w-3 h-3 text-blue-500 mr-1" />Pain Points: {(persona.painPoints || []).length}</span>
+                      <span className="flex items-center"><TrendingUp className="w-3 h-3 text-green-500 mr-1" />Goals</span>
+                    </div>
+                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">Created: {persona.created}</div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Enhanced Metrics Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Persona Overview */}
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-xl">👥</span>
+                <span className="text-base">Persona Overview</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { metric: 'Total Personas', value: filteredPersonas.length.toString(), icon: '👤' },
+                  { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' },
+                  { metric: 'Avg. Pain Points', value: '3.2', icon: '💡' },
+                  { metric: 'Engagement Rate', value: '87%', icon: '📈' }
+                ].map((item) => (
+                  <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-base">{item.icon}</span>
+                      <span className="text-xs font-medium text-slate-700">{item.metric}</span>
+                    </div>
+                    <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Segments */}
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-xl">🔀</span>
+                <span className="text-base">Market Segments</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="text-xs text-slate-700">
+                  Enterprise, Mid-Market, SMB segments
+                </div>
+                <Link to={`/workspace/${slug}/segments`}>
+                  <Button variant="outline" size="sm" className="w-full text-xs">
+                    <Building2 className="w-3 h-3 mr-2" />
+                    View All Segments
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Products */}
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-xl">📦</span>
+                <span className="text-base">Products</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="text-xs text-slate-700">
+                  {workspace.name} - Main product offering
+                </div>
+                <Link to={`/workspace/${slug}/products`}>
+                  <Button variant="outline" size="sm" className="w-full text-xs">
+                    <Building2 className="w-3 h-3 mr-2" />
+                    View All Products
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Add Persona Modal */}
+      <AddPersonaModal
+        open={addPersonaModalOpen}
+        onOpenChange={setAddPersonaModalOpen}
+        onSave={handleAddPersona}
+      />
     </div>
   );
 };
