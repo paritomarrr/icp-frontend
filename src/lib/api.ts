@@ -107,7 +107,7 @@ export interface SegmentData {
 }
 
 export const icpWizardApi = {
-  async generateSuggestions(currentStep: number, formData: StepData, companyName: string): Promise<StepResponse> {
+  async generateSuggestions(currentStepOrField: string, formData: StepData, companyName: string): Promise<StepResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/icp-wizard/generate-suggestions`, {
         method: 'POST',
@@ -116,7 +116,7 @@ export const icpWizardApi = {
           Authorization: `Bearer ${authService.getToken()}`,
         },
         body: JSON.stringify({
-          currentStep,
+          currentStepOrField,
           formData,
           companyName,
         }),

@@ -43,6 +43,20 @@ const CreateWorkspace = () => {
           companyUrl: formData.clientWebsite,
           creatorId: user.id,
           collaborators: [],
+          admin: { emailSignatures: [], platformAccess: false, domain: '' },
+          productUnderstanding: {
+            valueProposition: [],
+            problemsSolved: [],
+            keyFeatures: [],
+            solutionsOutcomes: [],
+            usps: [],
+            urgency: [],
+            competitorAnalysis: []
+          },
+          offerSales: { pricingPackages: [], clientTimelineROI: '', salesDeckUrl: '' },
+          socialProof: { caseStudies: [], testimonials: [] },
+          targetSegments: [],
+          previousOutboundExperience: { successfulEmailsOrDMs: [], coldCallScripts: [] }
         }),
       });
   
