@@ -118,7 +118,7 @@ export interface PersonaData {
   goals?: string[];
   responsibilities?: string[];
   challenges?: string[];
-  decisionInfluence?: 'Decision Maker' | 'Influencer' | 'User' | 'Gatekeeper';
+  decisionInfluence?: 'Decision Maker' | 'Champion' | 'End User';
   budget?: string;
   teamSize?: string;
   channels?: string[];

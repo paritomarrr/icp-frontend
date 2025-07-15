@@ -352,9 +352,15 @@ interface Testimonial {
 
 interface Persona {
   title: string;
+  jobTitles?: string[]; // Multiple job titles for the persona
   seniority: string;
+  department?: string;
+  decisionInfluence: 'Decision Maker' | 'Champion' | 'End User';
   primaryResponsibilities: string[];
+  okrs?: string[]; // Objectives and key results they're responsible for
   challenges: string[];
+  painPoints?: string[];
+  goals?: string[];
 }
 
 interface Segment {
@@ -752,6 +758,7 @@ const EnhancedICPWizard = () => {
             segment.personas.forEach((persona, pIndex) => {
               if (!persona.title.trim()) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Title is required`);
               if (!persona.seniority.trim()) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Seniority is required`);
+              if (!persona.decisionInfluence) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Decision influence is required`);
               if (!persona.primaryResponsibilities || persona.primaryResponsibilities.filter(r => r.trim()).length === 0) {
                 errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: At least one responsibility is required`);
               }

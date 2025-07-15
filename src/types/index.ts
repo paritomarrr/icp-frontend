@@ -59,17 +59,23 @@ export interface Persona {
   _id?: string;
   name: string;
   title?: string;
+  jobTitles?: string[]; // Multiple job titles for the persona
   department?: string;
   seniority?: string;
   industry?: string;
   company?: string;
   location?: string;
   description?: string;
+  mappedSegment?: string; // Which segment this persona belongs to
+  valueProposition?: string; // Role-specific value proposition
+  specificCTA?: string; // Specific call-to-action for this persona
+  primaryResponsibilities?: string[]; // Core duties within the company
+  okrs?: string[]; // Objectives and key results they're responsible for
   painPoints?: string[];
   goals?: string[];
   responsibilities?: string[];
   challenges?: string[];
-  decisionInfluence?: 'Decision Maker' | 'Influencer' | 'User' | 'Gatekeeper';
+  decisionInfluence?: 'Decision Maker' | 'Champion' | 'End User';
   budget?: string;
   teamSize?: string;
   channels?: string[];
@@ -112,6 +118,8 @@ export interface Segment {
   revenue?: string;
   geography?: string;
   employees?: string;
+  locations?: string[]; // Multiple locations
+  signals?: string[]; // Qualifying signals
   marketSize?: string;
   growthRate?: string;
   customerCount?: string;
@@ -128,14 +136,19 @@ export interface Segment {
     value: string;
   }>;
   benefits?: string;
-  awarenessLevel?: 'Problem' | 'Solution' | 'Product' | 'Brand';
+  specificBenefits?: string[]; // Specific benefits for this segment
+  awarenessLevel?: 'Unaware' | 'Problem Aware' | 'Solution Aware' | 'Product Aware' | 'Brand Aware';
+  ctaOptions?: string[]; // Call-to-action options
   priority?: 'high' | 'medium' | 'low';
   status?: 'active' | 'draft' | 'archived';
   qualification?: {
+    tier1Criteria?: string[]; // Tier 1 qualification criteria
     idealCriteria?: string[];
     lookalikeCompanies?: string[];
+    lookalikeCompaniesUrl?: string; // URL to lookalike companies
     disqualifyingCriteria?: string[];
   };
+  personas?: Persona[]; // Personas within this segment
   createdAt?: Date;
   updatedAt?: Date;
 }

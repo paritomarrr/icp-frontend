@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Loader2 } from "lucide-react";
 import { enhancedICPApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -343,8 +344,12 @@ const ArrayField = ({ values, onChange, placeholder }: {
 interface Persona {
   title: string;
   seniority: string;
+  decisionInfluence: 'Decision Maker' | 'Champion' | 'End User';
   primaryResponsibilities: string[];
+  okrs?: string[]; // Objectives and key results they're responsible for
   challenges: string[];
+  painPoints?: string[];
+  goals?: string[];
 }
 
 interface Segment {
@@ -353,6 +358,19 @@ interface Segment {
   companySize: string;
   geography: string;
   awarenessLevel: "Unaware" | "Problem Aware" | "Solution Aware" | "Product Aware" | "Brand Aware" | "";
+  // Firmographics
+  employees?: string;
+  locations?: string[];
+  signals?: string[];
+  // Benefits and CTAs
+  specificBenefits?: string[];
+  ctaOptions?: string[];
+  // Qualification
+  qualification?: {
+    tier1Criteria?: string[];
+    lookalikeCompaniesUrl?: string;
+    disqualifyingCriteria?: string[];
+  };
   personas?: Persona[];
 }
 
@@ -374,8 +392,12 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
     personas: [{
       title: "",
       seniority: "",
+      decisionInfluence: "Decision Maker" as const,
       primaryResponsibilities: [],
-      challenges: []
+      okrs: [],
+      challenges: [],
+      painPoints: [],
+      goals: []
     }]
   }];
 
@@ -394,8 +416,12 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
       personas: [{
         title: "",
         seniority: "",
+        decisionInfluence: "Decision Maker" as const,
         primaryResponsibilities: [],
-        challenges: []
+        okrs: [],
+        challenges: [],
+        painPoints: [],
+        goals: []
       }]
     };
     onUpdate([...currentSegments, newSegment]);
@@ -422,8 +448,12 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
         {
           title: "",
           seniority: "",
+          decisionInfluence: "Decision Maker" as const,
           primaryResponsibilities: [],
-          challenges: []
+          okrs: [],
+          challenges: [],
+          painPoints: [],
+          goals: []
         }
       ]
     };
@@ -531,6 +561,64 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
             </div>
           </div>
 
+          {/* Firmographics Section */}
+          <div className="space-y-4 border-t pt-4">
+            <h5 className="font-medium text-lg">Firmographics</h5>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Employee Count</label>
+                <InputFieldWithAI
+                  placeholder="e.g., 500-1000, 1000-5000"
+                  value={segment.employees || ''}
+                  onChange={(value) => updateSegment(segmentIndex, 'employees', value)}
+                  fieldType="segmentEmployees"
+                  domain={domain}
+                  cumulativeData={cumulativeData}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Locations</label>
+                <ArrayFieldWithAI
+                  values={segment.locations || []}
+                  onChange={(values) => updateSegment(segmentIndex, 'locations', values)}
+                  placeholder="e.g., New York, London, Singapore"
+                  fieldType="segmentLocations"
+                  domain={domain}
+                  cumulativeData={cumulativeData}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Signals (Qualifying/Outreach-relevant)</label>
+              <ArrayFieldWithAI
+                values={segment.signals || []}
+                onChange={(values) => updateSegment(segmentIndex, 'signals', values)}
+                placeholder="e.g., Recent funding, Tech stack changes, Job postings"
+                fieldType="segmentSignals"
+                domain={domain}
+                cumulativeData={cumulativeData}
+              />
+            </div>
+          </div>
+
+          {/* Specific Benefits Section */}
+          <div className="space-y-4 border-t pt-4">
+            <h5 className="font-medium text-lg">Specific Benefits for Segment</h5>
+            <div>
+              <label className="block text-sm font-medium mb-2">Specific Benefits/USPs</label>
+              <ArrayFieldWithAI
+                values={segment.specificBenefits || []}
+                onChange={(values) => updateSegment(segmentIndex, 'specificBenefits', values)}
+                placeholder="e.g., 30% faster deployment, Industry-specific compliance"
+                fieldType="segmentBenefits"
+                domain={domain}
+                cumulativeData={cumulativeData}
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-2">Awareness Level <span className="text-red-500">*</span></label>
             <select
@@ -545,6 +633,72 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
               <option value="Product Aware">Product Aware - Know your product exists</option>
               <option value="Brand Aware">Brand Aware - Familiar with your brand</option>
             </select>
+          </div>
+
+          {/* CTA Options Section */}
+          <div className="space-y-4 border-t pt-4">
+            <h5 className="font-medium text-lg">CTA Options</h5>
+            <div>
+              <label className="block text-sm font-medium mb-2">Call-to-Action Options (ranked by priority)</label>
+              <ArrayFieldWithAI
+                values={segment.ctaOptions || []}
+                onChange={(values) => updateSegment(segmentIndex, 'ctaOptions', values)}
+                placeholder="e.g., Book a demo, Free trial, Consultation call"
+                fieldType="segmentCTA"
+                domain={domain}
+                cumulativeData={cumulativeData}
+              />
+            </div>
+          </div>
+
+          {/* Qualification Section */}
+          <div className="space-y-4 border-t pt-4">
+            <h5 className="font-medium text-lg">Qualification</h5>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Tier 1 Criteria</label>
+              <ArrayFieldWithAI
+                values={segment.qualification?.tier1Criteria || []}
+                onChange={(values) => updateSegment(segmentIndex, 'qualification', { 
+                  ...segment.qualification, 
+                  tier1Criteria: values 
+                })}
+                placeholder="e.g., Budget above $100K, Decision maker access"
+                fieldType="segmentTier1Criteria"
+                domain={domain}
+                cumulativeData={cumulativeData}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Lookalike Companies URL</label>
+              <InputFieldWithAI
+                placeholder="e.g., URL to list of similar companies"
+                value={segment.qualification?.lookalikeCompaniesUrl || ''}
+                onChange={(value) => updateSegment(segmentIndex, 'qualification', { 
+                  ...segment.qualification, 
+                  lookalikeCompaniesUrl: value 
+                })}
+                fieldType="segmentLookalikeURL"
+                domain={domain}
+                cumulativeData={cumulativeData}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Disqualifying Criteria</label>
+              <ArrayFieldWithAI
+                values={segment.qualification?.disqualifyingCriteria || []}
+                onChange={(values) => updateSegment(segmentIndex, 'qualification', { 
+                  ...segment.qualification, 
+                  disqualifyingCriteria: values 
+                })}
+                placeholder="e.g., Budget below $50K, No decision authority"
+                fieldType="segmentDisqualifying"
+                domain={domain}
+                cumulativeData={cumulativeData}
+              />
+            </div>
           </div>
 
           {/* Always show personas section */}
@@ -596,6 +750,22 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                         cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Decision Influence <span className="text-red-500">*</span></label>
+                      <Select 
+                        value={persona.decisionInfluence} 
+                        onValueChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'decisionInfluence', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select decision influence level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Decision Maker">Decision Maker</SelectItem>
+                          <SelectItem value="Champion">Champion</SelectItem>
+                          <SelectItem value="End User">End User</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="mt-3">
@@ -607,6 +777,20 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'primaryResponsibilities', values)}
                       placeholder="e.g., Manage IT infrastructure and security"
                       fieldType="personaResponsibilities"
+                      domain={domain}
+                      cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium mb-2">
+                      OKRs (Objectives & Key Results)
+                    </label>
+                    <ArrayFieldWithAI
+                      values={persona.okrs || []}
+                      onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'okrs', values)}
+                      placeholder="e.g., Increase system uptime to 99.9%"
+                      fieldType="personaOKRs"
                       domain={domain}
                       cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
                     />

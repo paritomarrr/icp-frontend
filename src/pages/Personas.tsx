@@ -136,8 +136,8 @@ const Personas = () => {
   const getInfluenceColor = (influence: string) => {
     switch (influence) {
       case 'Decision Maker': return 'bg-purple-100 text-purple-800';
-      case 'Influencer': return 'bg-blue-100 text-blue-800';
-      case 'User': return 'bg-green-100 text-green-800';
+      case 'Champion': return 'bg-blue-100 text-blue-800';
+      case 'End User': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };

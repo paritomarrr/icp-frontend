@@ -18,12 +18,15 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
   const [formData, setFormData] = useState({
     name: '',
     title: '',
+    jobTitles: [''],
     department: '',
     seniority: '',
     industry: '',
     company: '',
     location: '',
     description: '',
+    primaryResponsibilities: [''],
+    okrs: [''],
     painPoints: [''],
     goals: [''],
     responsibilities: [''],
@@ -40,7 +43,7 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
   };
 
   const handleArrayChange = (field: string, index: number, value: string) => {
-    const arrayFields = ['painPoints', 'goals', 'responsibilities', 'challenges', 'channels', 'objections'];
+    const arrayFields = ['jobTitles', 'primaryResponsibilities', 'okrs', 'painPoints', 'goals', 'responsibilities', 'challenges', 'channels', 'objections'];
     if (arrayFields.includes(field)) {
       setFormData(prev => ({
         ...prev,
@@ -74,6 +77,9 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
   const handleSubmit = () => {
     const cleanedData = {
       ...formData,
+      jobTitles: formData.jobTitles.filter(j => j.trim() !== ''),
+      primaryResponsibilities: formData.primaryResponsibilities.filter(p => p.trim() !== ''),
+      okrs: formData.okrs.filter(o => o.trim() !== ''),
       painPoints: formData.painPoints.filter(p => p.trim() !== ''),
       goals: formData.goals.filter(g => g.trim() !== ''),
       responsibilities: formData.responsibilities.filter(r => r.trim() !== ''),
@@ -86,12 +92,15 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
     setFormData({
       name: '',
       title: '',
+      jobTitles: [''],
       department: '',
       seniority: '',
       industry: '',
       company: '',
       location: '',
       description: '',
+      primaryResponsibilities: [''],
+      okrs: [''],
       painPoints: [''],
       goals: [''],
       responsibilities: [''],
@@ -178,6 +187,8 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
               />
             </div>
 
+            {renderArrayField('jobTitles', 'Alternative Job Titles', 'Add alternative job title')}
+
             <div>
               <Label htmlFor="department">Department</Label>
               <Input
@@ -258,9 +269,8 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Decision Maker">Decision Maker</SelectItem>
-                  <SelectItem value="Influencer">Influencer</SelectItem>
-                  <SelectItem value="User">User</SelectItem>
-                  <SelectItem value="Gatekeeper">Gatekeeper</SelectItem>
+                  <SelectItem value="Champion">Champion</SelectItem>
+                  <SelectItem value="End User">End User</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -285,9 +295,13 @@ export const AddPersonaModal = ({ open, onOpenChange, onSave }: AddPersonaModalP
               />
             </div>
 
-            {renderArrayField('responsibilities', 'Responsibilities', 'Add a responsibility')}
+            {renderArrayField('primaryResponsibilities', 'Primary Responsibilities', 'Add a primary responsibility')}
+
+            {renderArrayField('okrs', 'OKRs (Objectives & Key Results)', 'Add an OKR')}
 
             {renderArrayField('painPoints', 'Pain Points', 'Add a pain point')}
+
+            {renderArrayField('responsibilities', 'Other Responsibilities', 'Add a responsibility')}
 
             {renderArrayField('goals', 'Goals', 'Add a goal')}
 

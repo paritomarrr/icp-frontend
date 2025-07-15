@@ -148,6 +148,11 @@ const SegmentDetails = () => {
     awarenessLevel: currentSegment.awarenessLevel || '',
     priority: currentSegment.priority || 'medium',
     status: currentSegment.status || 'active',
+    budget: (currentSegment as any).budget || '',
+    description: (currentSegment as any).description || `${currentSegment.name} - ${currentSegment.industry} segment`,
+    marketSize: (currentSegment as any).marketSize || 'Not specified',
+    growthRate: (currentSegment as any).growthRate || 'Not specified',
+    customerCount: (currentSegment as any).customerCount || 'Not specified',
     locations: (currentSegment as any).locations || [],
     characteristics: currentSegment.characteristics || [],
     industries: (currentSegment as any).industries || [],
@@ -168,18 +173,14 @@ const SegmentDetails = () => {
     personas: (currentSegment as any).personas || [],
     createdAt: (currentSegment as any).createdAt,
     updatedAt: (currentSegment as any).updatedAt,
-    // Add fields for display compatibility
-    description: `${currentSegment.name} - ${currentSegment.industry} segment`,
-    firmographics: [
-      { label: 'Industry', value: currentSegment.industry || 'N/A' },
-      { label: 'Company Size', value: currentSegment.companySize || 'N/A' },
-      { label: 'Geography', value: currentSegment.geography || 'N/A' },
-      { label: 'Awareness Level', value: currentSegment.awarenessLevel || 'N/A' }
-    ],
-    benefits: (currentSegment as any).specificBenefits?.join(', ') || 'Benefits not specified',
-    marketSize: 'Not specified',
-    growthRate: 'Not specified',
-    customerCount: 'Not specified'
+    // Firmographics object structure from backend
+    firmographics: (currentSegment as any).firmographics || {
+      industry: currentSegment.industry || '',
+      employees: currentSegment.companySize || '',
+      location: (currentSegment as any).geography ? [(currentSegment as any).geography] : [],
+      signals: (currentSegment as any).signals || []
+    },
+    benefits: (currentSegment as any).specificBenefits?.join(', ') || 'Benefits not specified'
   };
 
   const getPriorityColor = (priority: string) => {
@@ -244,35 +245,154 @@ const SegmentDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Firmographics */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <span>Firmographics</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Industry</p>
+                    <p className="text-sm text-gray-600">{segmentData.firmographics?.industry || segmentData.industry || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Company Size</p>
+                    <p className="text-sm text-gray-600">{segmentData.firmographics?.employees || segmentData.companySize || 'Not specified'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium text-gray-900 mb-1">Location</p>
+                    <p className="text-sm text-gray-600">
+                      {segmentData.firmographics?.location && segmentData.firmographics.location.length > 0 
+                        ? segmentData.firmographics.location.join(', ') 
+                        : segmentData.geography || 'Not specified'}
+                    </p>
+                  </div>
+                </div>
+                {segmentData.firmographics?.signals && segmentData.firmographics.signals.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-2">Qualifying Signals</p>
+                    <div className="space-y-2">
+                      {segmentData.firmographics.signals.map((signal: string, idx: number) => (
+                        <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                          <p className="text-sm text-gray-700 leading-relaxed">{signal}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Segment Overview */}
-            <Card className="shadow-sm border border-slate-200/60 bg-white">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center space-x-2 text-base font-medium">
-                  <Target className="w-4 h-4 text-blue-600" />
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Target className="w-5 h-5 text-blue-600" />
                   <span>Segment Overview</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-gray-700 leading-relaxed">
+                  {segmentData.description || 'No description available'}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Industry</p>
-                    <p className="text-sm text-slate-900">{segmentData.industry || 'Not specified'}</p>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Market Size</p>
+                    <p className="text-sm text-gray-600">{segmentData.marketSize || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Company Size</p>
-                    <p className="text-sm text-slate-900">{segmentData.companySize || 'Not specified'}</p>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Growth Rate</p>
+                    <p className="text-sm text-gray-600">{segmentData.growthRate || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Geography</p>
-                    <p className="text-sm text-slate-900">{segmentData.geography || 'Not specified'}</p>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Customer Count</p>
+                    <p className="text-sm text-gray-600">{segmentData.customerCount || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Awareness Level</p>
-                    <p className="text-sm text-slate-900">{segmentData.awarenessLevel || 'Not specified'}</p>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Awareness Level</p>
+                    <p className="text-sm text-gray-600">{segmentData.awarenessLevel || 'Not specified'}</p>
                   </div>
                 </div>
+                {segmentData.budget && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">Budget Range</p>
+                    <p className="text-sm text-gray-600">{segmentData.budget}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* CTA Options */}
+            {segmentData.ctaOptions && segmentData.ctaOptions.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-orange-600" />
+                    <span>CTA Options (Ranked by Priority)</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {segmentData.ctaOptions.map((cta: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                          {idx + 1}
+                        </div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{cta}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Buying Processes */}
+            {segmentData.buyingProcesses && segmentData.buyingProcesses.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Building2 className="w-5 h-5 text-indigo-600" />
+                    <span>Buying Processes</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {segmentData.buyingProcesses.map((process: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <div className="w-2 h-2 bg-indigo-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{process}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Technologies */}
+            {segmentData.technologies && segmentData.technologies.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Building2 className="w-5 h-5 text-gray-600" />
+                    <span>Technologies</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {segmentData.technologies.map((tech: string, idx: number) => (
+                      <div key={idx} className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg border">
+                        {tech}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Pain Points */}
             {segmentData.painPoints && segmentData.painPoints.length > 0 && (
@@ -364,6 +484,31 @@ const SegmentDetails = () => {
                       </div>
                     </div>
                   )}
+                  {segmentData.qualification.disqualifyingCriteria && segmentData.qualification.disqualifyingCriteria.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-2">Disqualifying Criteria</p>
+                      <div className="space-y-1">
+                        {segmentData.qualification.disqualifyingCriteria.map((criteria: string, idx: number) => (
+                          <div key={idx} className="text-sm text-slate-700 p-2 bg-red-50 rounded border border-red-200">
+                            • {criteria}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {segmentData.qualification.lookalikeCompaniesUrl && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-2">Lookalike Companies URL</p>
+                      <a 
+                        href={segmentData.qualification.lookalikeCompaniesUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm break-all"
+                      >
+                        {segmentData.qualification.lookalikeCompaniesUrl}
+                      </a>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -442,6 +587,53 @@ const SegmentDetails = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Additional Segment Data */}
+            {(segmentData.characteristics?.length > 0 || segmentData.industries?.length > 0 || segmentData.companySizes?.length > 0) && (
+              <Card className="shadow-sm border border-slate-200/60 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium">Additional Data</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {segmentData.characteristics?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-700 mb-2">Characteristics</p>
+                      <div className="flex flex-wrap gap-1">
+                        {segmentData.characteristics.map((char: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {char}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {segmentData.industries?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-700 mb-2">Industries</p>
+                      <div className="flex flex-wrap gap-1">
+                        {segmentData.industries.map((industry: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {industry}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {segmentData.companySizes?.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-700 mb-2">Company Sizes</p>
+                      <div className="flex flex-wrap gap-1">
+                        {segmentData.companySizes.map((size: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {size}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Segment Metadata */}
             <Card className="shadow-sm border border-slate-200/60 bg-white">

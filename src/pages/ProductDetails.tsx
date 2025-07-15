@@ -308,6 +308,26 @@ const ProductDetails = () => {
               </CardContent>
             </Card>
 
+            {/* Why Now */}
+            {displayData.whyNow?.length > 0 && (
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
+                    Why Now
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayData.whyNow.map((reason: string, idx: number) => (
+                      <div key={idx} className="p-3 bg-slate-50 rounded border">
+                        <p className="text-slate-700 text-xs">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Problems & Solutions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="border hover:border-blue-300 transition-colors">
@@ -352,6 +372,26 @@ const ProductDetails = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Benefits */}
+            {displayData.benefits?.length > 0 && (
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
+                    Benefits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayData.benefits.map((benefit: string, idx: number) => (
+                      <div key={idx} className="p-3 bg-green-50 rounded border border-green-200">
+                        <p className="text-slate-700 text-xs">{benefit}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Features & USPs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,18 +481,69 @@ const ProductDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {displayData.clientTimeline && (
-                      <div className="p-3 bg-slate-50 rounded border">
-                        <h4 className="text-xs font-medium text-slate-600 mb-1">Client Timeline:</h4>
-                        <p className="text-slate-700 text-xs">{displayData.clientTimeline}</p>
+                    {displayData.clientTimeline?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-slate-600 mb-2">Client Timeline:</h4>
+                        <div className="space-y-1">
+                          {displayData.clientTimeline.map((timeline: string, idx: number) => (
+                            <div key={idx} className="p-3 bg-slate-50 rounded border">
+                              <p className="text-slate-700 text-xs">{timeline}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {displayData.roiRequirements && (
-                      <div className="p-3 bg-slate-50 rounded border">
-                        <h4 className="text-xs font-medium text-slate-600 mb-1">ROI Requirements:</h4>
-                        <p className="text-slate-700 text-xs">{displayData.roiRequirements}</p>
+                    {displayData.roiRequirements?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-slate-600 mb-2">ROI Requirements:</h4>
+                        <div className="space-y-1">
+                          {displayData.roiRequirements.map((requirement: string, idx: number) => (
+                            <div key={idx} className="p-3 bg-slate-50 rounded border">
+                              <p className="text-slate-700 text-xs">{requirement}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Competitive Analysis & Differentiation */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
+                    Competitors
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayData.competitors?.length > 0 ? (
+                      displayData.competitors.map((competitor: string, idx: number) => (
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{competitor}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-slate-500 text-xs">No competitors specified</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
+                    Target Audience
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-3 bg-slate-50 rounded border">
+                    <p className="text-slate-700 text-xs">
+                      {displayData.targetAudience || 'Target audience not specified'}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -505,7 +596,7 @@ const ProductDetails = () => {
             </Card>
 
             {/* Sales Resources */}
-            {displayData.salesDeckUrl && (
+            {(displayData.salesDeckUrl || (displayData.salesDeckUrl && displayData.salesDeckUrl.length > 0)) && (
               <Card className="border hover:border-blue-300 transition-colors">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-slate-900">
@@ -513,20 +604,81 @@ const ProductDetails = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="p-3 bg-slate-50 rounded border">
-                    <h4 className="text-xs font-medium text-slate-600 mb-1">Sales Deck URL:</h4>
-                    <a 
-                      href={displayData.salesDeckUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-xs break-all"
-                    >
-                      {displayData.salesDeckUrl}
-                    </a>
+                  <div className="space-y-2">
+                    {Array.isArray(displayData.salesDeckUrl) ? (
+                      displayData.salesDeckUrl.map((url: string, idx: number) => (
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <h4 className="text-xs font-medium text-slate-600 mb-1">Sales Deck {idx + 1}:</h4>
+                          <a 
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-xs break-all"
+                          >
+                            {url}
+                          </a>
+                        </div>
+                      ))
+                    ) : displayData.salesDeckUrl ? (
+                      <div className="p-3 bg-slate-50 rounded border">
+                        <h4 className="text-xs font-medium text-slate-600 mb-1">Sales Deck:</h4>
+                        <a 
+                          href={displayData.salesDeckUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-xs break-all"
+                        >
+                          {displayData.salesDeckUrl}
+                        </a>
+                      </div>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* Product Metadata */}
+            <Card className="border hover:border-blue-300 transition-colors">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-900">
+                  Product Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {displayData.category && (
+                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                      <span className="text-xs font-medium text-slate-700">Category</span>
+                      <span className="text-xs text-slate-600">{displayData.category}</span>
+                    </div>
+                  )}
+                  {displayData.targetAudience && (
+                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                      <span className="text-xs font-medium text-slate-700">Target Audience</span>
+                      <span className="text-xs text-slate-600">{displayData.targetAudience}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                    <span className="text-xs font-medium text-slate-700">Priority</span>
+                    <Badge variant="outline" className="text-xs">{displayData.priority}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                    <span className="text-xs font-medium text-slate-700">Status</span>
+                    <Badge variant={displayData.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                      {displayData.status}
+                    </Badge>
+                  </div>
+                  {displayData.createdAt && (
+                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                      <span className="text-xs font-medium text-slate-700">Created</span>
+                      <span className="text-xs text-slate-600">
+                        {new Date((displayData.createdAt as any)?.$date || displayData.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Use Cases */}
             {displayData.useCases?.length > 0 && (
