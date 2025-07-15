@@ -3,18 +3,12 @@ import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Building2, Users, Target, TrendingUp, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal, ChevronRight, Sparkles, Briefcase, Award, CheckCircle } from 'lucide-react';
+import { Building2, Users, Target, Download, ChevronRight, Briefcase, Award, CheckCircle, Eye, Copy, ArrowRight } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
-import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
-import { EditSegmentModal } from '@/components/modals';
 
 const SegmentDetails = () => {
   const { slug, segmentId } = useParams();
@@ -24,11 +18,6 @@ const SegmentDetails = () => {
   const [icpData, setIcpData] = useState<ICPData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editedSegment, setEditedSegment] = useState<any>(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
   const { canEdit, canView, getUserRole } = usePermissions();
 
   useEffect(() => {
@@ -119,21 +108,11 @@ const SegmentDetails = () => {
     );
   }
 
-  // Get segments from the workspace data and ICP enrichment versions
-  const rootSegments = Array.isArray(icpData?.segments) ? icpData.segments : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const segmentsEnrichment = latestVersion && enrichmentData?.[latestVersion]?.segments || [];
+  // Get segments directly from MongoDB structure
+  const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
   
-  // Debug: Log segmentId and available segment IDs
-  console.log('segmentId from URL:', segmentId);
-  console.log('Available segment IDs:', rootSegments.map(s => typeof s._id === 'object' && s._id.$oid ? s._id.$oid : s._id));
-  // Find segment by _id instead of array index
-  const currentSegment = rootSegments.find((segment: any) => {
-    if (typeof segment === 'string') {
-      return false; // Skip string segments, we need object segments with _id
-    }
-    // Support both string and object _id (MongoDB $oid)
+  // Find segment by _id
+  const currentSegment = segments.find((segment: any) => {
     const segId = typeof segment._id === 'object' && segment._id.$oid ? segment._id.$oid : segment._id;
     return segId === segmentId;
   });
@@ -158,156 +137,49 @@ const SegmentDetails = () => {
     );
   }
 
-  // Handle both old string format and new object format
-  const segmentDesc = typeof currentSegment === 'string' ? currentSegment : currentSegment.name;
-  const currentSegmentData = typeof currentSegment === 'string' ? {} : currentSegment as any;
-  
-  // Extract meaningful segment name from description
-  let segmentName = currentSegmentData.name || `Segment ${segmentId}`;
-  
-  // If no name in segmentData, try to extract from description
-  if (!currentSegmentData.name && typeof segmentDesc === 'string') {
-    if (segmentDesc.includes('manufacturing')) {
-      segmentName = 'Enterprise Manufacturing';
-    } else if (segmentDesc.includes('engineering firms')) {
-      segmentName = 'Mid-size Engineering Firms';
-    } else if (segmentDesc.includes('construction')) {
-      segmentName = 'Construction & Infrastructure';
-    } else if (segmentDesc.includes('technology startups') || segmentDesc.includes('startups')) {
-      segmentName = 'Technology Startups';
-    } else {
-      // Extract the first part before any size/region descriptors
-      const match = segmentDesc.match(/^([^(]+)/);
-      if (match) {
-        segmentName = match[1].trim();
-        // Clean up common prefixes
-        segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
-      }
-    }
-  }
-
-  // Try to find matching enrichment data
-  const enrichmentMatch = segmentsEnrichment.find((s: any) => 
-    s.name && (segmentDesc.toLowerCase().includes(s.name.toLowerCase()) ||
-               s.name.toLowerCase().includes(segmentName.toLowerCase()))
-  );
-
-  // Transform segment data for display
+  // Use segment data directly from MongoDB structure
   const segmentData = {
-    id: currentSegmentData._id || segmentId,
-    name: enrichmentMatch?.name || segmentName,
-    description: currentSegmentData.description || segmentDesc,
-    firmographics: currentSegmentData.firmographics || [
-      { label: 'Size', value: enrichmentMatch?.size || currentSegmentData.size || '100-500 employees' },
-      { label: 'Region', value: enrichmentMatch?.region || currentSegmentData.region || 'Global' },
-      { label: 'Budget', value: enrichmentMatch?.budget || currentSegmentData.budget || '$200K-500K' },
-      { label: 'Focus', value: enrichmentMatch?.focus || currentSegmentData.focus || 'Growth' },
-      { label: 'Employees', value: currentSegmentData.employees || '50 - 500 employees' }
-    ],
-    benefits: currentSegmentData.benefits || `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
-    awarenessLevel: currentSegmentData.awarenessLevel || 'Solution',
-    priority: currentSegmentData.priority || 'Medium',
-    status: currentSegmentData.status || 'active',
-    marketSize: enhancedData?.marketSize || currentSegmentData.marketSize || '$500M - $2B',
-    growthRate: enhancedData?.growthRate || currentSegmentData.growthRate || '12% YoY',
-    qualification: currentSegmentData.qualification || {
-      idealCriteria: enhancedData?.qualification?.idealCriteria || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
-      lookalikeCompanies: enhancedData?.qualification?.lookalikeCompanies || ['salesforce.com', 'hubspot.com', 'slack.com'],
-      disqualifyingCriteria: enhancedData?.qualification?.disqualifyingCriteria || ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
+    _id: currentSegment._id,
+    id: currentSegment._id?.toString() || segmentId,
+    name: currentSegment.name || 'Unnamed Segment',
+    industry: currentSegment.industry || '',
+    companySize: currentSegment.companySize || '',
+    geography: currentSegment.geography || '',
+    awarenessLevel: currentSegment.awarenessLevel || '',
+    priority: currentSegment.priority || 'medium',
+    status: currentSegment.status || 'active',
+    locations: (currentSegment as any).locations || [],
+    characteristics: currentSegment.characteristics || [],
+    industries: (currentSegment as any).industries || [],
+    companySizes: (currentSegment as any).companySizes || [],
+    technologies: (currentSegment as any).technologies || [],
+    qualificationCriteria: (currentSegment as any).qualificationCriteria || [],
+    signals: (currentSegment as any).signals || [],
+    painPoints: currentSegment.painPoints || [],
+    buyingProcesses: (currentSegment as any).buyingProcesses || [],
+    specificBenefits: (currentSegment as any).specificBenefits || [],
+    ctaOptions: (currentSegment as any).ctaOptions || [],
+    qualification: (currentSegment as any).qualification || {
+      tier1Criteria: [],
+      idealCriteria: [],
+      lookalikeCompanies: [],
+      disqualifyingCriteria: []
     },
-    size: currentSegmentData.size || '',
-    region: currentSegmentData.region || '',
-    budget: currentSegmentData.budget || '',
-    focus: currentSegmentData.focus || '',
-    industry: currentSegmentData.industry || '',
-    companySize: currentSegmentData.companySize || '',
-    revenue: currentSegmentData.revenue || '',
-    geography: currentSegmentData.geography || '',
-    employees: currentSegmentData.employees || '',
-    customerCount: currentSegmentData.customerCount || '',
-    competitiveIntensity: currentSegmentData.competitiveIntensity || '',
-    characteristics: currentSegmentData.characteristics || [],
-    industries: currentSegmentData.industries || [],
-    companySizes: currentSegmentData.companySizes || [],
-    technologies: currentSegmentData.technologies || [],
-    qualificationCriteria: currentSegmentData.qualificationCriteria || [],
-    painPoints: currentSegmentData.painPoints || [],
-    buyingProcesses: currentSegmentData.buyingProcesses || []
-  };
-
-  // Function to enhance segment with Claude AI
-  const enhanceSegmentWithAI = async () => {
-    if (!icpData) return;
-    
-    setIsEnhancing(true);
-    const companyData = {
-      companyName: icpData.companyName || workspace?.companyName,
-      products: icpData.products,
-      companyUrl: icpData.companyUrl || workspace?.companyUrl
-    };
-
-    try {
-      console.log(`Enhancing segment: ${segmentDesc}`);
-      const result = await icpWizardApi.generateSegmentDetails(segmentDesc, companyData);
-      
-      if (result.success && result.data) {
-        setEnhancedData(result.data);
-        console.log('Enhanced segment data:', result.data);
-      }
-    } catch (error) {
-      console.error('Error enhancing segment:', error);
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
-  const handleEdit = () => {
-    setEditedSegment({ ...segmentData });
-    setEditDialogOpen(true);
-  };
-
-  const handleSave = async (updatedSegmentData: any) => {
-    if (!icpData || !workspace || !segmentData || !slug) return;
-    
-    try {
-      // Call the API to update the segment
-      const response = await icpWizardApi.updateSegment(slug, segmentData.id.toString(), updatedSegmentData);
-      
-      if (response.success && response.segment) {
-        // Update local state
-        const updatedICPData = {
-          ...icpData,
-          segments: icpData.segments.map((s: any) => 
-            s.id === segmentData.id ? response.segment : s
-          )
-        };
-        
-        setIcpData(updatedICPData);
-        storageService.saveICPData(updatedICPData);
-        setEditDialogOpen(false);
-        setIsEditing(false);
-        
-        // Show success message (you can add a toast here)
-        console.log('Segment updated successfully');
-      } else {
-        throw new Error(response.error || 'Failed to update segment');
-      }
-    } catch (error) {
-      console.error('Error saving segment:', error);
-      // Show error message (you can add a toast here)
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this segment?')) return;
-    
-    try {
-      // Here you would typically delete from backend
-      console.log('Deleting segment:', segmentData.name);
-      navigate(`/workspace/${slug}/segments`);
-    } catch (error) {
-      console.error('Error deleting segment:', error);
-    }
+    personas: (currentSegment as any).personas || [],
+    createdAt: (currentSegment as any).createdAt,
+    updatedAt: (currentSegment as any).updatedAt,
+    // Add fields for display compatibility
+    description: `${currentSegment.name} - ${currentSegment.industry} segment`,
+    firmographics: [
+      { label: 'Industry', value: currentSegment.industry || 'N/A' },
+      { label: 'Company Size', value: currentSegment.companySize || 'N/A' },
+      { label: 'Geography', value: currentSegment.geography || 'N/A' },
+      { label: 'Awareness Level', value: currentSegment.awarenessLevel || 'N/A' }
+    ],
+    benefits: (currentSegment as any).specificBenefits?.join(', ') || 'Benefits not specified',
+    marketSize: 'Not specified',
+    growthRate: 'Not specified',
+    customerCount: 'Not specified'
   };
 
   const getPriorityColor = (priority: string) => {
@@ -344,7 +216,7 @@ const SegmentDetails = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-semibold text-slate-800">{segmentData.name}</h1>
-            <p className="text-sm text-slate-600 mt-1">Segment Details & Messaging</p>
+            <p className="text-sm text-slate-600 mt-1">Segment Details & Information</p>
           </div>
           <div className="flex items-center space-x-3">
             {getUserRole() && (
@@ -356,7 +228,6 @@ const SegmentDetails = () => {
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-            {/* Add Enhance with AI, Edit, Delete as needed */}
           </div>
         </div>
 
@@ -489,11 +360,49 @@ const SegmentDetails = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {segmentData.characteristics?.map((char: string, idx: number) => (
+                  {segmentData.characteristics?.length > 0 ? segmentData.characteristics.map((char: string, idx: number) => (
                     <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
                       • {char}
                     </div>
-                  )) || <div className="text-xs text-slate-500">No characteristics defined</div>}
+                  )) : <div className="text-xs text-slate-500">No characteristics defined</div>}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Personas in this Segment */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <Users className="w-4 h-4 text-purple-600" />
+                  <span>Personas ({segmentData.personas?.length || 0})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {segmentData.personas?.length > 0 ? segmentData.personas.map((persona: any, idx: number) => (
+                    <Button
+                      key={persona._id || idx}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-between text-xs h-auto py-3"
+                      onClick={() => navigate(`/workspace/${slug}/personas/${persona._id?.$oid || persona._id}`)}
+                    >
+                      <div className="flex flex-col items-start">
+                        <div className="font-semibold text-slate-800">{persona.name}</div>
+                        <div className="text-slate-600">{persona.title} • {persona.seniority}</div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge className="text-xs bg-purple-100 text-purple-800">
+                          {persona.decisionInfluence}
+                        </Badge>
+                        <ArrowRight className="w-3 h-3 text-slate-400" />
+                      </div>
+                    </Button>
+                  )) : (
+                    <div className="text-xs text-slate-500 text-center py-4">
+                      No personas defined for this segment
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -579,14 +488,6 @@ const SegmentDetails = () => {
           </div>
         </div>
       </div>
-
-      {/* Edit Segment Modal */}
-      <EditSegmentModal
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSave={handleSave}
-        segmentData={editedSegment}
-      />
     </div>
   );
 };

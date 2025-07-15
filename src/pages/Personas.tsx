@@ -57,52 +57,53 @@ const Personas = () => {
     return <Navigate to="/login" />;
   }
 
-  // Get personas from the workspace data and ICP enrichment versions
+  // Get personas from the workspace data - include both root personas and personas within segments
   const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
+  const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
   
-  console.log('Personas - Root personas:', rootPersonas);
-  console.log('Personas - Enrichment data:', personasTable);
+  // Collect all personas from segments
+  const segmentPersonas: any[] = [];
+  segments.forEach((segment: any) => {
+    if (segment.personas && Array.isArray(segment.personas)) {
+      // Add segment info to each persona to identify which segment they belong to
+      const personasWithSegment = segment.personas.map((persona: any) => ({
+        ...persona,
+        segmentName: segment.name,
+        segmentId: segment._id
+      }));
+      segmentPersonas.push(...personasWithSegment);
+    }
+  });
   
-  // Transform the personas array into the expected format
-  const allPersonas = rootPersonas.map((persona: any, index: number) => {
-    // Handle both old string format and new object format
-    const personaDesc = typeof persona === 'string' ? persona : persona.name;
-    const personaData = typeof persona === 'string' ? {} : persona;
-    
-    // Extract title from the persona description (everything before the first '-')
-    const titleMatch = personaDesc.match(/^([^-]+)/);
-    const title = titleMatch ? titleMatch[1].trim() : personaData.title || `Persona ${index + 1}`;
-    
-    // Try to find matching enrichment data
-    const enrichmentMatch = personasTable.find((p: any) => 
-      p.title && title.toLowerCase().includes(p.title.toLowerCase())
-    );
-    
+  // Combine all personas
+  const allPersonasRaw = [...rootPersonas, ...segmentPersonas];
+  
+  // Transform the personas array into the expected format using MongoDB structure
+  const allPersonas = allPersonasRaw.map((persona: any, index: number) => {
     return {
-      id: personaData._id || index + 1,
-      title: title,
-      summary: personaDesc,
-      created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
-      status: personaData.status || 'active',
-      priority: personaData.priority || (enrichmentMatch ? 'high' : 'medium'),
-      influence: personaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
-      painPoints: personaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
-      goals: personaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
-      department: personaData.department || '',
-      seniority: personaData.seniority || '',
-      industry: personaData.industry || '',
-      company: personaData.company || '',
-      location: personaData.location || '',
-      description: personaData.description || '',
-      budget: personaData.budget || '',
-      teamSize: personaData.teamSize || '',
-      channels: personaData.channels || [],
-      objections: personaData.objections || [],
-      responsibilities: personaData.responsibilities || [],
-      challenges: personaData.challenges || []
+      id: persona._id?.$oid || persona._id || index + 1,
+      title: persona.name || persona.title || `Persona ${index + 1}`,
+      summary: `${persona.name || 'Unknown Name'} - ${persona.title || 'Unknown Title'}${persona.segmentName ? ` (${persona.segmentName} segment)` : ''}`,
+      created: persona.createdAt ? new Date(persona.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+      status: persona.status || 'active',
+      priority: persona.priority || 'medium',
+      influence: persona.decisionInfluence || 'Decision Maker',
+      painPoints: persona.painPoints || [],
+      goals: persona.goals || [],
+      department: '',
+      seniority: persona.seniority || '',
+      industry: '',
+      company: '',
+      location: '',
+      description: `${persona.name} - ${persona.title}`,
+      budget: '',
+      teamSize: '',
+      channels: persona.channels || [],
+      objections: persona.objections || [],
+      responsibilities: persona.primaryResponsibilities || persona.responsibilities || [],
+      challenges: persona.challenges || [],
+      segmentName: persona.segmentName || '',
+      segmentId: persona.segmentId || ''
     };
   });
 

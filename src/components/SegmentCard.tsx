@@ -66,19 +66,26 @@ const SegmentCard: React.FC<SegmentCardProps> = ({ segment }) => {
       <CardContent className="pt-0">
         <div className="space-y-3">
           <div className="text-xs text-slate-600 line-clamp-2">
-            {segment.description || 'Segment description and overview'}
+            {/* Show basic segment info */}
+            <div className="space-y-1">
+              {segment.industry && <div><span className="font-medium">Industry:</span> {segment.industry}</div>}
+              {segment.companySize && <div><span className="font-medium">Company Size:</span> {segment.companySize}</div>}
+              {segment.geography && <div><span className="font-medium">Geography:</span> {segment.geography}</div>}
+            </div>
           </div>
+          
           {/* Key Metrics */}
           <div className="grid grid-cols-2 gap-2">
             <div className="text-center p-2 bg-slate-50 rounded">
-              <div className="text-xs text-slate-500 mb-1">Market Size</div>
-              <div className="text-xs font-semibold text-slate-800">{segment.marketSize}</div>
+              <div className="text-xs text-slate-500 mb-1">Awareness Level</div>
+              <div className="text-xs font-semibold text-slate-800">{segment.awarenessLevel || 'N/A'}</div>
             </div>
             <div className="text-center p-2 bg-slate-50 rounded">
-              <div className="text-xs text-slate-500 mb-1">Growth Rate</div>
-              <div className="text-xs font-semibold text-slate-800">{segment.growthRate}</div>
+              <div className="text-xs text-slate-500 mb-1">Personas</div>
+              <div className="text-xs font-semibold text-slate-800">{segment.personas?.length || 0}</div>
             </div>
           </div>
+          
           {/* Firmographics */}
           <div className="space-y-2">
             <div className="text-xs font-medium text-slate-700">Key Characteristics</div>
@@ -95,8 +102,9 @@ const SegmentCard: React.FC<SegmentCardProps> = ({ segment }) => {
               )}
             </div>
           </div>
+          
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Qualification Criteria: {segment.qualification?.idealCriteria?.length || 0}</span>
+            <span>Qualification Criteria: {segment.qualification?.tier1Criteria?.length || 0}</span>
             <ArrowRight className="w-3 h-3 text-slate-400" />
           </div>
         </div>

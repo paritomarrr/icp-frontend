@@ -119,18 +119,28 @@ const PersonaDetails = () => {
     );
   }
 
-  // Get personas from the workspace data and ICP enrichment versions
+  // Get personas from the workspace data - check both root personas and personas within segments
   const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
+  const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
   
-  // Find persona by _id instead of array index
-  const currentPersona = rootPersonas.find((persona: any) => {
+  // Collect all personas from segments
+  const segmentPersonas: any[] = [];
+  segments.forEach((segment: any) => {
+    if (segment.personas && Array.isArray(segment.personas)) {
+      segmentPersonas.push(...segment.personas);
+    }
+  });
+  
+  // Combine all personas
+  const allPersonas = [...rootPersonas, ...segmentPersonas];
+  
+  // Find persona by _id
+  const currentPersona = allPersonas.find((persona: any) => {
     if (typeof persona === 'string') {
       return false; // Skip string personas, we need object personas with _id
     }
-    return persona._id === personaId;
+    const personaIdToMatch = typeof persona._id === 'object' && persona._id.$oid ? persona._id.$oid : persona._id;
+    return personaIdToMatch === personaId;
   });
 
   if (!currentPersona) {
@@ -154,63 +164,56 @@ const PersonaDetails = () => {
   }
 
   // Handle both old string format and new object format
-  const personaDesc = typeof currentPersona === 'string' ? currentPersona : currentPersona.name;
-  const currentPersonaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
+  const personaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
   
-  // Extract title from the persona description (everything before the first '-')
-  const titleMatch = personaDesc.match(/^([^-]+)/);
-  const title = titleMatch ? titleMatch[1].trim() : currentPersonaData.title || `Persona ${personaId}`;
-  
-  // Try to find matching enrichment data
-  const enrichmentMatch = personasTable.find((p: any) => 
-    p.title && title.toLowerCase().includes(p.title.toLowerCase())
-  );
-  
-  const personaData = {
-    id: currentPersonaData._id || personaId,
-    name: title,
-    title: title,
-    description: currentPersonaData.description || personaDesc,
-    summary: currentPersonaData.description || personaDesc,
-    company: currentPersonaData.company || icpData?.companyName || 'Your Company',
-    industry: currentPersonaData.industry || 'Technology',
-    role: enrichmentMatch?.title || title,
-    department: currentPersonaData.department || 'Leadership',
-    seniority: currentPersonaData.seniority || 'Senior',
+  // Use persona data directly from MongoDB structure
+  const displayPersona = {
+    id: currentPersona._id || personaId,
+    name: personaData.name || 'Unnamed Persona',
+    title: personaData.title || 'Unknown Title',
+    description: `${personaData.name} - ${personaData.title}`,
+    summary: `${personaData.name} - ${personaData.title}`,
+    company: icpData?.companyName || 'Your Company',
+    industry: 'Technology',
+    role: personaData.title || 'Unknown Role',
+    department: 'Leadership',
+    seniority: personaData.seniority || 'Senior',
     reportingStructure: 'C-Level',
-    location: currentPersonaData.location || 'Global',
-    teamSize: currentPersonaData.teamSize || '10-50',
-    budget: currentPersonaData.budget || '$500K-2M',
-    decisionInfluence: currentPersonaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
-    influence: currentPersonaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
-    painPoints: enhancedData?.painPoints || currentPersonaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
-    goals: enhancedData?.goals || currentPersonaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
-    triggers: enhancedData?.triggers || currentPersonaData.triggers || enrichmentMatch?.triggers || ['Budget planning', 'Performance reviews', 'Strategic initiatives'],
-    channels: currentPersonaData.channels || ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
-    objections: enhancedData?.objections || currentPersonaData.objections || ['Budget constraints', 'Change resistance', 'ROI concerns'],
-    messaging: enhancedData?.messaging || currentPersonaData.messaging || `Tailored messaging for ${title} focused on business value and strategic outcomes`,
-    responsibilities: enhancedData?.responsibilities || currentPersonaData.responsibilities || ['Strategic planning', 'Budget allocation', 'Team leadership', 'Performance management'],
-    challenges: enhancedData?.challenges || currentPersonaData.challenges || ['Limited resources', 'Time constraints', 'Complex decision-making', 'Stakeholder alignment'],
-    created: currentPersonaData.createdAt ? new Date(currentPersonaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
-    status: currentPersonaData.status || 'active',
-    priority: currentPersonaData.priority || (enrichmentMatch ? 'high' : 'medium'),
-    contactInfo: currentPersonaData.contactInfo || {
+    location: 'Global',
+    teamSize: '10-50',
+    budget: '$500K-2M',
+    decisionInfluence: personaData.decisionInfluence || 'Decision Maker',
+    influence: personaData.decisionInfluence || 'Decision Maker',
+    painPoints: personaData.painPoints || [],
+    goals: personaData.goals || [],
+    triggers: personaData.triggers || [],
+    channels: personaData.channels || ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
+    objections: personaData.objections || [],
+    messaging: `Tailored messaging for ${personaData.title} focused on business value and strategic outcomes`,
+    responsibilities: personaData.primaryResponsibilities || personaData.responsibilities || [],
+    challenges: personaData.challenges || [],
+    created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+    status: personaData.status || 'active',
+    priority: personaData.priority || 'medium',
+    contactInfo: {
       email: 'persona@company.com',
       phone: '+1 (555) 123-4567',
       linkedin: 'linkedin.com/in/persona',
       location: 'Global'
     },
-    demographics: currentPersonaData.demographics || {
+    demographics: {
       age: '35-50',
       experience: '10+ years',
       education: 'MBA or equivalent',
       industry: 'Technology'
     },
-    buyingBehavior: currentPersonaData.buyingBehavior || {
+    buyingBehavior: personaData.buyingBehavior || {
       researchTime: '3-6 months',
-      decisionFactors: enhancedData?.decisionFactors || ['ROI', 'Ease of implementation', 'Vendor reputation'],
+      decisionFactors: ['ROI', 'Ease of implementation', 'Vendor reputation'],
       preferredChannels: ['LinkedIn', 'Industry events', 'Peer recommendations']
-    }
+    },
+    jobTitles: personaData.jobTitles || [],
+    okrs: personaData.okrs || []
   };
 
   // Function to enhance persona with Claude AI
@@ -225,8 +228,8 @@ const PersonaDetails = () => {
     };
 
     try {
-      console.log(`Enhancing persona: ${title}`);
-      const result = await icpWizardApi.generatePersonaDetails(title, companyData);
+      console.log(`Enhancing persona: ${displayPersona.name}`);
+      const result = await icpWizardApi.generatePersonaDetails(displayPersona.name, companyData);
       
       if (result.success && result.data) {
         setEnhancedData(result.data);
@@ -418,10 +421,10 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(personaData.demographics).map(([key, value]) => (
+                    {Object.entries(displayPersona.demographics).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center p-2 bg-slate-50 rounded">
                         <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
-                        <span className="text-xs text-slate-600">{value}</span>
+                        <span className="text-xs text-slate-600">{String(value)}</span>
                       </div>
                     ))}
                   </div>
@@ -437,14 +440,14 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(personaData.contactInfo).map(([key, value]) => (
+                    {Object.entries(displayPersona.contactInfo).map(([key, value]) => (
                       <div key={key} className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
                         {key === 'email' && <Mail className="w-3 h-3 text-slate-500" />}
                         {key === 'phone' && <Phone className="w-3 h-3 text-slate-500" />}
                         {key === 'linkedin' && <Linkedin className="w-3 h-3 text-slate-500" />}
                         {key === 'location' && <MapPin className="w-3 h-3 text-slate-500" />}
                         <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
-                        <span className="text-xs text-slate-600 ml-auto">{value}</span>
+                        <span className="text-xs text-slate-600 ml-auto">{String(value)}</span>
                       </div>
                     ))}
                   </div>
