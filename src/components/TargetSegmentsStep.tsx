@@ -1,9 +1,283 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
+import { enhancedICPApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-// Array field component for managing lists
+// Enhanced Array field component with AI suggestions
+const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cumulativeData }: {
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder?: string;
+  fieldType: string;
+  domain: string;
+  cumulativeData: any;
+}) => {
+  const [inputValue, setInputValue] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const { toast } = useToast();
+
+  const addItem = () => {
+    if (inputValue.trim() && !values.includes(inputValue.trim())) {
+      onChange([...values, inputValue.trim()]);
+      setInputValue("");
+    }
+  };
+
+  const removeItem = (index: number) => {
+    onChange(values.filter((_, i) => i !== index));
+  };
+
+  const generateSuggestions = async () => {
+    if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
+
+    setIsLoadingSuggestions(true);
+    setHasFetched(true);
+    try {
+      const result = await enhancedICPApi.generateProductFieldSuggestions(fieldType, domain, cumulativeData);
+      
+      if (result.success) {
+        let processedSuggestions = result.suggestions;
+        
+        // If suggestions is a string that looks like a JSON array, parse it
+        if (typeof processedSuggestions === 'string') {
+          try {
+            // First try to parse as JSON
+            const parsed = JSON.parse(processedSuggestions);
+            processedSuggestions = Array.isArray(parsed) ? parsed : [processedSuggestions];
+          } catch (parseError) {
+            // If it's not valid JSON, check if it looks like an array string
+            if (processedSuggestions.startsWith('[') && processedSuggestions.endsWith(']')) {
+              try {
+                // Try to fix common JSON issues and parse again
+                const fixedJson = processedSuggestions
+                  .replace(/'/g, '"') // Replace single quotes with double quotes
+                  .replace(/"/g, '"') // Replace smart quotes
+                  .replace(/"/g, '"');
+                const parsed = JSON.parse(fixedJson);
+                processedSuggestions = Array.isArray(parsed) ? parsed : [processedSuggestions];
+              } catch (secondParseError) {
+                // If still fails, treat as single suggestion
+                processedSuggestions = [processedSuggestions];
+              }
+            } else {
+              // If it's not an array-like string, treat as single suggestion
+              processedSuggestions = [processedSuggestions];
+            }
+          }
+        }
+        
+        // Ensure we have an array and filter out empty items
+        const finalSuggestions = Array.isArray(processedSuggestions) 
+          ? processedSuggestions.filter(s => s && s.trim()) 
+          : [processedSuggestions].filter(s => s && s.trim());
+          
+        setSuggestions(finalSuggestions);
+      } else {
+        console.warn('Failed to generate suggestions:', result.error);
+      }
+    } catch (error) {
+      console.warn('AI suggestions error:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
+      generateSuggestions();
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    if (!values.includes(suggestion.trim())) {
+      onChange([...values, suggestion.trim()]);
+      setSuggestions(prev => prev.filter(s => s !== suggestion));
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* AI Suggestions */}
+      {isLoadingSuggestions && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="flex items-center text-sm text-blue-800">
+            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            Generating AI suggestions...
+          </div>
+        </div>
+      )}
+      
+      {suggestions.length > 0 && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-sm font-medium text-blue-800 mb-2">AI Suggestions:</div>
+          <div className="space-y-1">
+            {suggestions.map((suggestion, index) => (
+              <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                <span className="text-sm text-gray-700 flex-1">{suggestion}</span>
+                <Button
+                  onClick={() => applySuggestion(suggestion)}
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs"
+                >
+                  Use This
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder={placeholder}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addItem();
+            }
+          }}
+          onFocus={handleInputFocus}
+          className="flex-1"
+        />
+        <Button 
+          type="button" 
+          onClick={addItem} 
+          disabled={!inputValue.trim()}
+          className="bg-black text-white hover:bg-gray-800"
+        >
+          Add
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {values.map((item, index) => (
+          <span key={index} className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+            {item}
+            <button
+              onClick={() => removeItem(index)}
+              className="ml-1 text-red-500 hover:text-red-700"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Input field component with AI suggestions
+const InputFieldWithAI = ({ value, onChange, placeholder, fieldType, domain, cumulativeData, label }: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  fieldType: string;
+  domain: string;
+  cumulativeData: any;
+  label?: string;
+}) => {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const { toast } = useToast();
+
+  const generateSuggestions = async () => {
+    if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
+
+    setIsLoadingSuggestions(true);
+    setHasFetched(true);
+    try {
+      const result = await enhancedICPApi.generateProductFieldSuggestions(fieldType, domain, cumulativeData);
+      
+      if (result.success) {
+        let processedSuggestions = result.suggestions;
+        
+        // If suggestions is a string that looks like a JSON array, parse it
+        if (typeof processedSuggestions === 'string') {
+          try {
+            const parsed = JSON.parse(processedSuggestions);
+            processedSuggestions = Array.isArray(parsed) ? parsed : [processedSuggestions];
+          } catch (parseError) {
+            processedSuggestions = [processedSuggestions];
+          }
+        }
+        
+        const finalSuggestions = Array.isArray(processedSuggestions) 
+          ? processedSuggestions.filter(s => s && s.trim()) 
+          : [processedSuggestions].filter(s => s && s.trim());
+          
+        setSuggestions(finalSuggestions);
+      } else {
+        console.warn('Failed to generate suggestions:', result.error);
+      }
+    } catch (error) {
+      console.warn('AI suggestions error:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
+      generateSuggestions();
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    onChange(suggestion);
+    setSuggestions([]);
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* AI Suggestions */}
+      {isLoadingSuggestions && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="flex items-center text-sm text-blue-800">
+            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            Generating AI suggestions...
+          </div>
+        </div>
+      )}
+      
+      {suggestions.length > 0 && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-sm font-medium text-blue-800 mb-2">AI Suggestions:</div>
+          <div className="space-y-1">
+            {suggestions.map((suggestion, index) => (
+              <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                <span className="text-sm text-gray-700 flex-1">{suggestion}</span>
+                <Button
+                  onClick={() => applySuggestion(suggestion)}
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs"
+                >
+                  Use This
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        onFocus={handleInputFocus}
+      />
+    </div>
+  );
+};
+
+// Array field component for managing lists (without AI)
 const ArrayField = ({ values, onChange, placeholder }: {
   values: string[];
   onChange: (values: string[]) => void;
@@ -85,9 +359,11 @@ interface Segment {
 interface TargetSegmentsStepProps {
   segments: Segment[];
   onUpdate: (segments: Segment[]) => void;
+  domain: string;
+  cumulativeData: any;
 }
 
-export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegmentsStepProps) {
+export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulativeData }: TargetSegmentsStepProps) {
   // Initialize with one segment if none exist
   const currentSegments = segments.length > 0 ? segments : [{
     name: "",
@@ -208,18 +484,24 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Segment Name <span className="text-red-500">*</span></label>
-              <Input
+              <InputFieldWithAI
                 placeholder="e.g., Enterprise Manufacturing Companies"
                 value={segment.name}
-                onChange={(e) => updateSegment(segmentIndex, 'name', e.target.value)}
+                onChange={(value) => updateSegment(segmentIndex, 'name', value)}
+                fieldType="segmentName"
+                domain={domain}
+                cumulativeData={cumulativeData}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Industry <span className="text-red-500">*</span></label>
-              <Input
+              <InputFieldWithAI
                 placeholder="e.g., Manufacturing, Healthcare, SaaS"
                 value={segment.industry}
-                onChange={(e) => updateSegment(segmentIndex, 'industry', e.target.value)}
+                onChange={(value) => updateSegment(segmentIndex, 'industry', value)}
+                fieldType="segmentIndustry"
+                domain={domain}
+                cumulativeData={cumulativeData}
               />
             </div>
           </div>
@@ -227,18 +509,24 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Company Size <span className="text-red-500">*</span></label>
-              <Input
+              <InputFieldWithAI
                 placeholder="e.g., 500-2000 employees, $50M-$200M revenue"
                 value={segment.companySize}
-                onChange={(e) => updateSegment(segmentIndex, 'companySize', e.target.value)}
+                onChange={(value) => updateSegment(segmentIndex, 'companySize', value)}
+                fieldType="segmentCompanySize"
+                domain={domain}
+                cumulativeData={cumulativeData}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Geography <span className="text-red-500">*</span></label>
-              <Input
+              <InputFieldWithAI
                 placeholder="e.g., North America, EMEA, Global"
                 value={segment.geography}
-                onChange={(e) => updateSegment(segmentIndex, 'geography', e.target.value)}
+                onChange={(value) => updateSegment(segmentIndex, 'geography', value)}
+                fieldType="segmentGeography"
+                domain={domain}
+                cumulativeData={cumulativeData}
               />
             </div>
           </div>
@@ -288,18 +576,24 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium mb-1">Job Title/Role <span className="text-red-500">*</span></label>
-                      <Input
+                      <InputFieldWithAI
                         placeholder="e.g., VP of Engineering, IT Director"
                         value={persona.title}
-                        onChange={(e) => updatePersonaInSegment(segmentIndex, personaIndex, 'title', e.target.value)}
+                        onChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'title', value)}
+                        fieldType="personaTitle"
+                        domain={domain}
+                        cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize}}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Seniority Level <span className="text-red-500">*</span></label>
-                      <Input
+                      <InputFieldWithAI
                         placeholder="e.g., Senior, Director, VP, C-level"
                         value={persona.seniority}
-                        onChange={(e) => updatePersonaInSegment(segmentIndex, personaIndex, 'seniority', e.target.value)}
+                        onChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'seniority', value)}
+                        fieldType="personaSeniority"
+                        domain={domain}
+                        cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
                       />
                     </div>
                   </div>
@@ -308,10 +602,13 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
                     <label className="block text-sm font-medium mb-2">
                       Primary Responsibilities <span className="text-red-500">*</span>
                     </label>
-                    <ArrayField
+                    <ArrayFieldWithAI
                       values={persona.primaryResponsibilities}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'primaryResponsibilities', values)}
                       placeholder="e.g., Manage IT infrastructure and security"
+                      fieldType="personaResponsibilities"
+                      domain={domain}
+                      cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
                     />
                   </div>
 
@@ -319,10 +616,13 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
                     <label className="block text-sm font-medium mb-2">
                       Challenges/Pain Points <span className="text-red-500">*</span>
                     </label>
-                    <ArrayField
+                    <ArrayFieldWithAI
                       values={persona.challenges}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'challenges', values)}
                       placeholder="e.g., Limited budget for new technology adoption"
+                      fieldType="personaChallenges"
+                      domain={domain}
+                      cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
                     />
                   </div>
                 </div>

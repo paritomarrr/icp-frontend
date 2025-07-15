@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Building2, Users, Target, ChevronRight, Briefcase, Award, CheckCircle, ArrowRight } from 'lucide-react';
+import { Building2, Users, Target, ChevronRight, TrendingUp, Edit, User } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { usePermissions } from '@/hooks/use-permissions';
 
@@ -201,8 +201,8 @@ const SegmentDetails = () => {
   };
 
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-octave-light-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
           <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
@@ -213,230 +213,211 @@ const SegmentDetails = () => {
         </nav>
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">{segmentData.name}</h1>
-            <p className="text-sm text-slate-600 mt-1">Segment Details & Information</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {getUserRole() && (
-              <Badge variant="outline" className="text-xs">
-                {getUserRole() === 'owner' ? 'Owner' : getUserRole() === 'editor' ? 'Editor' : 'Viewer'}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/30 p-4 mb-6">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-slate-900 mb-1">
+                {segmentData.name}
+              </h1>
+              <p className="text-xs text-slate-600">
+                Segment Details & Analysis
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Badge className={`${getPriorityColor(segmentData.priority)} text-xs`}>
+                {segmentData.priority} Priority
               </Badge>
-            )}
+              <Badge className={`${getStatusColor(segmentData.status)} text-xs`}>
+                {segmentData.status}
+              </Badge>
+              {canEdit() && (
+                <Button size="sm" variant="outline" className="text-xs">
+                  <Edit className="w-3 h-3 mr-1" />
+                  Edit Segment
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Segment Overview */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Building2 className="w-4 h-4 text-blue-600" />
+            <Card className="shadow-sm border border-slate-200/60 bg-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-base font-medium">
+                  <Target className="w-4 h-4 text-blue-600" />
                   <span>Segment Overview</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                  {segmentData.description}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={`${getPriorityColor(segmentData.priority)} text-xs`}>
-                    {segmentData.priority} Priority
-                  </Badge>
-                  <Badge className={`${getStatusColor(segmentData.status)} text-xs`}>
-                    {segmentData.status}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Firmographics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Briefcase className="w-4 h-4 text-purple-600" />
-                  <span>Firmographics</span>
-                </CardTitle>
-              </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {segmentData.firmographics?.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <span className="text-xs font-medium text-slate-700 capitalize">{item.label}</span>
-                      <span className="text-xs text-slate-600">{item.value}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Industry</p>
+                    <p className="text-sm text-slate-900">{segmentData.industry || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Company Size</p>
+                    <p className="text-sm text-slate-900">{segmentData.companySize || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Geography</p>
+                    <p className="text-sm text-slate-900">{segmentData.geography || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Awareness Level</p>
+                    <p className="text-sm text-slate-900">{segmentData.awarenessLevel || 'Not specified'}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Pain Points */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Target className="w-4 h-4 text-red-600" />
-                  <span>Pain Points</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {segmentData.painPoints?.map((point: string, idx: number) => (
-                    <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                      • {point}
-                    </div>
-                  )) || <div className="text-xs text-slate-500">No pain points defined</div>}
-                </div>
-              </CardContent>
-            </Card>
+            {segmentData.painPoints && segmentData.painPoints.length > 0 && (
+              <Card className="shadow-sm border border-slate-200/60 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
+                    <Target className="w-4 h-4 text-red-600" />
+                    <span>Pain Points</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {segmentData.painPoints.map((point: string, idx: number) => (
+                      <div key={idx} className="text-sm text-slate-700 p-3 bg-slate-50 rounded-lg border">
+                        • {point}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Benefits */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Award className="w-4 h-4 text-green-600" />
-                  <span>Benefits</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                  {segmentData.benefits}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Specific Benefits */}
+            {segmentData.specificBenefits && segmentData.specificBenefits.length > 0 && (
+              <Card className="shadow-sm border border-slate-200/60 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span>Specific Benefits</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {segmentData.specificBenefits.map((benefit: string, idx: number) => (
+                      <div key={idx} className="text-sm text-slate-700 p-3 bg-green-50 rounded-lg border border-green-200">
+                        • {benefit}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Qualification Criteria */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
-                  <span>Qualification Criteria</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div>
-                    <span className="font-semibold text-xs">Ideal Criteria:</span>
-                    <ul className="list-disc ml-5">
-                      {segmentData.qualification?.idealCriteria?.map((c: string, idx: number) => (
-                        <li key={idx} className="text-xs text-slate-600">{c}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-xs">Lookalike Companies:</span>
-                    <ul className="list-disc ml-5">
-                      {segmentData.qualification?.lookalikeCompanies?.map((c: string, idx: number) => (
-                        <li key={idx} className="text-xs text-slate-600">{c}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-xs">Disqualifying Criteria:</span>
-                    <ul className="list-disc ml-5">
-                      {segmentData.qualification?.disqualifyingCriteria?.map((c: string, idx: number) => (
-                        <li key={idx} className="text-xs text-slate-600">{c}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Characteristics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Award className="w-4 h-4 text-orange-600" />
-                  <span>Characteristics</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {segmentData.characteristics?.length > 0 ? segmentData.characteristics.map((char: string, idx: number) => (
-                    <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                      • {char}
-                    </div>
-                  )) : <div className="text-xs text-slate-500">No characteristics defined</div>}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Personas in this Segment */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Users className="w-4 h-4 text-purple-600" />
-                  <span>Personas ({segmentData.personas?.length || 0})</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {segmentData.personas?.length > 0 ? segmentData.personas.map((persona: any, idx: number) => (
-                    <Button
-                      key={persona._id || idx}
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-between text-xs h-auto py-3"
-                      onClick={() => navigate(`/workspace/${slug}/personas/${persona._id?.$oid || persona._id}`)}
-                    >
-                      <div className="flex flex-col items-start">
-                        <div className="font-semibold text-slate-800">{persona.name}</div>
-                        <div className="text-slate-600">{persona.title} • {persona.seniority}</div>
+            {segmentData.qualification && Object.keys(segmentData.qualification).some(key => 
+              segmentData.qualification[key] && segmentData.qualification[key].length > 0
+            ) && (
+              <Card className="shadow-sm border border-slate-200/60 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    <span>Qualification Criteria</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {segmentData.qualification.tier1Criteria && segmentData.qualification.tier1Criteria.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-2">Tier 1 Criteria</p>
+                      <div className="space-y-1">
+                        {segmentData.qualification.tier1Criteria.map((criteria: string, idx: number) => (
+                          <div key={idx} className="text-sm text-slate-700 p-2 bg-blue-50 rounded border border-blue-200">
+                            • {criteria}
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className="text-xs bg-purple-100 text-purple-800">
-                          {persona.decisionInfluence}
-                        </Badge>
-                        <ArrowRight className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </Button>
-                  )) : (
-                    <div className="text-xs text-slate-500 text-center py-4">
-                      No personas defined for this segment
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metrics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Segment Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { metric: 'Market Size', value: segmentData.marketSize },
-                    { metric: 'Growth Rate', value: segmentData.growthRate },
-                    { metric: 'Total Companies', value: segmentData.customerCount || 'N/A' },
-                    { metric: 'Accounts Reached', value: '324' }
-                  ].map((item) => (
-                    <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <div>
-                        <p className="text-xs font-medium text-slate-700">{item.metric}</p>
-                        <p className="text-sm font-bold text-slate-900">{item.value}</p>
+                  {segmentData.qualification.idealCriteria && segmentData.qualification.idealCriteria.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-2">Ideal Criteria</p>
+                      <div className="space-y-1">
+                        {segmentData.qualification.idealCriteria.map((criteria: string, idx: number) => (
+                          <div key={idx} className="text-sm text-slate-700 p-2 bg-purple-50 rounded border border-purple-200">
+                            • {criteria}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  )}
+                  {segmentData.qualification.lookalikeCompanies && segmentData.qualification.lookalikeCompanies.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-600 mb-2">Lookalike Companies</p>
+                      <div className="space-y-1">
+                        {segmentData.qualification.lookalikeCompanies.map((company: string, idx: number) => (
+                          <div key={idx} className="text-sm text-slate-700 p-2 bg-orange-50 rounded border border-orange-200">
+                            • {company}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Personas in this Segment */}
+            {segmentData.personas && segmentData.personas.length > 0 && (
+              <Card className="shadow-sm border border-slate-200/60 bg-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
+                    <User className="w-4 h-4 text-indigo-600" />
+                    <span>Personas ({segmentData.personas.length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {segmentData.personas.map((persona: any, idx: number) => (
+                      <div
+                        key={persona._id?.$oid || persona._id || idx}
+                        className="p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/workspace/${slug}/personas/${persona._id?.$oid || persona._id}`)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-slate-900 mb-1">{persona.name}</h4>
+                            <p className="text-xs text-slate-600 mb-2">{persona.title}</p>
+                            {persona.seniority && (
+                              <Badge variant="outline" className="text-xs">
+                                {persona.seniority}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {persona.decisionInfluence && (
+                              <Badge className="text-xs bg-purple-100 text-purple-700">
+                                {persona.decisionInfluence}
+                              </Badge>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-slate-400" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Right Side - 1/3 */}
           <div className="space-y-6">
-            {/* Related Pages */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Users className="w-4 h-4 text-purple-600" />
-                  <span>Related Pages</span>
-                </CardTitle>
+            {/* Quick Actions */}
+            <Card className="shadow-sm border border-slate-200/60 bg-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -448,10 +429,51 @@ const SegmentDetails = () => {
                   </Link>
                   <Link to={`/workspace/${slug}/personas`}>
                     <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Users className="w-3 h-3 mr-2" />
-                      View Personas
+                      <User className="w-3 h-3 mr-2" />
+                      View All Personas
                     </Button>
                   </Link>
+                  <Link to={`/workspace/${slug}/segments`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
+                      <Target className="w-3 h-3 mr-2" />
+                      Back to Segments
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Segment Metadata */}
+            <Card className="shadow-sm border border-slate-200/60 bg-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">Segment Info</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                    <span className="text-xs font-medium text-slate-700">Created</span>
+                    <span className="text-xs text-slate-600">
+                      {segmentData.createdAt ? new Date(segmentData.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                    <span className="text-xs font-medium text-slate-700">Last Updated</span>
+                    <span className="text-xs text-slate-600">
+                      {segmentData.updatedAt ? new Date(segmentData.updatedAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                    <span className="text-xs font-medium text-slate-700">Priority</span>
+                    <Badge className={`${getPriorityColor(segmentData.priority)} text-xs`}>
+                      {segmentData.priority}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                    <span className="text-xs font-medium text-slate-700">Status</span>
+                    <Badge className={`${getStatusColor(segmentData.status)} text-xs`}>
+                      {segmentData.status}
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>

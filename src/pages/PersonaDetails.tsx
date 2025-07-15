@@ -166,7 +166,7 @@ const PersonaDetails = () => {
   // Handle both old string format and new object format
   const personaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
   
-  // Use persona data directly from MongoDB structure - only core fields
+  // Use persona data directly from MongoDB structure - map correct fields
   const displayPersona = {
     id: currentPersona._id || personaId,
     name: personaData.name || 'Unnamed Persona',
@@ -184,7 +184,12 @@ const PersonaDetails = () => {
     priority: personaData.priority || 'medium',
     influence: personaData.decisionInfluence || '',
     jobTitles: personaData.jobTitles || [],
-    okrs: personaData.okrs || []
+    okrs: personaData.okrs || [],
+    // Map backend fields correctly
+    seniority: personaData.seniority || '',
+    primaryResponsibilities: personaData.primaryResponsibilities || [],
+    responsibilities: personaData.responsibilities || personaData.primaryResponsibilities || [],
+    challenges: personaData.challenges || []
   };
 
   // Function to enhance persona with Claude AI

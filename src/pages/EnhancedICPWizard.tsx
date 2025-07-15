@@ -1243,6 +1243,8 @@ const EnhancedICPWizard = () => {
           return newData;
         });
       }}
+      domain={icpData.domain}
+      cumulativeData={getCumulativeProductData()}
     />
   );
 
