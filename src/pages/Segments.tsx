@@ -197,7 +197,7 @@ const Segments = () => {
 
   return (
     <>
-      <div className="p-8 bg-background min-h-screen">
+      <div className="p-6 bg-octave-light-1 min-h-screen">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">

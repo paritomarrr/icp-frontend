@@ -32,21 +32,21 @@ const Analytics = () => {
   const latestVersion = latestVersionKey ? enrichment[latestVersionKey] : null;
 
   return (
-    <div className="p-8 bg-background min-h-screen">
+    <div className="p-8 bg-octave-light-1 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Company Banner */}
-        <Card className="shadow-xl border-0 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+        <Card className="shadow-xl border-0 bg-octave-dark-1">
           <CardContent className="p-6">
             <div className="space-y-3">
-              <h1 className="text-2xl font-bold">{workspace.companyName}</h1>
-              <div className="flex items-center space-x-2 text-primary-foreground/80">
+              <h1 className="text-2xl font-bold text-white">{workspace.companyName}</h1>
+              <div className="flex items-center space-x-2 text-white/90">
                 <Globe className="w-3 h-3" />
                 <span className="text-xs">{workspace.companyUrl}</span>
               </div>
-              <p className="text-primary-foreground/90 text-xs max-w-3xl leading-relaxed">
+              <p className="text-white/95 text-xs max-w-3xl leading-relaxed">
                 {latestVersion?.products?.solution?.split('.')[0] || 'Company description from Claude analysis'}
               </p>
-              <p className="text-primary-foreground/80 text-xs max-w-4xl leading-relaxed">
+              <p className="text-white/85 text-xs max-w-4xl leading-relaxed">
                 {latestVersion?.differentiation?.split('.').slice(0, 2).join('.') || 'Company value and mission summary'}
               </p>
             </div>
@@ -56,114 +56,114 @@ const Analytics = () => {
         {/* Analytics Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Key Metrics */}
-          <Card className="shadow-lg border border-border bg-card">
+          <Card className="shadow-lg border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-muted-foreground">
+              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-octave-dark-1">
                 <Target className="w-3 h-3" />
                 <span>ICP Segments</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-foreground">
+              <div className="text-xl font-bold text-octave-dark-3">
                 {latestVersion?.segments?.length || 3}
               </div>
-              <p className="text-xs text-muted-foreground">Active segments</p>
+              <p className="text-xs text-octave-dark-1">Active segments</p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border border-border bg-card">
+          <Card className="shadow-lg border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-muted-foreground">
+              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-octave-dark-1">
                 <Users className="w-3 h-3" />
                 <span>Personas</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-foreground">9</div>
-              <p className="text-xs text-muted-foreground">Mapped personas</p>
+              <div className="text-xl font-bold text-octave-dark-3">9</div>
+              <p className="text-xs text-octave-dark-1">Mapped personas</p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border border-border bg-card">
+          <Card className="shadow-lg border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-muted-foreground">
+              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-octave-dark-1">
                 <Building className="w-3 h-3" />
                 <span>Target Accounts</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-foreground">1,247</div>
-              <p className="text-xs text-muted-foreground">Qualified accounts</p>
+              <div className="text-xl font-bold text-octave-dark-3">1,247</div>
+              <p className="text-xs text-octave-dark-1">Qualified accounts</p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border border-border bg-card">
+          <Card className="shadow-lg border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-muted-foreground">
+              <CardTitle className="flex items-center space-x-2 text-xs font-medium text-octave-dark-1">
                 <TrendingUp className="w-3 h-3" />
                 <span>Conversion Rate</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-foreground">12.4%</div>
-              <p className="text-xs text-muted-foreground">Outbound to meeting</p>
+              <div className="text-xl font-bold text-octave-dark-3">12.4%</div>
+              <p className="text-xs text-octave-dark-1">Outbound to meeting</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Analytics Charts Placeholder */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-xl border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Activity className="w-4 h-4 text-blue-600" />
-                <span className="text-base">Outreach Performance</span>
+                <Activity className="w-4 h-4 text-octave-dark-2" />
+                <span className="text-base text-octave-dark-3">Outreach Performance</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg">
-                <p className="text-xs text-slate-500">Performance charts coming soon</p>
+              <div className="h-64 flex items-center justify-center bg-octave-light-1 rounded-lg">
+                <p className="text-xs text-octave-dark-1">Performance charts coming soon</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-xl border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-indigo-600" />
-                <span className="text-base">Segment Distribution</span>
+                <Target className="w-4 h-4 text-octave-dark-2" />
+                <span className="text-base text-octave-dark-3">Segment Distribution</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg">
-                <p className="text-xs text-slate-500">Segment analysis coming soon</p>
+              <div className="h-64 flex items-center justify-center bg-octave-light-1 rounded-lg">
+                <p className="text-xs text-octave-dark-1">Segment analysis coming soon</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Recent Activity */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="shadow-xl border border-octave-light-2 bg-white hover:border-octave-light-3 transition-colors">
           <CardHeader>
-            <CardTitle className="text-base">Recent ICP Updates</CardTitle>
+            <CardTitle className="text-base text-octave-dark-3">Recent ICP Updates</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center space-x-4 p-3 bg-slate-50 rounded-lg">
-                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+              <div className="flex items-center space-x-4 p-3 bg-octave-light-1 rounded-lg">
+                <div className="w-2 h-2 bg-octave-accent rounded-full"></div>
                 <div>
-                  <p className="text-xs font-medium text-slate-900">ICP analysis generated</p>
-                  <p className="text-xs text-slate-500">4 variants created by Claude AI</p>
+                  <p className="text-xs font-medium text-octave-dark-3">ICP analysis generated</p>
+                  <p className="text-xs text-octave-dark-1">4 variants created by Claude AI</p>
                 </div>
-                <div className="ml-auto text-xs text-slate-400">Just now</div>
+                <div className="ml-auto text-xs text-octave-dark-1">Just now</div>
               </div>
-              <div className="flex items-center space-x-4 p-3 bg-slate-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+              <div className="flex items-center space-x-4 p-3 bg-octave-light-1 rounded-lg">
+                <div className="w-2 h-2 bg-octave-dark-2 rounded-full"></div>
                 <div>
-                  <p className="text-xs font-medium text-slate-900">Workspace created</p>
-                  <p className="text-xs text-slate-500">New ICP project initialized</p>
+                  <p className="text-xs font-medium text-octave-dark-3">Workspace created</p>
+                  <p className="text-xs text-octave-dark-1">New ICP project initialized</p>
                 </div>
-                <div className="ml-auto text-xs text-slate-400">Today</div>
+                <div className="ml-auto text-xs text-octave-dark-1">Today</div>
               </div>
             </div>
           </CardContent>

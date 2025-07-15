@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Download, Edit, AlertTriangle, CheckCircle, Star, Zap, Clock } from 'lucide-react';
+import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Download, Edit } from 'lucide-react';
 import { icpWizardApi } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -213,108 +213,93 @@ const ProductDetails = () => {
   const displayData = currentProduct as any;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Enhanced Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-sm text-slate-500 mb-8">
+    <div className="min-h-screen bg-octave-light-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-1 text-xs text-slate-400 mb-6">
           <Link 
             to={`/workspace/${slug}`} 
-            className="hover:text-blue-600 transition-colors duration-200 font-medium"
+            className="hover:text-slate-600 transition-colors"
           >
             Dashboard
           </Link>
-          <ChevronRight className="w-4 h-4 text-slate-400" />
+          <span>/</span>
           <Link 
             to={`/workspace/${slug}/products`} 
-            className="hover:text-blue-600 transition-colors duration-200 font-medium"
+            className="hover:text-slate-600 transition-colors"
           >
             Products
           </Link>
-          <ChevronRight className="w-4 h-4 text-slate-400" />
-          <span className="text-slate-900 font-semibold">{displayData.name}</span>
+          <span>/</span>
+          <span className="text-slate-700">{displayData.name}</span>
         </nav>
 
-        {/* Enhanced Header */}
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 mb-8 shadow-lg border border-white/20">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/30 p-4 mb-6">
+          <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex items-center space-x-4 mb-3">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
-                  <Building2 className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                    {displayData.name}
-                  </h1>
-                  <div className="flex items-center space-x-3 mt-2">
-                    <Badge 
-                      variant={displayData.status === 'active' ? 'default' : 'secondary'} 
-                      className={`text-sm font-medium ${
-                        displayData.status === 'active' 
-                          ? 'bg-green-100 text-green-800 border-green-300' 
-                          : 'bg-yellow-100 text-yellow-800 border-yellow-300'
-                      }`}
-                    >
-                      {displayData.status}
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-sm font-medium ${
-                        displayData.priority === 'high' ? 'bg-red-50 border-red-300 text-red-700' :
-                        displayData.priority === 'medium' ? 'bg-yellow-50 border-yellow-300 text-yellow-700' :
-                        'bg-green-50 border-green-300 text-green-700'
-                      }`}
-                    >
-                      {displayData.priority} priority
-                    </Badge>
-                  </div>
-                </div>
+              <div className="flex items-center space-x-3 mb-2">
+                <h1 className="text-xl font-semibold text-slate-900">
+                  {displayData.name}
+                </h1>
+                <Badge 
+                  variant={displayData.status === 'active' ? 'default' : 'secondary'} 
+                  className="text-xs"
+                >
+                  {displayData.status}
+                </Badge>
+                <Badge 
+                  variant="outline" 
+                  className="text-xs border-blue-300 text-blue-700"
+                >
+                  {displayData.priority} priority
+                </Badge>
               </div>
               {displayData.updatedAt && (
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-slate-500">
                   Last updated: {new Date((displayData.updatedAt as any)?.$date || displayData.updatedAt).toLocaleDateString()}
                 </p>
               )}
             </div>
             
-            <div className="flex items-center space-x-3 flex-wrap gap-2">
+            <div className="flex items-center space-x-2">
               {canEdit() && (
                 <Button 
                   size="sm" 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  variant="outline"
                   onClick={handleEditProduct}
+                  className="border-blue-300 hover:bg-blue-50"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Product
+                  <Edit className="w-3 h-3 mr-1" />
+                  Edit
                 </Button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Enhanced Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Side - 2/3 - Enhanced */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Product Overview - Enhanced */}
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200/50 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-bold text-slate-800 flex items-center">
-                  <Building2 className="w-6 h-6 text-blue-600 mr-3" />
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Side - 2/3 */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Product Overview */}
+            <Card className="border hover:border-blue-300 transition-colors">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-900">
                   Product Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-slate-700 text-lg leading-relaxed whitespace-pre-wrap">
+                <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
                   {displayData.valueProposition || 'No value proposition available'}
                 </div>
                 {displayData.valuePropositionVariations?.length > 0 && (
                   <div className="mt-4">
-                    <h4 className="text-sm font-semibold text-slate-600 mb-2">Value Proposition Variations:</h4>
+                    <h4 className="text-xs font-medium text-slate-600 mb-2">Value Proposition Variations:</h4>
                     <div className="space-y-2">
                       {displayData.valuePropositionVariations.map((variation: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-3 rounded-lg border border-blue-200/30">
-                          <p className="text-slate-700 text-sm">{variation}</p>
+                        <div key={idx} className="bg-slate-50 p-3 rounded border">
+                          <p className="text-slate-700 text-xs">{variation}</p>
                         </div>
                       ))}
                     </div>
@@ -323,136 +308,102 @@ const ProductDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Problems & Solutions - Enhanced */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <Target className="w-5 h-5 text-red-600 mr-3" />
+            {/* Problems & Solutions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Problems We Solve
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.problemsWithRootCauses?.length > 0 ? (
                       displayData.problemsWithRootCauses.map((problem: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-red-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-red-100 rounded-lg">
-                              <AlertTriangle className="w-4 h-4 text-red-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{problem}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{problem}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-slate-500 italic text-sm">No problems with root causes specified</div>
+                      <div className="text-slate-500 text-xs">No problems with root causes specified</div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Business Outcomes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.businessOutcomes?.length > 0 ? (
                       displayData.businessOutcomes.map((outcome: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-green-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-green-100 rounded-lg">
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{outcome}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{outcome}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-slate-500 italic text-sm">No business outcomes specified</div>
+                      <div className="text-slate-500 text-xs">No business outcomes specified</div>
                     )}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Features & USPs - Enhanced */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <Star className="w-5 h-5 text-purple-600 mr-3" />
+            {/* Features & USPs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Key Features
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.keyFeatures?.length > 0 ? (
                       displayData.keyFeatures.map((feature: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-purple-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-purple-100 rounded-lg">
-                              <Star className="w-4 h-4 text-purple-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{feature}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{feature}</p>
                         </div>
                       ))
                     ) : displayData.features?.length > 0 ? (
                       displayData.features.map((feature: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-purple-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-purple-100 rounded-lg">
-                              <Star className="w-4 h-4 text-purple-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{feature}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{feature}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-slate-500 italic text-sm">No features specified</div>
+                      <div className="text-slate-500 text-xs">No features specified</div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <Zap className="w-5 h-5 text-orange-600 mr-3" />
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Unique Selling Points
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.uniqueSellingPoints?.length > 0 ? (
                       displayData.uniqueSellingPoints.map((usp: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-orange-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-orange-100 rounded-lg">
-                              <Zap className="w-4 h-4 text-orange-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{usp}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{usp}</p>
                         </div>
                       ))
                     ) : displayData.usps?.length > 0 ? (
                       displayData.usps.map((usp: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-orange-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-orange-100 rounded-lg">
-                              <Zap className="w-4 h-4 text-orange-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{usp}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{usp}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-slate-500 italic text-sm">No USPs specified</div>
+                      <div className="text-slate-500 text-xs">No USPs specified</div>
                     )}
                   </div>
                 </CardContent>
@@ -460,53 +411,46 @@ const ProductDetails = () => {
             </div>
 
             {/* Pricing & Timeline Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Pricing Tiers
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.pricingTiers?.length > 0 ? (
                       displayData.pricingTiers.map((tier: string, idx: number) => (
-                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-green-200/30 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-1.5 bg-green-100 rounded-lg">
-                              <TrendingUp className="w-4 h-4 text-green-600" />
-                            </div>
-                            <p className="text-slate-700 text-sm">{tier}</p>
-                          </div>
+                        <div key={idx} className="p-3 bg-slate-50 rounded border">
+                          <p className="text-slate-700 text-xs">{tier}</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-slate-500 italic text-sm">No pricing tiers specified</div>
+                      <div className="text-slate-500 text-xs">No pricing tiers specified</div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <Clock className="w-5 h-5 text-blue-600 mr-3" />
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Client Timeline & ROI
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {displayData.clientTimeline && (
-                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-blue-200/30">
-                        <h4 className="text-sm font-semibold text-slate-600 mb-2">Client Timeline:</h4>
-                        <p className="text-slate-700 text-sm">{displayData.clientTimeline}</p>
+                      <div className="p-3 bg-slate-50 rounded border">
+                        <h4 className="text-xs font-medium text-slate-600 mb-1">Client Timeline:</h4>
+                        <p className="text-slate-700 text-xs">{displayData.clientTimeline}</p>
                       </div>
                     )}
                     {displayData.roiRequirements && (
-                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-blue-200/30">
-                        <h4 className="text-sm font-semibold text-slate-600 mb-2">ROI Requirements:</h4>
-                        <p className="text-slate-700 text-sm">{displayData.roiRequirements}</p>
+                      <div className="p-3 bg-slate-50 rounded border">
+                        <h4 className="text-xs font-medium text-slate-600 mb-1">ROI Requirements:</h4>
+                        <p className="text-slate-700 text-xs">{displayData.roiRequirements}</p>
                       </div>
                     )}
                   </div>
@@ -516,23 +460,17 @@ const ProductDetails = () => {
 
             {/* Urgency Consequences */}
             {displayData.urgencyConsequences?.length > 0 && (
-              <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3" />
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Urgency Consequences
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.urgencyConsequences.map((consequence: string, idx: number) => (
-                      <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-yellow-200/30 hover:shadow-md transition-all duration-200">
-                        <div className="flex items-start space-x-3">
-                          <div className="p-1.5 bg-yellow-100 rounded-lg">
-                            <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                          </div>
-                          <p className="text-slate-700 text-sm">{consequence}</p>
-                        </div>
+                      <div key={idx} className="p-3 bg-slate-50 rounded border">
+                        <p className="text-slate-700 text-xs">{consequence}</p>
                       </div>
                     ))}
                   </div>
@@ -541,13 +479,12 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Enhanced Right Side - 1/3 */}
-          <div className="space-y-8">
+          {/* Right Side - 1/3 */}
+          <div className="space-y-6">
             {/* Competitor Analysis */}
-            <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200/50 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                  <Building2 className="w-5 h-5 text-red-600 mr-3" />
+            <Card className="border hover:border-blue-300 transition-colors">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-900">
                   Competitor Analysis
                 </CardTitle>
               </CardHeader>
@@ -555,13 +492,13 @@ const ProductDetails = () => {
                 <div className="space-y-3">
                   {displayData.competitorAnalysis?.length > 0 ? (
                     displayData.competitorAnalysis.map((competitor: any, idx: number) => (
-                      <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-red-200/30 hover:shadow-md transition-all duration-200">
-                        <h4 className="font-semibold text-slate-700 text-sm mb-2">{competitor.domain}</h4>
-                        <p className="text-slate-600 text-sm">{competitor.differentiation}</p>
+                      <div key={idx} className="p-3 bg-slate-50 rounded border">
+                        <h4 className="font-medium text-slate-700 text-xs mb-1">{competitor.domain}</h4>
+                        <p className="text-slate-600 text-xs">{competitor.differentiation}</p>
                       </div>
                     ))
                   ) : (
-                    <div className="text-slate-500 italic text-sm">No competitor analysis available</div>
+                    <div className="text-slate-500 text-xs">No competitor analysis available</div>
                   )}
                 </div>
               </CardContent>
@@ -569,21 +506,20 @@ const ProductDetails = () => {
 
             {/* Sales Resources */}
             {displayData.salesDeckUrl && (
-              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <Users className="w-5 h-5 text-purple-600 mr-3" />
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Sales Resources
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-purple-200/30">
-                    <h4 className="text-sm font-semibold text-slate-600 mb-2">Sales Deck URL:</h4>
+                  <div className="p-3 bg-slate-50 rounded border">
+                    <h4 className="text-xs font-medium text-slate-600 mb-1">Sales Deck URL:</h4>
                     <a 
                       href={displayData.salesDeckUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-purple-600 hover:text-purple-800 text-sm break-all"
+                      className="text-blue-600 hover:text-blue-800 text-xs break-all"
                     >
                       {displayData.salesDeckUrl}
                     </a>
@@ -594,23 +530,17 @@ const ProductDetails = () => {
 
             {/* Use Cases */}
             {displayData.useCases?.length > 0 && (
-              <Card className="bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200/50 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
-                    <Target className="w-5 h-5 text-indigo-600 mr-3" />
+              <Card className="border hover:border-blue-300 transition-colors">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-slate-900">
                     Use Cases
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {displayData.useCases.map((useCase: string, idx: number) => (
-                      <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-indigo-200/30 hover:shadow-md transition-all duration-200">
-                        <div className="flex items-start space-x-3">
-                          <div className="p-1.5 bg-indigo-100 rounded-lg">
-                            <Target className="w-4 h-4 text-indigo-600" />
-                          </div>
-                          <p className="text-slate-700 text-sm">{useCase}</p>
-                        </div>
+                      <div key={idx} className="p-3 bg-slate-50 rounded border">
+                        <p className="text-slate-700 text-xs">{useCase}</p>
                       </div>
                     ))}
                   </div>

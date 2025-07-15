@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useParams, Navigate } from 'react-router-dom
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import Logo from '@/components/ui/logo';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { Home, ShoppingBag, Building2, Users, Target, UserPlus, Crown, Eye, PenTool } from 'lucide-react';
@@ -105,32 +106,30 @@ const WorkspaceLayout = () => {
     const role = getUserRole();
     switch (role) {
       case 'owner':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-octave-accent/20 text-octave-dark-3 border-octave-accent/50';
       case 'editor':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-octave-light-3/50 text-octave-dark-2 border-octave-dark-1/30';
       case 'viewer':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-octave-light-2/50 text-octave-dark-1 border-octave-light-3/50';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-octave-light-1 text-octave-dark-1 border-octave-light-2';
     }
   };
 
   return (
-    <div className="h-screen bg-background flex">
+    <div className="h-screen bg-octave-light-1 flex">
       {/* Sidebar - Fixed height, non-scrollable */}
-      <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
+      <div className="w-64 bg-white border-r border-octave-light-2 flex flex-col h-full shadow-sm">
         {/* Header */}
-        <div className="p-6 border-b border-sidebar-border flex-shrink-0">
+        <div className="p-6 border-b border-octave-light-2/30 flex-shrink-0 bg-gradient-to-r from-octave-light-1 to-white">
           <Link to="/dashboard" className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-gradient-to-r from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-sm">
-              <ShoppingBag className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sidebar-primary text-base">ICP Wizard</span>
+            <Logo size="lg" />
+            <span className="font-semibold text-octave-dark-3 text-base">ICP Wizard</span>
           </Link>
           {workspace && (
             <div className="mt-5">
-              <h3 className="font-semibold text-sidebar-primary truncate text-sm">{workspace.name}</h3>
-              <p className="text-xs text-sidebar-foreground truncate mt-1">{workspace.companyName}</p>
+              <h3 className="font-semibold text-octave-dark-2 truncate text-sm">{workspace.name}</h3>
+              <p className="text-xs text-octave-dark-1 truncate mt-1">{workspace.companyName}</p>
               <div className="mt-2 flex items-center space-x-2">
                 <Badge className={`text-xs ${getUserRoleColor()}`}>
                   {getUserRoleIcon()}
@@ -150,8 +149,8 @@ const WorkspaceLayout = () => {
                 to={item.path}
                 className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 font-medium text-sm ${
                   isActivePath(item.path)
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-octave-accent/20 text-octave-dark-3 shadow-sm border border-octave-accent/30'
+                    : 'text-octave-dark-1 hover:bg-octave-light-1 hover:text-octave-dark-2'
                 }`}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -162,17 +161,17 @@ const WorkspaceLayout = () => {
         </nav>
         
         {/* User Info - Fixed at bottom */}
-        <div className="p-4 border-t border-sidebar-border flex-shrink-0">
-          <div className="flex items-center justify-between p-3 bg-sidebar-accent rounded-xl">
+        <div className="p-4 border-t border-octave-light-2 flex-shrink-0">
+          <div className="flex items-center justify-between p-3 bg-octave-light-1 rounded-xl border border-octave-light-2">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-sidebar-primary truncate">{user.fullName}</p>
-              <p className="text-xs text-sidebar-foreground truncate mt-1" title={user.email}>{user.email}</p>
+              <p className="text-sm font-semibold text-octave-dark-3 truncate">{user.fullName}</p>
+              <p className="text-xs text-octave-dark-1 truncate mt-1" title={user.email}>{user.email}</p>
             </div>
             <Button 
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-sidebar-foreground hover:text-sidebar-primary ml-2 flex-shrink-0 text-xs"
+              className="text-octave-dark-1 hover:text-octave-dark-3 hover:bg-octave-light-2 ml-2 flex-shrink-0 text-xs"
             >
               Logout
             </Button>
@@ -181,7 +180,7 @@ const WorkspaceLayout = () => {
       </div>
       
       {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-auto bg-background">
+      <div className="flex-1 overflow-auto bg-octave-light-1">
         <Outlet />
       </div>
     </div>

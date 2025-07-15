@@ -143,27 +143,27 @@ const Personas = () => {
   };
 
   return (
-    <div className="p-8 bg-background min-h-screen">
+    <div className="p-6 bg-octave-light-1 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
-          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
-          <span>&gt;</span>
-          <span className="text-foreground font-medium">Personas</span>
+        <nav className="flex items-center space-x-1 text-xs text-slate-400 mb-6">
+          <Link to={`/workspace/${slug}`} className="hover:text-slate-600 transition-colors">Dashboard</Link>
+          <span>/</span>
+          <span className="text-slate-700">Personas</span>
         </nav>
 
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl font-bold text-foreground mb-1">
+            <h1 className="text-xl font-semibold text-slate-900 mb-1">
               Buyer Personas
             </h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Understand your target audience and their decision-making process
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs" onClick={() => setAddPersonaModalOpen(true)}>
-              <Plus className="w-3 h-3 mr-2" />
+            <Button size="sm" variant="outline" className="text-xs" onClick={() => setAddPersonaModalOpen(true)}>
+              <Plus className="w-3 h-3 mr-1" />
               Add Persona
             </Button>
           </div>
