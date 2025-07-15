@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { ChevronRight, Building2, Edit, Search, Plus, Lock } from 'lucide-react';
+import { ChevronRight, Building2, Edit, Search, Plus, Lock, Target, TrendingUp } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { usePermissions } from '@/hooks/use-permissions';
 import { AddProductModal, EditProductModal } from '@/components/modals';
@@ -258,8 +258,8 @@ const Products = () => {
   const userRole = getUserRole();
 
   return (
-    <div className="min-h-screen bg-octave-light-1">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="p-6 bg-octave-light-1 min-h-screen">
+      <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-1 text-xs text-slate-400 mb-6">
           <Link 
@@ -272,38 +272,18 @@ const Products = () => {
           <span className="text-slate-700">Products</span>
         </nav>
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 p-4 mb-6">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-slate-900 mb-1">
-                Products & Solutions
-              </h1>
-              <p className="text-xs text-slate-600 mb-2">
-                Manage your core product offerings and value propositions
-              </p>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-xs text-slate-600">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>{filteredProducts.length} Products</span>
-                </div>
-                {userRole && (
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs border-blue-200 text-blue-700"
-                  >
-                    {userRole === 'owner' ? 'Owner' : userRole === 'editor' ? 'Editor' : 'Viewer'}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900 mb-1">
+              Products & Solutions
+            </h1>
+            <p className="text-xs text-slate-500">
+              Manage your core product offerings and value propositions
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
             {canEdit() && (
-              <Button 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => setAddProductModalOpen(true)}
-              >
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => setAddProductModalOpen(true)}>
                 <Plus className="w-3 h-3 mr-1" />
                 Add Product
               </Button>
@@ -311,25 +291,25 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3 h-3" />
+        {/* Search and Filter Bar */}
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
             <Input
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 text-xs border-slate-300"
+              className="pl-8 text-xs"
             />
           </div>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
           {filteredProducts.map((product: any, idx: number) => (
             <Card
               key={product.name}
-              className="bg-white border border-slate-200 cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all duration-200"
+              className="bg-white shadow-sm border-0 cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-[1.02]"
               onClick={() => {
                 console.log('Navigating to product:', product.id, 'for product:', product.name);
                 navigate(`/workspace/${slug}/products/${product.id}`);
@@ -337,14 +317,14 @@ const Products = () => {
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-sm font-medium text-slate-900">
+                  <CardTitle className="text-base font-semibold text-slate-800">
                     {product.name}
                   </CardTitle>
                   {canEdit() && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-6 w-6 p-0"
+                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditProduct(product);
@@ -354,42 +334,23 @@ const Products = () => {
                     </Button>
                   )}
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  {product.status && product.status !== 'active' && (
-                    <Badge 
-                      variant="secondary" 
-                      className="text-xs"
-                    >
-                      {product.status}
-                    </Badge>
-                  )}
-                  {product.priority && product.priority !== 'medium' && (
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs"
-                    >
-                      {product.priority} priority
-                    </Badge>
-                  )}
-                </div>
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {product.valueProposition && (
-                    <div className="text-xs text-slate-600 line-clamp-2">
+                    <p className="text-sm text-slate-600 line-clamp-3">
                       {product.valueProposition}
-                    </div>
+                    </p>
                   )}
                   
-                  {/* Simple metrics */}
-                  <div className="text-xs text-slate-500 space-y-1">
+                  {/* Product Stats */}
+                  <div className="flex items-center space-x-4 text-xs text-slate-500">
                     {product.keyFeatures?.length > 0 && (
-                      <div>Features: {product.keyFeatures.length}</div>
+                      <span>Features: {product.keyFeatures.length}</span>
                     )}
                     {product.uniqueSellingPoints?.length > 0 && (
-                      <div>USPs: {product.uniqueSellingPoints.length}</div>
+                      <span>USPs: {product.uniqueSellingPoints.length}</span>
                     )}
                   </div>
                 </div>
@@ -422,6 +383,89 @@ const Products = () => {
                 </Button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Show metrics only when there are products */}
+        {filteredProducts.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            {/* Products Overview */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-700 flex items-center space-x-2">
+                  <Building2 className="w-4 h-4" />
+                  <span>Products Overview</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { metric: 'Total Products', value: filteredProducts.length.toString(), icon: '📦' },
+                    { metric: 'With Value Props', value: filteredProducts.filter(p => p.valueProposition?.length > 0).length.toString(), icon: '💡' }
+                  ].map((item) => (
+                    <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-base">{item.icon}</span>
+                        <span className="text-xs font-medium text-slate-700">{item.metric}</span>
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Features & USPs */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-700 flex items-center space-x-2">
+                  <Target className="w-4 h-4" />
+                  <span>Features & USPs</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { metric: 'Total Features', value: filteredProducts.reduce((sum, p) => sum + (p.keyFeatures?.length || 0), 0).toString(), icon: '⚡' },
+                    { metric: 'Total USPs', value: filteredProducts.reduce((sum, p) => sum + (p.uniqueSellingPoints?.length || 0), 0).toString(), icon: '🎯' }
+                  ].map((item) => (
+                    <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-base">{item.icon}</span>
+                        <span className="text-xs font-medium text-slate-700">{item.metric}</span>
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Solutions & Outcomes */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-slate-700 flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Solutions & Outcomes</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { metric: 'Problems Solved', value: filteredProducts.reduce((sum, p) => sum + (p.problemsWithRootCauses?.length || 0), 0).toString(), icon: '🔧' },
+                    { metric: 'Business Outcomes', value: filteredProducts.reduce((sum, p) => sum + (p.businessOutcomes?.length || 0), 0).toString(), icon: '📈' }
+                  ].map((item) => (
+                    <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-base">{item.icon}</span>
+                        <span className="text-xs font-medium text-slate-700">{item.metric}</span>
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

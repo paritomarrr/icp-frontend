@@ -183,23 +183,6 @@ const SegmentDetails = () => {
     benefits: (currentSegment as any).specificBenefits?.join(', ') || 'Benefits not specified'
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-octave-light-1">
@@ -225,12 +208,6 @@ const SegmentDetails = () => {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <Badge className={`${getPriorityColor(segmentData.priority)} text-xs`}>
-                {segmentData.priority} Priority
-              </Badge>
-              <Badge className={`${getStatusColor(segmentData.status)} text-xs`}>
-                {segmentData.status}
-              </Badge>
               {canEdit() && (
                 <Button size="sm" variant="outline" className="text-xs">
                   <Edit className="w-3 h-3 mr-1" />
@@ -653,18 +630,6 @@ const SegmentDetails = () => {
                     <span className="text-xs text-slate-600">
                       {segmentData.updatedAt ? new Date(segmentData.updatedAt).toLocaleDateString() : 'N/A'}
                     </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                    <span className="text-xs font-medium text-slate-700">Priority</span>
-                    <Badge className={`${getPriorityColor(segmentData.priority)} text-xs`}>
-                      {segmentData.priority}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                    <span className="text-xs font-medium text-slate-700">Status</span>
-                    <Badge className={`${getStatusColor(segmentData.status)} text-xs`}>
-                      {segmentData.status}
-                    </Badge>
                   </div>
                 </div>
               </CardContent>

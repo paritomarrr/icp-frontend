@@ -213,68 +213,44 @@ const ProductDetails = () => {
   const displayData = currentProduct as any;
 
   return (
-    <div className="min-h-screen bg-octave-light-1">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-1 text-xs text-slate-400 mb-6">
+        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
           <Link 
             to={`/workspace/${slug}`} 
-            className="hover:text-slate-600 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             Dashboard
           </Link>
-          <span>/</span>
+          <ChevronRight className="w-3 h-3" />
           <Link 
             to={`/workspace/${slug}/products`} 
-            className="hover:text-slate-600 transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             Products
           </Link>
-          <span>/</span>
-          <span className="text-slate-700">{displayData.name}</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-foreground font-medium">{displayData.name}</span>
         </nav>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/30 p-4 mb-6">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2">
-                <h1 className="text-xl font-semibold text-slate-900">
-                  {displayData.name}
-                </h1>
-                <Badge 
-                  variant={displayData.status === 'active' ? 'default' : 'secondary'} 
-                  className="text-xs"
-                >
-                  {displayData.status}
-                </Badge>
-                <Badge 
-                  variant="outline" 
-                  className="text-xs border-blue-300 text-blue-700"
-                >
-                  {displayData.priority} priority
-                </Badge>
-              </div>
-              {displayData.updatedAt && (
-                <p className="text-xs text-slate-500">
-                  Last updated: {new Date((displayData.updatedAt as any)?.$date || displayData.updatedAt).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              {canEdit() && (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={handleEditProduct}
-                  className="border-blue-300 hover:bg-blue-50"
-                >
-                  <Edit className="w-3 h-3 mr-1" />
-                  Edit
-                </Button>
-              )}
-            </div>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-800">{displayData.name}</h1>
+            <p className="text-sm text-slate-600 mt-1">Product Details & Specifications</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {canEdit() && (
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleEditProduct}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Product
+              </Button>
+            )}
           </div>
         </div>
 
@@ -283,23 +259,25 @@ const ProductDetails = () => {
           {/* Left Side - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Product Overview */}
-            <Card className="border hover:border-blue-300 transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-900">
-                  Product Overview
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <span>Product Overview</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+              <CardContent className="space-y-4">
+                <div className="text-sm text-gray-700 leading-relaxed">
                   {displayData.valueProposition || 'No value proposition available'}
                 </div>
                 {displayData.valuePropositionVariations?.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-xs font-medium text-slate-600 mb-2">Value Proposition Variations:</h4>
-                    <div className="space-y-2">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Value Proposition Variations</h4>
+                    <div className="space-y-3">
                       {displayData.valuePropositionVariations.map((variation: string, idx: number) => (
-                        <div key={idx} className="bg-slate-50 p-3 rounded border">
-                          <p className="text-slate-700 text-xs">{variation}</p>
+                        <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                          <p className="text-sm text-gray-700 leading-relaxed">{variation}</p>
                         </div>
                       ))}
                     </div>
@@ -310,184 +288,177 @@ const ProductDetails = () => {
 
             {/* Why Now */}
             {displayData.whyNow?.length > 0 && (
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Why Now
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.whyNow.map((reason: string, idx: number) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded border">
-                        <p className="text-slate-700 text-xs">{reason}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Problems & Solutions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Problems We Solve
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.problemsWithRootCauses?.length > 0 ? (
-                      displayData.problemsWithRootCauses.map((problem: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{problem}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-500 text-xs">No problems with root causes specified</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Business Outcomes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.businessOutcomes?.length > 0 ? (
-                      displayData.businessOutcomes.map((outcome: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{outcome}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-500 text-xs">No business outcomes specified</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Benefits */}
-            {displayData.benefits?.length > 0 && (
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Benefits
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.benefits.map((benefit: string, idx: number) => (
-                      <div key={idx} className="p-3 bg-green-50 rounded border border-green-200">
-                        <p className="text-slate-700 text-xs">{benefit}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Features & USPs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Key Features
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.keyFeatures?.length > 0 ? (
-                      displayData.keyFeatures.map((feature: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{feature}</p>
-                        </div>
-                      ))
-                    ) : displayData.features?.length > 0 ? (
-                      displayData.features.map((feature: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{feature}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-500 text-xs">No features specified</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Unique Selling Points
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.uniqueSellingPoints?.length > 0 ? (
-                      displayData.uniqueSellingPoints.map((usp: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{usp}</p>
-                        </div>
-                      ))
-                    ) : displayData.usps?.length > 0 ? (
-                      displayData.usps.map((usp: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{usp}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-500 text-xs">No USPs specified</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Pricing & Timeline Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Pricing Tiers
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayData.pricingTiers?.length > 0 ? (
-                      displayData.pricingTiers.map((tier: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{tier}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-500 text-xs">No pricing tiers specified</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Client Timeline & ROI
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-green-600" />
+                    <span>Why Now</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
+                    {displayData.whyNow.map((reason: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Problems We Solve */}
+            {displayData.problemsWithRootCauses?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-red-600" />
+                    <span>Problems We Solve</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.problemsWithRootCauses.map((problem: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{problem}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Business Outcomes */}
+            {displayData.businessOutcomes?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>Business Outcomes</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.businessOutcomes.map((outcome: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{outcome}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Benefits */}
+            {displayData.benefits?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>Benefits</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.benefits.map((benefit: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{benefit}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Key Features */}
+            {(displayData.keyFeatures?.length > 0 || displayData.features?.length > 0) && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Building2 className="w-5 h-5 text-blue-600" />
+                    <span>Key Features</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(displayData.keyFeatures?.length > 0 ? displayData.keyFeatures : displayData.features || []).map((feature: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{feature}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Unique Selling Points */}
+            {(displayData.uniqueSellingPoints?.length > 0 || displayData.usps?.length > 0) && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-purple-600" />
+                    <span>Unique Selling Points</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(displayData.uniqueSellingPoints?.length > 0 ? displayData.uniqueSellingPoints : displayData.usps || []).map((usp: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{usp}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pricing Tiers */}
+            {displayData.pricingTiers?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>Pricing Tiers</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.pricingTiers.map((tier: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{tier}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Client Timeline & ROI */}
+            {(displayData.clientTimeline?.length > 0 || displayData.roiRequirements?.length > 0) && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <span>Client Timeline & ROI</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
                     {displayData.clientTimeline?.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-slate-600 mb-2">Client Timeline:</h4>
-                        <div className="space-y-1">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">Client Timeline</h4>
+                        <div className="space-y-3">
                           {displayData.clientTimeline.map((timeline: string, idx: number) => (
-                            <div key={idx} className="p-3 bg-slate-50 rounded border">
-                              <p className="text-slate-700 text-xs">{timeline}</p>
+                            <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <p className="text-sm text-gray-700 leading-relaxed">{timeline}</p>
                             </div>
                           ))}
                         </div>
@@ -495,11 +466,12 @@ const ProductDetails = () => {
                     )}
                     {displayData.roiRequirements?.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-slate-600 mb-2">ROI Requirements:</h4>
-                        <div className="space-y-1">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">ROI Requirements</h4>
+                        <div className="space-y-3">
                           {displayData.roiRequirements.map((requirement: string, idx: number) => (
-                            <div key={idx} className="p-3 bg-slate-50 rounded border">
-                              <p className="text-slate-700 text-xs">{requirement}</p>
+                            <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <p className="text-sm text-gray-700 leading-relaxed">{requirement}</p>
                             </div>
                           ))}
                         </div>
@@ -508,60 +480,62 @@ const ProductDetails = () => {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Competitive Analysis & Differentiation */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Competitors
+            {/* Competitors */}
+            {displayData.competitors?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Users className="w-5 h-5 text-red-600" />
+                    <span>Competitors</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {displayData.competitors?.length > 0 ? (
-                      displayData.competitors.map((competitor: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <p className="text-slate-700 text-xs">{competitor}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-500 text-xs">No competitors specified</div>
-                    )}
+                  <div className="space-y-3">
+                    {displayData.competitors.map((competitor: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{competitor}</p>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Target Audience
+            {/* Target Audience */}
+            {displayData.targetAudience && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <span>Target Audience</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="p-3 bg-slate-50 rounded border">
-                    <p className="text-slate-700 text-xs">
-                      {displayData.targetAudience || 'Target audience not specified'}
-                    </p>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-700 leading-relaxed">{displayData.targetAudience}</p>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
             {/* Urgency Consequences */}
             {displayData.urgencyConsequences?.length > 0 && (
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Urgency Consequences
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-orange-600" />
+                    <span>Urgency Consequences</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {displayData.urgencyConsequences.map((consequence: string, idx: number) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded border">
-                        <p className="text-slate-700 text-xs">{consequence}</p>
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{consequence}</p>
                       </div>
                     ))}
                   </div>
@@ -572,127 +546,98 @@ const ProductDetails = () => {
 
           {/* Right Side - 1/3 */}
           <div className="space-y-6">
-            {/* Competitor Analysis */}
-            <Card className="border hover:border-blue-300 transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-900">
-                  Competitor Analysis
+            {/* Related Pages */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Building2 className="w-5 h-5 text-purple-600" />
+                  <span>Related Pages</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {displayData.competitorAnalysis?.length > 0 ? (
-                    displayData.competitorAnalysis.map((competitor: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded border">
-                        <h4 className="font-medium text-slate-700 text-xs mb-1">{competitor.domain}</h4>
-                        <p className="text-slate-600 text-xs">{competitor.differentiation}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-slate-500 text-xs">No competitor analysis available</div>
+                  <Link to={`/workspace/${slug}/segments`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Target className="w-4 h-4 mr-2" />
+                      View Segments
+                    </Button>
+                  </Link>
+                  <Link to={`/workspace/${slug}/personas`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      View Personas
+                    </Button>
+                  </Link>
+                  <Link to={`/workspace/${slug}/products`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      All Products
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Summary */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold">Quick Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {displayData.category && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Category</h4>
+                      <p className="text-sm text-gray-600">{displayData.category}</p>
+                    </div>
+                  )}
+                  {displayData.targetAudience && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Target Audience</h4>
+                      <p className="text-sm text-gray-600">{displayData.targetAudience}</p>
+                    </div>
+                  )}
+                  {displayData.createdAt && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Created</h4>
+                      <p className="text-sm text-gray-600">
+                        {new Date((displayData.createdAt as any)?.$date || displayData.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Sales Resources */}
-            {(displayData.salesDeckUrl || (displayData.salesDeckUrl && displayData.salesDeckUrl.length > 0)) && (
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Sales Resources
-                  </CardTitle>
+            {/* Competitor Analysis */}
+            {displayData.competitorAnalysis?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold">Competitor Analysis</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {Array.isArray(displayData.salesDeckUrl) ? (
-                      displayData.salesDeckUrl.map((url: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded border">
-                          <h4 className="text-xs font-medium text-slate-600 mb-1">Sales Deck {idx + 1}:</h4>
-                          <a 
-                            href={url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 text-xs break-all"
-                          >
-                            {url}
-                          </a>
-                        </div>
-                      ))
-                    ) : displayData.salesDeckUrl ? (
-                      <div className="p-3 bg-slate-50 rounded border">
-                        <h4 className="text-xs font-medium text-slate-600 mb-1">Sales Deck:</h4>
-                        <a 
-                          href={displayData.salesDeckUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-xs break-all"
-                        >
-                          {displayData.salesDeckUrl}
-                        </a>
+                    {displayData.competitorAnalysis.map((competitor: any, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        <strong>{competitor.domain}:</strong> {competitor.differentiation}
                       </div>
-                    ) : null}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Product Metadata */}
-            <Card className="border hover:border-blue-300 transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-900">
-                  Product Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {displayData.category && (
-                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <span className="text-xs font-medium text-slate-700">Category</span>
-                      <span className="text-xs text-slate-600">{displayData.category}</span>
-                    </div>
-                  )}
-                  {displayData.targetAudience && (
-                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <span className="text-xs font-medium text-slate-700">Target Audience</span>
-                      <span className="text-xs text-slate-600">{displayData.targetAudience}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                    <span className="text-xs font-medium text-slate-700">Priority</span>
-                    <Badge variant="outline" className="text-xs">{displayData.priority}</Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                    <span className="text-xs font-medium text-slate-700">Status</span>
-                    <Badge variant={displayData.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                      {displayData.status}
-                    </Badge>
-                  </div>
-                  {displayData.createdAt && (
-                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <span className="text-xs font-medium text-slate-700">Created</span>
-                      <span className="text-xs text-slate-600">
-                        {new Date((displayData.createdAt as any)?.$date || displayData.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Use Cases */}
             {displayData.useCases?.length > 0 && (
-              <Card className="border hover:border-blue-300 transition-colors">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-slate-900">
-                    Use Cases
-                  </CardTitle>
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold">Use Cases</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {displayData.useCases.map((useCase: string, idx: number) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded border">
-                        <p className="text-slate-700 text-xs">{useCase}</p>
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        • {useCase}
                       </div>
                     ))}
                   </div>

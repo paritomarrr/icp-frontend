@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Users, Edit, Save, X, Plus, Trash2, ChevronRight, Target, TrendingUp, Building2, User, Briefcase, Sparkles } from 'lucide-react';
+import { Users, Edit, Save, X, Plus, Trash2, ChevronRight, Target, TrendingUp, Building2, User, Briefcase } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -27,8 +27,6 @@ const PersonaDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editedPersona, setEditedPersona] = useState<any>(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
   const { canEdit, canView, getUserRole } = usePermissions();
 
   useEffect(() => {
@@ -192,31 +190,7 @@ const PersonaDetails = () => {
     challenges: personaData.challenges || []
   };
 
-  // Function to enhance persona with Claude AI
-  const enhancePersonaWithAI = async () => {
-    if (!icpData) return;
-    
-    setIsEnhancing(true);
-    const companyData = {
-      companyName: icpData.companyName || workspace?.companyName,
-      products: icpData.products,
-      companyUrl: icpData.companyUrl || workspace?.companyUrl
-    };
-
-    try {
-      console.log(`Enhancing persona: ${displayPersona.name}`);
-      const result = await icpWizardApi.generatePersonaDetails(displayPersona.name, companyData);
-      
-      if (result.success && result.data) {
-        setEnhancedData(result.data);
-        console.log('Enhanced persona data:', result.data);
-      }
-    } catch (error) {
-      console.error('Error enhancing persona:', error);
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
+  // Function to enhance persona with Claude AI - REMOVED
 
   const handleEdit = () => {
     setEditedPersona({ ...personaData });
@@ -267,24 +241,6 @@ const PersonaDetails = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
   const getInfluenceColor = (influence: string) => {
     switch (influence) {
       case 'Decision Maker': return 'bg-purple-100 text-purple-800';
@@ -318,16 +274,6 @@ const PersonaDetails = () => {
                 {getUserRole() === 'owner' ? 'Owner' : getUserRole() === 'editor' ? 'Editor' : 'Viewer'}
               </Badge>
             )}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-              onClick={enhancePersonaWithAI}
-              disabled={isEnhancing}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
-            </Button>
             {canEdit() && (
               <Button 
                 size="sm" 
@@ -363,21 +309,9 @@ const PersonaDetails = () => {
                   {displayPersona.description || displayPersona.summary || 'No description available'}
                 </div>
                 <div className="flex items-center space-x-2 flex-wrap">
-                  <Badge className={`${getPriorityColor(displayPersona.priority)} text-xs`}>
-                    {displayPersona.priority} Priority
-                  </Badge>
-                  <Badge className={`${getStatusColor(displayPersona.status)} text-xs`}>
-                    {displayPersona.status}
-                  </Badge>
                   {displayPersona.influence && (
                     <Badge className={`${getInfluenceColor(displayPersona.influence)} text-xs`}>
                       {displayPersona.influence}
-                    </Badge>
-                  )}
-                  {enhancedData && (
-                    <Badge className="bg-purple-100 text-purple-700 text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      AI Enhanced
                     </Badge>
                   )}
                 </div>
@@ -491,7 +425,7 @@ const PersonaDetails = () => {
                 <Card className="border border-gray-200 bg-white">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                      <Sparkles className="w-5 h-5 text-purple-600" />
+                      <Target className="w-5 h-5 text-purple-600" />
                       <span>Triggers</span>
                     </CardTitle>
                   </CardHeader>
@@ -591,17 +525,6 @@ const PersonaDetails = () => {
                       </Badge>
                     </div>
                   )}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-1">Status</h4>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={`${getStatusColor(displayPersona.status)} text-xs`}>
-                        {displayPersona.status}
-                      </Badge>
-                      <Badge className={`${getPriorityColor(displayPersona.priority)} text-xs`}>
-                        {displayPersona.priority} Priority
-                      </Badge>
-                    </div>
-                  </div>
                   {displayPersona.created && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-900 mb-1">Created</h4>

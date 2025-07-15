@@ -115,24 +115,6 @@ const Personas = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
   const getInfluenceColor = (influence: string) => {
     switch (influence) {
       case 'Decision Maker': return 'bg-purple-100 text-purple-800';
@@ -221,14 +203,6 @@ const Personas = () => {
                 <CardTitle className="text-base font-semibold text-slate-800 mb-2">
                   {persona.title}
                 </CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Badge className={`${getPriorityColor(persona.priority)} text-xs`}>
-                    {persona.priority}
-                  </Badge>
-                  <Badge className={`${getStatusColor(persona.status)} text-xs`}>
-                    {persona.status}
-                  </Badge>
-                </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
@@ -264,9 +238,7 @@ const Personas = () => {
               <div className="space-y-3">
                 {[
                   { metric: 'Total Personas', value: filteredPersonas.length.toString(), icon: '👤' },
-                  { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' },
-                  { metric: 'High Priority', value: filteredPersonas.filter(p => p.priority?.toLowerCase() === 'high').length.toString(), icon: '�' },
-                  { metric: 'Active Status', value: filteredPersonas.filter(p => p.status === 'active').length.toString(), icon: '✅' }
+                  { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' }
                 ].map((item) => (
                   <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                     <div className="flex items-center space-x-2">

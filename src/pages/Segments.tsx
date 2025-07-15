@@ -177,23 +177,7 @@ const Segments = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
 
   return (
     <>
@@ -291,10 +275,7 @@ const Segments = () => {
               <CardContent>
                 <div className="space-y-3">
                   {[
-                    { metric: 'Total Segments', value: filteredSegments.length.toString(), icon: '🎯' },
-                    { metric: 'High Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'high').length.toString(), icon: '🔥' },
-                    { metric: 'Medium Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'medium').length.toString(), icon: '🟡' },
-                    { metric: 'Low Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'low').length.toString(), icon: '�' }
+                    { metric: 'Total Segments', value: filteredSegments.length.toString(), icon: '🎯' }
                   ].map((item) => (
                     <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center space-x-2">
