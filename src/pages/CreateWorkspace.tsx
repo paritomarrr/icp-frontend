@@ -82,8 +82,8 @@ const CreateWorkspace = () => {
       localStorage.setItem("workspaceSlug", data.slug);
 
   
-      // Navigate to the ICP wizard step
-      navigate(`/workspace/${data.slug}/icp-wizard`);
+      // Navigate to the Enhanced ICP wizard step
+      navigate(`/workspace/${data.slug}/enhanced-icp-wizard`);
     } catch (error) {
       toast({
         title: "Error",
@@ -116,7 +116,7 @@ const CreateWorkspace = () => {
             Create New Workspace
           </CardTitle>
           <CardDescription className="text-xs">
-            Set up a new ICP project for your client
+            Set up a new ICP project and get started with our Enhanced ICP Wizard
           </CardDescription>
         </CardHeader>
         
@@ -170,7 +170,7 @@ const CreateWorkspace = () => {
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-xs"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Workspace...' : 'Create Workspace'}
+              {isLoading ? 'Creating Workspace...' : 'Create Workspace & Start ICP Wizard'}
             </Button>
             
             <Button

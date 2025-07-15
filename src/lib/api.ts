@@ -21,6 +21,68 @@ export interface StepResponse {
   error?: string;
 }
 
+// Enhanced ICP Data interfaces
+export interface EmailSignature {
+  firstName: string;
+  lastName: string;
+  title: string;
+}
+
+export interface CompetitorAnalysis {
+  domain: string;
+  differentiation: string;
+}
+
+export interface CaseStudy {
+  url: string;
+  marketSegment: string;
+  title: string;
+  description: string;
+}
+
+export interface Testimonial {
+  content: string;
+  author: string;
+  company: string;
+  metrics: string;
+  title: string;
+}
+
+export interface EnhancedICPData {
+  adminAccess: {
+    emailSignatures: EmailSignature[];
+    platformAccessGranted: boolean;
+  };
+  domain: string;
+  product: {
+    valueProposition: string;
+    valuePropositionVariations: string[];
+    problemsWithRootCauses: string[];
+    keyFeatures: string[];
+    businessOutcomes: string[];
+    uniqueSellingPoints: string[];
+    urgencyConsequences: string[];
+    competitorAnalysis: CompetitorAnalysis[];
+  };
+  offerSales: {
+    pricingTiers: string[];
+    clientTimeline: string;
+    roiRequirements: string;
+    salesDeckUrl: string;
+  };
+  socialProof: {
+    caseStudies: CaseStudy[];
+    testimonials: Testimonial[];
+  };
+  numberOfSegments: number;
+  segments: any[];
+  personas: any[];
+  outboundExperience: {
+    successfulEmails: string[];
+    successfulCallScripts: string[];
+  };
+}
+
 // New interfaces for detailed items
 export interface ProductData {
   name: string;
@@ -448,6 +510,35 @@ export const icpWizardApi = {
       return await response.json();
     } catch (error) {
       console.error('Delete segment error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
+};
+
+// Enhanced ICP Wizard API
+export const enhancedICPApi = {
+  async saveEnhancedICP(workspaceId: string, icpData: EnhancedICPData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/enhanced-icp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+        body: JSON.stringify(icpData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save enhanced ICP data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Save enhanced ICP error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

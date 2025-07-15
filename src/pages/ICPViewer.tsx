@@ -44,9 +44,9 @@ const ICPViewer = () => {
           <div className="text-center text-slate-600 bg-slate-50 p-6 rounded-lg">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">No ICP Data Found</h2>
             <p className="text-slate-600 mb-6">Please complete the ICP Wizard first.</p>
-            <Link to={`/workspace/${id}/icp-wizard`}>
+            <Link to={`/workspace/${id}/enhanced-icp-wizard`}>
               <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                Start ICP Wizard
+                Start Enhanced ICP Wizard
               </Button>
             </Link>
           </div>
@@ -67,9 +67,9 @@ const ICPViewer = () => {
           <div className="text-center text-slate-600 bg-slate-50 p-6 rounded-lg">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">No ICP Data Available</h2>
             <p className="text-slate-600 mb-6">ICP enrichment data not found.</p>
-            <Link to={`/workspace/${id}/icp-wizard`}>
+            <Link to={`/workspace/${id}/enhanced-icp-wizard`}>
               <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                Start ICP Wizard
+                Start Enhanced ICP Wizard
               </Button>
             </Link>
           </div>
@@ -120,7 +120,7 @@ const ICPViewer = () => {
           </h1>
           
           <div className="flex items-center space-x-4">
-            <Link to={`/workspace/${id}/icp-wizard`}>
+            <Link to={`/workspace/${id}/enhanced-icp-wizard`}>
               <Button
                 variant="outline"
                 size="sm"

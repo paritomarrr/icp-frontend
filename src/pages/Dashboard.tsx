@@ -72,7 +72,7 @@ const Dashboard = () => {
       if (hasIcpData) {
         navigate(`/workspace/${workspaceSlug}/products`);
       } else {
-        navigate(`/workspace/${workspaceSlug}/icp-wizard`);
+        navigate(`/workspace/${workspaceSlug}/enhanced-icp-wizard`);
       }
     } catch (error) {
       console.error('Error navigating to workspace:', error);
@@ -202,6 +202,26 @@ const Dashboard = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/workspace/${workspace.slug}/icp-wizard`);
+                          }}
+                          className="text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-2" />
+                          ICP Wizard (Classic)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/workspace/${workspace.slug}/enhanced-icp-wizard`);
+                          }}
+                          className="text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-2" />
+                          Enhanced ICP Wizard
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(e) => handleDeleteWorkspace(workspace, e)}
                           className="text-red-600 focus:text-red-600 focus:bg-red-50 text-xs"

@@ -109,7 +109,7 @@ const ProductDetails = () => {
             <p className="text-lg font-semibold mb-2">No ICP Data Found</p>
             <p>Please generate ICP data first.</p>
             <Button 
-              onClick={() => navigate(`/workspace/${slug}/icp-wizard`)}
+              onClick={() => navigate(`/workspace/${slug}/enhanced-icp-wizard`)}
               className="mt-4"
             >
               Generate ICP Data
