@@ -529,7 +529,7 @@ const EnhancedICPWizard = () => {
         description: "Your enhanced ICP has been saved successfully.",
       });
 
-      navigate(`/workspace/${slug}/dashboard`);
+      navigate(`/workspace/${slug}/products`);
     } catch (error) {
 
       toast({
