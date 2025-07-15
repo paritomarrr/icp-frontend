@@ -108,7 +108,6 @@ interface Segment {
   companySize: string;
   geography: string;
   awarenessLevel: "Unaware" | "Problem Aware" | "Solution Aware" | "Product Aware" | "Brand Aware" | "";
-  numberOfPersonas?: number;
   personas?: Persona[];
 }
 
@@ -170,7 +169,6 @@ const EnhancedICPWizard = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [numberOfSegments, setNumberOfSegments] = useState(1);
 
   const [icpData, setIcpData] = useState<EnhancedICPData>({
     adminAccess: {

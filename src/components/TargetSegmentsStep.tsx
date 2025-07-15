@@ -73,7 +73,6 @@ interface Segment {
   companySize: string;
   geography: string;
   awarenessLevel: "Unaware" | "Problem Aware" | "Solution Aware" | "Product Aware" | "Brand Aware" | "";
-  numberOfPersonas?: number;
   personas?: Persona[];
 }
 
@@ -83,30 +82,25 @@ interface TargetSegmentsStepProps {
 }
 
 export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegmentsStepProps) {
-  const [numberOfSegments, setNumberOfSegments] = useState(segments.length || 1);
+  // Initialize with one segment if none exist
+  const currentSegments = segments.length > 0 ? segments : [{
+    name: "",
+    industry: "",
+    companySize: "",
+    geography: "",
+    awarenessLevel: "" as const,
+    personas: [{
+      title: "",
+      seniority: "",
+      primaryResponsibilities: [],
+      challenges: []
+    }]
+  }];
 
-  const initializeSegments = (count: number) => {
-    const newSegments = Array.from({ length: count }, (_, index) => {
-      if (segments[index]) {
-        return segments[index];
-      }
-      return {
-        name: "",
-        industry: "",
-        companySize: "",
-        geography: "",
-        awarenessLevel: "" as const,
-        numberOfPersonas: 1,
-        personas: [{
-          title: "",
-          seniority: "",
-          primaryResponsibilities: [""],
-          challenges: [""]
-        }]
-      };
-    });
-    onUpdate(newSegments);
-  };
+  // Update segments whenever currentSegments changes
+  if (segments.length === 0 && currentSegments.length > 0) {
+    onUpdate(currentSegments);
+  }
 
   const addSegment = () => {
     const newSegment: Segment = {
@@ -115,52 +109,30 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
       companySize: "",
       geography: "",
       awarenessLevel: "",
-      numberOfPersonas: 1,
       personas: [{
         title: "",
         seniority: "",
-        primaryResponsibilities: [""],
-        challenges: [""]
+        primaryResponsibilities: [],
+        challenges: []
       }]
     };
-    onUpdate([...segments, newSegment]);
+    onUpdate([...currentSegments, newSegment]);
   };
 
   const removeSegment = (index: number) => {
-    onUpdate(segments.filter((_, i) => i !== index));
+    const updatedSegments = currentSegments.filter((_, i) => i !== index);
+    onUpdate(updatedSegments);
   };
 
   const updateSegment = (index: number, field: string, value: any) => {
-    const updatedSegments = segments.map((segment, i) => 
+    const updatedSegments = currentSegments.map((segment, i) => 
       i === index ? { ...segment, [field]: value } : segment
     );
     onUpdate(updatedSegments);
   };
 
-  const initializePersonasForSegment = (segmentIndex: number, count: number) => {
-    const updatedSegments = [...segments];
-    const newPersonas = Array.from({ length: count }, (_, index) => {
-      if (updatedSegments[segmentIndex].personas && updatedSegments[segmentIndex].personas![index]) {
-        return updatedSegments[segmentIndex].personas![index];
-      }
-      return {
-        title: "",
-        seniority: "",
-        primaryResponsibilities: [""],
-        challenges: [""]
-      };
-    });
-    
-    updatedSegments[segmentIndex] = {
-      ...updatedSegments[segmentIndex],
-      personas: newPersonas
-    };
-    
-    onUpdate(updatedSegments);
-  };
-
   const addPersonaToSegment = (segmentIndex: number) => {
-    const updatedSegments = [...segments];
+    const updatedSegments = [...currentSegments];
     updatedSegments[segmentIndex] = {
       ...updatedSegments[segmentIndex],
       personas: [
@@ -168,8 +140,8 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
         {
           title: "",
           seniority: "",
-          primaryResponsibilities: [""],
-          challenges: [""]
+          primaryResponsibilities: [],
+          challenges: []
         }
       ]
     };
@@ -177,16 +149,23 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
   };
 
   const removePersonaFromSegment = (segmentIndex: number, personaIndex: number) => {
-    const updatedSegments = [...segments];
+    const updatedSegments = [...currentSegments];
+    const currentPersonas = updatedSegments[segmentIndex].personas || [];
+    
+    // Don't allow removing the last persona
+    if (currentPersonas.length <= 1) {
+      return;
+    }
+    
     updatedSegments[segmentIndex] = {
       ...updatedSegments[segmentIndex],
-      personas: updatedSegments[segmentIndex].personas?.filter((_, i) => i !== personaIndex) || []
+      personas: currentPersonas.filter((_, i) => i !== personaIndex)
     };
     onUpdate(updatedSegments);
   };
 
   const updatePersonaInSegment = (segmentIndex: number, personaIndex: number, field: string, value: any) => {
-    const updatedSegments = [...segments];
+    const updatedSegments = [...currentSegments];
     if (updatedSegments[segmentIndex].personas) {
       updatedSegments[segmentIndex].personas![personaIndex] = {
         ...updatedSegments[segmentIndex].personas![personaIndex],
@@ -199,28 +178,17 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium mb-2">
-          How many distinct target account segments do you have?
-        </label>
-        <Input
-          type="number"
-          min="1"
-          max="10"
-          placeholder="e.g., 3"
-          value={numberOfSegments}
-          onChange={(e) => {
-            const num = parseInt(e.target.value) || 0;
-            setNumberOfSegments(num);
-            initializeSegments(num);
-          }}
-        />
+        <h3 className="text-lg font-semibold mb-4">Target Account Segments</h3>
+        <p className="text-sm text-gray-600 mb-6">
+          Define your target market segments and the key personas within each segment. Start with one segment and add more as needed. Each segment should have at least one persona defined.
+        </p>
       </div>
 
-      {segments.map((segment, segmentIndex) => (
+      {currentSegments.map((segment, segmentIndex) => (
         <div key={segmentIndex} className="border p-6 rounded-lg space-y-6">
           <div className="flex justify-between items-center">
             <h4 className="font-semibold">Segment {segmentIndex + 1}</h4>
-            {segments.length > 1 && (
+            {currentSegments.length > 1 && (
               <Button 
                 variant="destructive" 
                 size="sm" 
@@ -233,17 +201,17 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Segment Name</label>
+              <label className="block text-sm font-medium mb-2">Segment Name <span className="text-red-500">*</span></label>
               <Input
-                placeholder="e.g., Enterprise Manufacturing"
+                placeholder="e.g., Enterprise Manufacturing Companies"
                 value={segment.name}
                 onChange={(e) => updateSegment(segmentIndex, 'name', e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Industry</label>
+              <label className="block text-sm font-medium mb-2">Industry <span className="text-red-500">*</span></label>
               <Input
-                placeholder="e.g., Manufacturing"
+                placeholder="e.g., Manufacturing, Healthcare, SaaS"
                 value={segment.industry}
                 onChange={(e) => updateSegment(segmentIndex, 'industry', e.target.value)}
               />
@@ -252,17 +220,17 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Company Size</label>
+              <label className="block text-sm font-medium mb-2">Company Size <span className="text-red-500">*</span></label>
               <Input
-                placeholder="e.g., 1000-5000 employees"
+                placeholder="e.g., 500-2000 employees, $50M-$200M revenue"
                 value={segment.companySize}
                 onChange={(e) => updateSegment(segmentIndex, 'companySize', e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Geography</label>
+              <label className="block text-sm font-medium mb-2">Geography <span className="text-red-500">*</span></label>
               <Input
-                placeholder="e.g., North America"
+                placeholder="e.g., North America, EMEA, Global"
                 value={segment.geography}
                 onChange={(e) => updateSegment(segmentIndex, 'geography', e.target.value)}
               />
@@ -270,47 +238,39 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Awareness Level</label>
+            <label className="block text-sm font-medium mb-2">Awareness Level <span className="text-red-500">*</span></label>
             <select
               className="w-full p-2 border rounded-md"
               value={segment.awarenessLevel}
               onChange={(e) => updateSegment(segmentIndex, 'awarenessLevel', e.target.value)}
             >
               <option value="">Select awareness level</option>
-              <option value="Unaware">Unaware</option>
-              <option value="Problem Aware">Problem Aware</option>
-              <option value="Solution Aware">Solution Aware</option>
-              <option value="Product Aware">Product Aware</option>
-              <option value="Brand Aware">Brand Aware</option>
+              <option value="Unaware">Unaware - Don't know they have a problem</option>
+              <option value="Problem Aware">Problem Aware - Know they have a problem</option>
+              <option value="Solution Aware">Solution Aware - Know solutions exist</option>
+              <option value="Product Aware">Product Aware - Know your product exists</option>
+              <option value="Brand Aware">Brand Aware - Familiar with your brand</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Number of personas for this segment
-            </label>
-            <Input
-              type="number"
-              min="1"
-              max="5"
-              placeholder="e.g., 2"
-              value={segment.numberOfPersonas || 1}
-              onChange={(e) => {
-                const num = parseInt(e.target.value) || 1;
-                updateSegment(segmentIndex, 'numberOfPersonas', num);
-                initializePersonasForSegment(segmentIndex, num);
-              }}
-            />
-          </div>
-
-          {segment.personas && segment.personas.length > 0 && (
-            <div className="space-y-4">
-              <h5 className="font-medium">Personas for this segment</h5>
-              {segment.personas.map((persona, personaIndex) => (
-                <div key={personaIndex} className="border p-4 rounded-lg bg-gray-50">
+          {/* Always show personas section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h5 className="font-medium text-lg">Personas for this segment</h5>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => addPersonaToSegment(segmentIndex)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Persona
+              </Button>
+            </div>
+            {(segment.personas || []).map((persona, personaIndex) => (
+                <div key={personaIndex} className="border-2 border-dashed border-gray-200 p-4 rounded-lg bg-blue-50/30">
                   <div className="flex justify-between items-center mb-4">
-                    <h6 className="font-medium">Persona {personaIndex + 1}</h6>
-                    {segment.personas!.length > 1 && (
+                    <h6 className="font-medium text-blue-900">Persona {personaIndex + 1}</h6>
+                    {(segment.personas || []).length > 1 && (
                       <Button 
                         variant="destructive" 
                         size="sm" 
@@ -322,61 +282,62 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="Job title/role"
-                      value={persona.title}
-                      onChange={(e) => updatePersonaInSegment(segmentIndex, personaIndex, 'title', e.target.value)}
-                    />
-                    <Input
-                      placeholder="Seniority level"
-                      value={persona.seniority}
-                      onChange={(e) => updatePersonaInSegment(segmentIndex, personaIndex, 'seniority', e.target.value)}
-                    />
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Job Title/Role <span className="text-red-500">*</span></label>
+                      <Input
+                        placeholder="e.g., VP of Engineering, IT Director"
+                        value={persona.title}
+                        onChange={(e) => updatePersonaInSegment(segmentIndex, personaIndex, 'title', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Seniority Level <span className="text-red-500">*</span></label>
+                      <Input
+                        placeholder="e.g., Senior, Director, VP, C-level"
+                        value={persona.seniority}
+                        onChange={(e) => updatePersonaInSegment(segmentIndex, personaIndex, 'seniority', e.target.value)}
+                      />
+                    </div>
                   </div>
 
                   <div className="mt-3">
                     <label className="block text-sm font-medium mb-2">
-                      Primary Responsibilities
+                      Primary Responsibilities <span className="text-red-500">*</span>
                     </label>
                     <ArrayField
                       values={persona.primaryResponsibilities}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'primaryResponsibilities', values)}
-                      placeholder="e.g., Manage IT infrastructure"
+                      placeholder="e.g., Manage IT infrastructure and security"
                     />
                   </div>
 
                   <div className="mt-3">
                     <label className="block text-sm font-medium mb-2">
-                      Challenges/Pain Points
+                      Challenges/Pain Points <span className="text-red-500">*</span>
                     </label>
                     <ArrayField
                       values={persona.challenges}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'challenges', values)}
-                      placeholder="e.g., Limited budget for new technology"
+                      placeholder="e.g., Limited budget for new technology adoption"
                     />
                   </div>
                 </div>
               ))}
               
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => addPersonaToSegment(segmentIndex)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Another Persona
-              </Button>
+              {/* Show message if no personas */}
+              {(!segment.personas || segment.personas.length === 0) && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No personas added yet. Click "Add Persona" to get started.</p>
+                </div>
+              )}
             </div>
-          )}
         </div>
       ))}
 
-      {numberOfSegments > 0 && segments.length < numberOfSegments && (
-        <Button variant="outline" onClick={() => addSegment()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Segment
-        </Button>
-      )}
+      <Button variant="outline" onClick={addSegment}>
+        <Plus className="h-4 w-4 mr-2" />
+        Add Another Segment
+      </Button>
     </div>
   );
 }
