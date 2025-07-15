@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Users, Download, ArrowRight, Search, Plus, MoreHorizontal, Eye, Copy, ChevronRight, Users2, Target, TrendingUp, Building2 } from 'lucide-react';
+import { Users, Search, Plus, Building2 } from 'lucide-react';
 import { AddPersonaModal } from '@/components/modals';
 import { icpWizardApi, PersonaData } from '@/lib/api';
 
@@ -148,7 +148,7 @@ const Personas = () => {
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
           <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
-          <ChevronRight className="w-3 h-3" />
+          <span>&gt;</span>
           <span className="text-foreground font-medium">Personas</span>
         </nav>
 
@@ -162,10 +162,6 @@ const Personas = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
-              <Download className="w-3 h-3 mr-2" />
-              Export
-            </Button>
             <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs" onClick={() => setAddPersonaModalOpen(true)}>
               <Plus className="w-3 h-3 mr-2" />
               Add Persona
@@ -218,56 +214,39 @@ const Personas = () => {
           {filteredPersonas.map((persona, idx) => (
             <Card
               key={persona.title}
-              className={`cursor-pointer border-0 transition-all duration-200 group shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl`}
+              className="cursor-pointer shadow-md border hover:shadow-lg transition-all duration-200"
               onClick={() => navigate(`/workspace/${slug}/personas/${persona.id}`)}
             >
-              <CardHeader className="pb-2">
-                {/* Colored header bar for persona role/title */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="inline-block bg-sky-200 text-sky-800 text-xs font-semibold px-3 py-1 rounded-t-md rounded-b mb-1 tracking-wide">
-                    {persona.title}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <MoreHorizontal className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                {/* Prominent persona name/title */}
-                <CardTitle className="text-base font-bold text-slate-900 mb-1 truncate">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-slate-800 mb-2">
                   {persona.title}
                 </CardTitle>
-                {/* Pill-shaped, color-coded badges in a single row */}
-                <div className="flex items-center space-x-2 mt-1 mb-1">
-                  <Badge className={`${getPriorityColor(persona.priority)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.priority} Priority</Badge>
-                  <Badge className={`${getStatusColor(persona.status)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.status}</Badge>
-                  <Badge className={`${getInfluenceColor(persona.influence)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.influence}</Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge className={`${getPriorityColor(persona.priority)} text-xs`}>
+                    {persona.priority}
+                  </Badge>
+                  <Badge className={`${getStatusColor(persona.status)} text-xs`}>
+                    {persona.status}
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-3">
-                  <div className="text-xs text-slate-600 mb-2 line-clamp-2">
-                    {persona.summary}
-                  </div>
-                  {/* Divider before metrics */}
-                  <div className="border-t border-slate-100 my-2"></div>
-                  {/* Metrics row */}
-                  <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="flex items-center"><Target className="w-3 h-3 text-blue-500 mr-1" />Pain Points: {(persona.painPoints || []).length}</span>
-                      <span className="flex items-center"><TrendingUp className="w-3 h-3 text-green-500 mr-1" />Goals</span>
+                  {persona.summary && (
+                    <div className="text-xs text-slate-600 line-clamp-2">
+                      {persona.summary}
                     </div>
-                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                  )}
+                  
+                  {/* Simple metrics */}
+                  <div className="text-xs text-slate-500 space-y-1">
+                    {persona.painPoints?.length > 0 && (
+                      <div>Pain Points: {persona.painPoints.length}</div>
+                    )}
+                    {persona.goals?.length > 0 && (
+                      <div>Goals: {persona.goals.length}</div>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">Created: {persona.created}</div>
                 </div>
               </CardContent>
             </Card>
@@ -279,18 +258,15 @@ const Personas = () => {
           {/* Persona Overview */}
           <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span className="text-xl">👥</span>
-                <span className="text-base">Persona Overview</span>
-              </CardTitle>
+              <CardTitle className="text-base">Persona Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[
                   { metric: 'Total Personas', value: filteredPersonas.length.toString(), icon: '👤' },
                   { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' },
-                  { metric: 'Avg. Pain Points', value: '3.2', icon: '💡' },
-                  { metric: 'Engagement Rate', value: '87%', icon: '📈' }
+                  { metric: 'High Priority', value: filteredPersonas.filter(p => p.priority?.toLowerCase() === 'high').length.toString(), icon: '�' },
+                  { metric: 'Active Status', value: filteredPersonas.filter(p => p.status === 'active').length.toString(), icon: '✅' }
                 ].map((item) => (
                   <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                     <div className="flex items-center space-x-2">

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Building2, Users, Download, ArrowRight, Target, TrendingUp, Search, Filter, Plus, MoreHorizontal, Eye, Copy, Trash2, ChevronRight, BarChart3, Users2, Globe } from 'lucide-react';
+import { Building2, Users, ArrowRight, Target, TrendingUp, Search, Filter, Plus, MoreHorizontal, ChevronRight, BarChart3, Users2, Globe } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { AddSegmentModal } from '@/components/modals';
 import { icpWizardApi, SegmentData } from '@/lib/api';
@@ -212,10 +212,6 @@ const Segments = () => {
               <p className="text-xs text-muted-foreground">Segment your audience and craft targeted messages</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
-                <Download className="w-3 h-3 mr-2" />
-                Export
-              </Button>
               <Button 
                 size="sm" 
                 className="bg-primary hover:bg-primary/90 text-xs"
@@ -297,8 +293,8 @@ const Segments = () => {
                   {[
                     { metric: 'Total Segments', value: filteredSegments.length.toString(), icon: '🎯' },
                     { metric: 'High Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'high').length.toString(), icon: '🔥' },
-                    { metric: 'Market Coverage', value: '85%', icon: '🌍' },
-                    { metric: 'Avg. Market Size', value: '$1.2B', icon: '💰' }
+                    { metric: 'Medium Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'medium').length.toString(), icon: '🟡' },
+                    { metric: 'Low Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'low').length.toString(), icon: '�' }
                   ].map((item) => (
                     <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center space-x-2">

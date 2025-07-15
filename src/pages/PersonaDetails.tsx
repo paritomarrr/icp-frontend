@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Users, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal, ChevronRight, Target, TrendingUp, Building2, User, Briefcase, Award, Clock, MapPin, Phone, Mail, Linkedin, Sparkles } from 'lucide-react';
+import { Users, Edit, Save, X, Plus, Trash2, ChevronRight, Target, TrendingUp, Building2, User, Briefcase, Sparkles } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -166,52 +166,23 @@ const PersonaDetails = () => {
   // Handle both old string format and new object format
   const personaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
   
-  // Use persona data directly from MongoDB structure
+  // Use persona data directly from MongoDB structure - only core fields
   const displayPersona = {
     id: currentPersona._id || personaId,
     name: personaData.name || 'Unnamed Persona',
-    title: personaData.title || 'Unknown Title',
-    description: `${personaData.name} - ${personaData.title}`,
-    summary: `${personaData.name} - ${personaData.title}`,
-    company: icpData?.companyName || 'Your Company',
-    industry: 'Technology',
-    role: personaData.title || 'Unknown Role',
-    department: 'Leadership',
-    seniority: personaData.seniority || 'Senior',
-    reportingStructure: 'C-Level',
-    location: 'Global',
-    teamSize: '10-50',
-    budget: '$500K-2M',
-    decisionInfluence: personaData.decisionInfluence || 'Decision Maker',
-    influence: personaData.decisionInfluence || 'Decision Maker',
+    title: personaData.title || '',
+    description: personaData.description || '',
+    summary: personaData.summary || '',
     painPoints: personaData.painPoints || [],
     goals: personaData.goals || [],
     triggers: personaData.triggers || [],
-    channels: personaData.channels || ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
+    channels: personaData.channels || [],
     objections: personaData.objections || [],
-    messaging: `Tailored messaging for ${personaData.title} focused on business value and strategic outcomes`,
-    responsibilities: personaData.primaryResponsibilities || personaData.responsibilities || [],
-    challenges: personaData.challenges || [],
-    created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+    messaging: personaData.messaging || '',
+    created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : '',
     status: personaData.status || 'active',
     priority: personaData.priority || 'medium',
-    contactInfo: {
-      email: 'persona@company.com',
-      phone: '+1 (555) 123-4567',
-      linkedin: 'linkedin.com/in/persona',
-      location: 'Global'
-    },
-    demographics: {
-      age: '35-50',
-      experience: '10+ years',
-      education: 'MBA or equivalent',
-      industry: 'Technology'
-    },
-    buyingBehavior: personaData.buyingBehavior || {
-      researchTime: '3-6 months',
-      decisionFactors: ['ROI', 'Ease of implementation', 'Vendor reputation'],
-      preferredChannels: ['LinkedIn', 'Industry events', 'Peer recommendations']
-    },
+    influence: personaData.decisionInfluence || '',
     jobTitles: personaData.jobTitles || [],
     okrs: personaData.okrs || []
   };
@@ -342,10 +313,6 @@ const PersonaDetails = () => {
                 {getUserRole() === 'owner' ? 'Owner' : getUserRole() === 'editor' ? 'Editor' : 'Viewer'}
               </Badge>
             )}
-            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -410,51 +377,6 @@ const PersonaDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Demographics & Contact */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Briefcase className="w-4 h-4 text-purple-600" />
-                    <span>Demographics</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Object.entries(displayPersona.demographics).map(([key, value]) => (
-                      <div key={key} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                        <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
-                        <span className="text-xs text-slate-600">{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Mail className="w-4 h-4 text-green-600" />
-                    <span>Contact Info</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Object.entries(displayPersona.contactInfo).map(([key, value]) => (
-                      <div key={key} className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                        {key === 'email' && <Mail className="w-3 h-3 text-slate-500" />}
-                        {key === 'phone' && <Phone className="w-3 h-3 text-slate-500" />}
-                        {key === 'linkedin' && <Linkedin className="w-3 h-3 text-slate-500" />}
-                        {key === 'location' && <MapPin className="w-3 h-3 text-slate-500" />}
-                        <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
-                        <span className="text-xs text-slate-600 ml-auto">{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Pain Points & Goals */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
@@ -466,11 +388,15 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.painPoints?.map((point: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {point}
-                      </div>
-                    )) || <div className="text-xs text-slate-500">No pain points defined</div>}
+                    {personaData.painPoints?.length > 0 ? (
+                      personaData.painPoints.map((point: string, idx: number) => (
+                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                          • {point}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-slate-500">No pain points defined</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -484,32 +410,40 @@ const PersonaDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.goals?.map((goal: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {goal}
-                      </div>
-                    )) || <div className="text-xs text-slate-500">No goals defined</div>}
+                    {personaData.goals?.length > 0 ? (
+                      personaData.goals.map((goal: string, idx: number) => (
+                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                          • {goal}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-slate-500">No goals defined</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Responsibilities & Challenges */}
+            {/* Triggers & Channels */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-base">
-                    <Award className="w-4 h-4 text-blue-600" />
-                    <span>Responsibilities</span>
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    <span>Triggers</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.responsibilities?.map((resp: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {resp}
-                      </div>
-                    )) || <div className="text-xs text-slate-500">No responsibilities defined</div>}
+                    {personaData.triggers?.length > 0 ? (
+                      personaData.triggers.map((trigger: string, idx: number) => (
+                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                          • {trigger}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-slate-500">No triggers defined</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -517,82 +451,29 @@ const PersonaDetails = () => {
               <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-base">
-                    <Clock className="w-4 h-4 text-orange-600" />
-                    <span>Challenges</span>
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                    <span>Preferred Channels</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {personaData.challenges?.map((challenge: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {challenge}
-                      </div>
-                    )) || <div className="text-xs text-slate-500">No challenges defined</div>}
+                    {personaData.channels?.length > 0 ? (
+                      personaData.channels.map((channel: string, idx: number) => (
+                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
+                          • {channel}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-slate-500">No channels defined</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
-
-            {/* Buying Behavior */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Buying Behavior</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Decision Timeline</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    Research Time: {personaData.buyingBehavior.researchTime}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Key Decision Factors</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {personaData.buyingBehavior.decisionFactors?.map((factor: string, idx: number) => (
-                      <div key={idx}>• {factor}</div>
-                    )) || <div>No decision factors defined</div>}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Preferred Channels</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {personaData.buyingBehavior.preferredChannels?.map((channel: string, idx: number) => (
-                      <div key={idx}>• {channel}</div>
-                    )) || <div>No preferred channels defined</div>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Side - 1/3 */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <User className="w-4 h-4 text-purple-600" />
-                  <span>Quick Actions</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Eye className="w-3 h-3 mr-2" />
-                    View Contacts
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Copy className="w-3 h-3 mr-2" />
-                    Copy Persona
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Download className="w-3 h-3 mr-2" />
-                    Export Data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Related Pages */}
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -626,19 +507,20 @@ const PersonaDetails = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { metric: 'Total Contacts', value: '1,247' },
-                    { metric: 'Engagement Rate', value: '87%' },
-                    { metric: 'Meetings Held', value: '324' },
-                    { metric: 'Deals Influenced', value: '156' }
-                  ].map((item) => (
-                    <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <div>
-                        <p className="text-xs font-medium text-slate-700">{item.metric}</p>
-                        <p className="text-sm font-bold text-slate-900">{item.value}</p>
+                  {personaData.metrics && Object.keys(personaData.metrics).length > 0 ? (
+                    Object.entries(personaData.metrics).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                        <div>
+                          <p className="text-xs font-medium text-slate-700 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                          <p className="text-sm font-bold text-slate-900">{String(value)}</p>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-slate-500 text-center py-4">
+                      No metrics data available
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>

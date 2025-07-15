@@ -118,18 +118,10 @@ const ProductDetails = () => {
     );
   }
 
-  // Get products from the workspace data and ICP enrichment versions
-  const rootProducts = Array.isArray(icpData?.products) ? icpData.products : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const productEnrichment = latestVersion && enrichmentData?.[latestVersion]?.products;
-  
-  console.log('ProductDetails - icpData:', icpData);
-  console.log('ProductDetails - Root products:', rootProducts);
-  console.log('ProductDetails - Product enrichment:', productEnrichment);
-  console.log('ProductDetails - productId:', productId);
+  // Get products directly from MongoDB structure
+  const products = Array.isArray(icpData?.products) ? icpData.products : [];
 
-  if (!rootProducts.length) {
+  if (!products.length) {
     return (
       <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
         <div className="max-w-7xl mx-auto">
@@ -148,69 +140,11 @@ const ProductDetails = () => {
     );
   }
   
-  // Parse product content to extract individual products with MongoDB structure
-  const parseProducts = () => {
-    return rootProducts.map((product: any, idx: number) => {
-      // Handle both string and object products
-      const productName = typeof product === 'string' ? product : product.name;
-      const productData = typeof product === 'string' ? {} : product;
-      
-      // Ensure consistent ID handling - use MongoDB _id if available
-      let productId;
-      if (productData._id) {
-        // Handle MongoDB ObjectId format
-        productId = productData._id.$oid || productData._id;
-      } else {
-        productId = productData.id || (idx + 1).toString();
-      }
-      
-      return {
-        id: productId,
-        name: productName,
-        // All the detailed fields from the new MongoDB structure
-        valueProposition: productData.valueProposition || '',
-        valuePropositionVariations: productData.valuePropositionVariations || [],
-        problems: productData.problems || [],
-        problemsWithRootCauses: productData.problemsWithRootCauses || [],
-        features: productData.features || [],
-        keyFeatures: productData.keyFeatures || [],
-        benefits: productData.benefits || [],
-        businessOutcomes: productData.businessOutcomes || [],
-        useCases: productData.useCases || [],
-        competitors: productData.competitors || [],
-        competitorAnalysis: productData.competitorAnalysis || [],
-        uniqueSellingPoints: productData.uniqueSellingPoints || [],
-        usps: productData.usps || [],
-        whyNow: productData.whyNow || [],
-        urgencyConsequences: productData.urgencyConsequences || [],
-        pricingTiers: productData.pricingTiers || [],
-        clientTimeline: productData.clientTimeline || '',
-        roiRequirements: productData.roiRequirements || '',
-        salesDeckUrl: productData.salesDeckUrl || '',
-        status: productData.status || 'active',
-        priority: productData.priority || 'medium',
-        createdAt: productData.createdAt,
-        updatedAt: productData.updatedAt
-      };
-    });
-  };
-
-  const products = parseProducts();
-  console.log('ProductDetails - Parsed products:', products);
-  
-  // Find product by ID (handle MongoDB ObjectIds and various ID formats)
-  const currentProduct = products.find(p => {
-    // Direct string match for MongoDB ObjectIds
-    if (p.id === productId) return true;
-    
-    // Try numeric comparison for legacy IDs
-    const productIdNum = parseInt(productId || '1');
-    if (!isNaN(productIdNum) && (p.id === productIdNum || p.id === productIdNum.toString())) return true;
-    
-    // Fallback to index-based lookup
-    const productIndex = parseInt(productId || '1') - 1;
-    return products.indexOf(p) === productIndex;
-  }) || products[0];
+  // Find the specific product using MongoDB structure
+  const currentProduct = products.find((product: any) => {
+    const productIdToMatch = product._id?.$oid || product._id;
+    return productIdToMatch === productId;
+  });
 
   console.log('ProductDetails - Current product:', currentProduct);
 
@@ -248,7 +182,8 @@ const ProductDetails = () => {
     if (!icpData || !currentProduct || !slug) return;
     
     try {
-      const response = await icpWizardApi.updateProduct(slug, currentProduct.id.toString(), updatedProductData);
+      const currentProductId = (currentProduct as any)._id?.$oid || (currentProduct as any)._id;
+      const response = await icpWizardApi.updateProduct(slug, currentProductId.toString(), updatedProductData);
       
       if (response.success && response.product) {
         // Update local state - handle MongoDB ObjectId matching
@@ -256,7 +191,6 @@ const ProductDetails = () => {
           ...icpData,
           products: icpData.products.map((p: any) => {
             const productId = p._id?.$oid || p._id || p.id;
-            const currentProductId = currentProduct.id;
             return productId === currentProductId ? response.product : p;
           })
         };
@@ -276,7 +210,7 @@ const ProductDetails = () => {
   };
 
   // Use only the current product data from MongoDB
-  const displayData = currentProduct;
+  const displayData = currentProduct as any;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -338,7 +272,7 @@ const ProductDetails = () => {
               </div>
               {displayData.updatedAt && (
                 <p className="text-sm text-slate-500">
-                  Last updated: {new Date(displayData.updatedAt.$date || displayData.updatedAt).toLocaleDateString()}
+                  Last updated: {new Date((displayData.updatedAt as any)?.$date || displayData.updatedAt).toLocaleDateString()}
                 </p>
               )}
             </div>

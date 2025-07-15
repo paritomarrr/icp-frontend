@@ -200,52 +200,41 @@ const Products = () => {
     );
   }
 
-  // Get products from the workspace data and ICP enrichment versions
+  // Get products directly from MongoDB structure
   const products = Array.isArray(icpData?.products) ? icpData.products : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const productEnrichment = latestVersion && enrichmentData?.[latestVersion]?.products;
   
-  console.log('Products - icpData:', icpData);
-  console.log('Products - Root products:', products);
-  console.log('Products - Product enrichment:', productEnrichment);
-
-  // Transform the products array into the expected format
+  // Transform products using only MongoDB data
   const transformedProducts = products.map((product: any, index: number) => {
-    // Handle both old string format and new object format
-    const productName = typeof product === 'string' ? product : product.name;
-    const productData = typeof product === 'string' ? {} : product;
-    
     // Ensure consistent ID handling - use MongoDB _id if available
-    const productId = productData._id?.$oid || productData._id || productData.id || (index + 1).toString();
+    const productId = product._id?.$oid || product._id || (index + 1).toString();
     
     return {
+      _id: product._id,
       id: productId,
-      name: productName,
-      // New detailed fields from the MongoDB structure
-      valueProposition: productData.valueProposition || '',
-      valuePropositionVariations: productData.valuePropositionVariations || [],
-      problems: productData.problems || [],
-      problemsWithRootCauses: productData.problemsWithRootCauses || [],
-      features: productData.features || [],
-      keyFeatures: productData.keyFeatures || [],
-      benefits: productData.benefits || [],
-      businessOutcomes: productData.businessOutcomes || [],
-      useCases: productData.useCases || [],
-      competitors: productData.competitors || [],
-      competitorAnalysis: productData.competitorAnalysis || [],
-      uniqueSellingPoints: productData.uniqueSellingPoints || [],
-      usps: productData.usps || [],
-      whyNow: productData.whyNow || [],
-      urgencyConsequences: productData.urgencyConsequences || [],
-      pricingTiers: productData.pricingTiers || [],
-      clientTimeline: productData.clientTimeline || '',
-      roiRequirements: productData.roiRequirements || '',
-      salesDeckUrl: productData.salesDeckUrl || '',
-      status: productData.status || 'active',
-      priority: productData.priority || 'medium',
-      createdAt: productData.createdAt,
-      updatedAt: productData.updatedAt
+      name: product.name || `Product ${index + 1}`,
+      valueProposition: product.valueProposition || '',
+      valuePropositionVariations: product.valuePropositionVariations || [],
+      problems: product.problems || [],
+      problemsWithRootCauses: product.problemsWithRootCauses || [],
+      features: product.features || [],
+      keyFeatures: product.keyFeatures || [],
+      benefits: product.benefits || [],
+      businessOutcomes: product.businessOutcomes || [],
+      useCases: product.useCases || [],
+      competitors: product.competitors || [],
+      competitorAnalysis: product.competitorAnalysis || [],
+      uniqueSellingPoints: product.uniqueSellingPoints || [],
+      usps: product.usps || [],
+      whyNow: product.whyNow || [],
+      urgencyConsequences: product.urgencyConsequences || [],
+      pricingTiers: product.pricingTiers || [],
+      clientTimeline: product.clientTimeline || '',
+      roiRequirements: product.roiRequirements || '',
+      salesDeckUrl: product.salesDeckUrl || '',
+      status: product.status || 'active',
+      priority: product.priority || 'medium',
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
     };
   });
 
@@ -265,9 +254,6 @@ const Products = () => {
       ))
     );
   });
-
-  console.log('Products - Transformed products:', transformedProducts);
-  console.log('Products - Filtered products:', filteredProducts);
 
   const userRole = getUserRole();
 

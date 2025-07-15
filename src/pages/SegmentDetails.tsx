@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Building2, Users, Target, Download, ChevronRight, Briefcase, Award, CheckCircle, Eye, Copy, ArrowRight } from 'lucide-react';
+import { Building2, Users, Target, ChevronRight, Briefcase, Award, CheckCircle, ArrowRight } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { usePermissions } from '@/hooks/use-permissions';
 
@@ -224,10 +224,6 @@ const SegmentDetails = () => {
                 {getUserRole() === 'owner' ? 'Owner' : getUserRole() === 'editor' ? 'Editor' : 'Viewer'}
               </Badge>
             )}
-            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
           </div>
         </div>
 
@@ -434,32 +430,6 @@ const SegmentDetails = () => {
 
           {/* Right Side - 1/3 */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Building2 className="w-4 h-4 text-purple-600" />
-                  <span>Quick Actions</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Eye className="w-3 h-3 mr-2" />
-                    View Accounts
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Copy className="w-3 h-3 mr-2" />
-                    Copy Segment
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Download className="w-3 h-3 mr-2" />
-                    Export Data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Related Pages */}
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
