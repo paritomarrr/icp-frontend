@@ -548,4 +548,34 @@ export const enhancedICPApi = {
       };
     }
   },
+  
+  async generateProductFieldSuggestions(fieldType: string, domain: string, cumulativeData: any = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/icp-wizard/generate-product-field-suggestions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+        body: JSON.stringify({
+          fieldType,
+          domain,
+          cumulativeData
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate suggestions');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Generate product field suggestions error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
 }; 

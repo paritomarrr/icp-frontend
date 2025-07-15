@@ -70,6 +70,260 @@ const ArrayField = ({ label, placeholder, items, onAdd, onRemove }: {
   );
 };
 
+// Enhanced component with auto AI suggestions
+const ArrayFieldWithAI = ({ label, placeholder, items, onAdd, onRemove, fieldType, domain, cumulativeData }: {
+  label: string;
+  placeholder: string;
+  items: string[];
+  onAdd: (value: string) => void;
+  onRemove: (index: number) => void;
+  fieldType: string;
+  domain: string;
+  cumulativeData: any;
+}) => {
+  const [inputValue, setInputValue] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const { toast } = useToast();
+
+  const handleAdd = () => {
+    if (inputValue.trim()) {
+      onAdd(inputValue.trim());
+      setInputValue("");
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAdd();
+    }
+  };
+
+  const generateSuggestions = async () => {
+    if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
+
+    setIsLoadingSuggestions(true);
+    setHasFetched(true);
+    try {
+      const result = await enhancedICPApi.generateProductFieldSuggestions(fieldType, domain, cumulativeData);
+      
+      if (result.success) {
+        let processedSuggestions = result.suggestions;
+        
+        // If suggestions is a string that looks like a JSON array, parse it
+        if (typeof processedSuggestions === 'string') {
+          try {
+            // First try to parse as JSON
+            const parsed = JSON.parse(processedSuggestions);
+            processedSuggestions = Array.isArray(parsed) ? parsed : [processedSuggestions];
+          } catch (parseError) {
+            // If it's not valid JSON, check if it looks like an array string
+            if (processedSuggestions.startsWith('[') && processedSuggestions.endsWith(']')) {
+              try {
+                // Try to fix common JSON issues and parse again
+                const fixedJson = processedSuggestions
+                  .replace(/'/g, '"') // Replace single quotes with double quotes
+                  .replace(/"/g, '"') // Replace smart quotes
+                  .replace(/"/g, '"');
+                const parsed = JSON.parse(fixedJson);
+                processedSuggestions = Array.isArray(parsed) ? parsed : [processedSuggestions];
+              } catch (secondParseError) {
+                // If still fails, treat as single suggestion
+                processedSuggestions = [processedSuggestions];
+              }
+            } else {
+              // If it's not an array-like string, treat as single suggestion
+              processedSuggestions = [processedSuggestions];
+            }
+          }
+        }
+        
+        // Ensure we have an array and filter out empty items
+        const finalSuggestions = Array.isArray(processedSuggestions) 
+          ? processedSuggestions.filter(s => s && s.trim()) 
+          : [processedSuggestions].filter(s => s && s.trim());
+          
+        setSuggestions(finalSuggestions);
+      } else {
+        console.warn('Failed to generate suggestions:', result.error);
+      }
+    } catch (error) {
+      console.warn('AI suggestions error:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
+      generateSuggestions();
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    onAdd(suggestion);
+    setSuggestions(prev => prev.filter(s => s !== suggestion));
+  };
+
+  return (
+    <div className="space-y-2">
+      <h4 className="font-medium">{label}</h4>
+      
+      {/* AI Suggestions */}
+      {isLoadingSuggestions && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="flex items-center text-sm text-blue-800">
+            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            Generating AI suggestions...
+          </div>
+        </div>
+      )}
+      
+      {suggestions.length > 0 && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-sm font-medium text-blue-800 mb-2">AI Suggestions:</div>
+          <div className="space-y-1">
+            {suggestions.map((suggestion, index) => (
+              <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                <span className="text-sm text-gray-700 flex-1">{suggestion}</span>
+                <Button
+                  onClick={() => applySuggestion(suggestion)}
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs"
+                >
+                  Use This
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      <div className="flex gap-2">
+        <Input
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          onFocus={handleInputFocus}
+          className="flex-1"
+        />
+        <Button onClick={handleAdd} disabled={!inputValue.trim()} className="bg-black text-white hover:bg-gray-800">
+          Add
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {items.map((item, index) => (
+          <Badge key={index} variant="secondary" className="flex items-center gap-2">
+            {item}
+            <button
+              onClick={() => onRemove(index)}
+              className="ml-1 text-red-500 hover:text-red-700 text-sm"
+            >
+              ×
+            </button>
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Enhanced input field with auto AI suggestions for single values
+const InputFieldWithAI = ({ label, placeholder, value, onChange, fieldType, domain, cumulativeData, maxLength, isTextarea = false }: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  fieldType: string;
+  domain: string;
+  cumulativeData: any;
+  maxLength?: number;
+  isTextarea?: boolean;
+}) => {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const { toast } = useToast();
+
+  const generateSuggestions = async () => {
+    if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
+
+    setIsLoadingSuggestions(true);
+    setHasFetched(true);
+    try {
+      const result = await enhancedICPApi.generateProductFieldSuggestions(fieldType, domain, cumulativeData);
+      
+      if (result.success) {
+        setSuggestions([result.suggestions]);
+      } else {
+        console.warn('Failed to generate suggestions:', result.error);
+      }
+    } catch (error) {
+      console.warn('AI suggestions error:', error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
+      generateSuggestions();
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    onChange(suggestion);
+    setSuggestions([]);
+  };
+
+  const InputComponent = isTextarea ? Textarea : Input;
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-lg font-semibold">{label}</h3>
+      
+      {/* AI Suggestions */}
+      {isLoadingSuggestions && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="flex items-center text-sm text-blue-800">
+            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            Generating AI suggestions...
+          </div>
+        </div>
+      )}
+      
+      {suggestions.length > 0 && suggestions[0] && (
+        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <div className="text-sm font-medium text-blue-800 mb-2">AI Suggestion:</div>
+          <div className="flex items-center justify-between bg-white p-2 rounded border">
+            <span className="text-sm text-gray-700 flex-1">{suggestions[0]}</span>
+            <Button
+              onClick={() => applySuggestion(suggestions[0])}
+              size="sm"
+              variant="outline"
+              className="ml-2 text-xs"
+            >
+              Use This
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      <InputComponent
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={handleInputFocus}
+        maxLength={maxLength}
+        className={isTextarea ? "min-h-[100px]" : ""}
+      />
+    </div>
+  );
+};
+
 interface EmailSignature {
   firstName: string;
   lastName: string;
@@ -348,6 +602,22 @@ const EnhancedICPWizard = () => {
       return newData;
     });
   }, []);
+
+  // Helper function to get cumulative product data for AI suggestions
+  const getCumulativeProductData = () => {
+    return {
+      description: icpData.product.description,
+      category: icpData.product.category,
+      valueProposition: icpData.product.valueProposition,
+      valuePropositionVariations: icpData.product.valuePropositionVariations,
+      problemsWithRootCauses: icpData.product.problemsWithRootCauses,
+      keyFeatures: icpData.product.keyFeatures,
+      businessOutcomes: icpData.product.businessOutcomes,
+      useCases: icpData.product.useCases,
+      uniqueSellingPoints: icpData.product.uniqueSellingPoints,
+      urgencyConsequences: icpData.product.urgencyConsequences
+    };
+  };
 
   // Competitor analysis functions
   const addCompetitorAnalysis = useCallback(() => {
@@ -715,129 +985,131 @@ const EnhancedICPWizard = () => {
 
   const renderProductStep = () => (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Product Description (Optional)</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Provide a brief description of your product or service.
-        </p>
-        <Textarea
-          placeholder="Describe your product or service..."
-          value={icpData.product.description}
-          onChange={(e) => {
-            setIcpData(prev => {
-              const newData = {
-                ...prev,
-                product: { ...prev.product, description: e.target.value }
-              };
-              return newData;
-            });
-          }}
-          className="min-h-[80px]"
-        />
-      </div>
+      <InputFieldWithAI
+        label="Product Description (Optional)"
+        placeholder="Describe your product or service..."
+        value={icpData.product.description}
+        onChange={(value) => {
+          setIcpData(prev => ({
+            ...prev,
+            product: { ...prev.product, description: value }
+          }));
+        }}
+        fieldType="description"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
+        isTextarea={true}
+      />
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Product Category (Optional)</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          What category does your product belong to?
-        </p>
-        <Input
-          placeholder="e.g., SaaS, Healthcare, Fintech, etc."
-          value={icpData.product.category}
-          onChange={(e) => {
-            setIcpData(prev => {
-              const newData = {
-                ...prev,
-                product: { ...prev.product, category: e.target.value }
-              };
-              return newData;
-            });
-          }}
-        />
-      </div>
+      <InputFieldWithAI
+        label="Product Category (Optional)"
+        placeholder="e.g., SaaS, Healthcare, Fintech, etc."
+        value={icpData.product.category}
+        onChange={(value) => {
+          setIcpData(prev => ({
+            ...prev,
+            product: { ...prev.product, category: value }
+          }));
+        }}
+        fieldType="category"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
+      />
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Value Proposition <span className="text-red-500">*</span></h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Write your value proposition in 50 characters or less. (You may include variations for different offerings.)
-        </p>
-        <Input
-          placeholder="Your main value proposition..."
-          value={icpData.product.valueProposition}
-          onChange={(e) => {
-            setIcpData(prev => {
-              const newData = {
-                ...prev,
-                product: { ...prev.product, valueProposition: e.target.value }
-              };
-              return newData;
-            });
-          }}
-          maxLength={50}
-          className={!icpData.product.valueProposition.trim() && validationErrors.some(error => error.includes("Value proposition")) ? "border-red-500" : ""}
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          {icpData.product.valueProposition.length}/50 characters
-        </p>
-        <div className="mt-2 text-xs text-gray-500">
-          Current value: "{icpData.product.valueProposition}"
-        </div>
-      </div>
+      <InputFieldWithAI
+        label="Value Proposition *"
+        placeholder="Your main value proposition..."
+        value={icpData.product.valueProposition}
+        onChange={(value) => {
+          setIcpData(prev => ({
+            ...prev,
+            product: { ...prev.product, valueProposition: value }
+          }));
+        }}
+        fieldType="valueProposition"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
+        maxLength={50}
+      />
+      <p className="text-xs text-gray-500 -mt-2">
+        {icpData.product.valueProposition.length}/50 characters
+      </p>
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Value Proposition Variations"
         placeholder="Alternative value propositions..."
         items={icpData.product.valuePropositionVariations}
         onAdd={(value) => addArrayItem("product.valuePropositionVariations", value)}
         onRemove={(index) => removeArrayItem("product.valuePropositionVariations", index)}
+        fieldType="valuePropositionVariations"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Problems Solved (with Root Causes)"
         placeholder="Problem and its root cause..."
         items={icpData.product.problemsWithRootCauses}
         onAdd={(value) => addArrayItem("product.problemsWithRootCauses", value)}
         onRemove={(index) => removeArrayItem("product.problemsWithRootCauses", index)}
+        fieldType="problemsWithRootCauses"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Key Features"
         placeholder="Most noteworthy feature..."
         items={icpData.product.keyFeatures}
         onAdd={(value) => addArrayItem("product.keyFeatures", value)}
         onRemove={(index) => removeArrayItem("product.keyFeatures", index)}
+        fieldType="keyFeatures"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Business Outcomes (with Metrics)"
         placeholder="Business outcome with specific metrics..."
         items={icpData.product.businessOutcomes}
         onAdd={(value) => addArrayItem("product.businessOutcomes", value)}
         onRemove={(index) => removeArrayItem("product.businessOutcomes", index)}
+        fieldType="businessOutcomes"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Use Cases"
         placeholder="Specific use case or application..."
         items={icpData.product.useCases}
         onAdd={(value) => addArrayItem("product.useCases", value)}
         onRemove={(index) => removeArrayItem("product.useCases", index)}
+        fieldType="useCases"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Unique Selling Points"
         placeholder="What makes you unique..."
         items={icpData.product.uniqueSellingPoints}
         onAdd={(value) => addArrayItem("product.uniqueSellingPoints", value)}
         onRemove={(index) => removeArrayItem("product.uniqueSellingPoints", index)}
+        fieldType="uniqueSellingPoints"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Urgency / Why Now (Consequences)"
         placeholder="Consequence of not solving this problem..."
         items={icpData.product.urgencyConsequences}
         onAdd={(value) => addArrayItem("product.urgencyConsequences", value)}
         onRemove={(index) => removeArrayItem("product.urgencyConsequences", index)}
+        fieldType="urgencyConsequences"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
       <div>
@@ -900,28 +1172,37 @@ const EnhancedICPWizard = () => {
 
   const renderOfferSalesStep = () => (
     <div className="space-y-6">
-      <ArrayField
+      <ArrayFieldWithAI
         label="Pricing Packages"
         placeholder="Describe pricing tier (e.g., Starter Plan - $99/month for up to 10 users)..."
         items={icpData.offerSales.pricingTiers}
         onAdd={(value) => addArrayItem("offerSales.pricingTiers", value)}
         onRemove={(index) => removeArrayItem("offerSales.pricingTiers", index)}
+        fieldType="pricingTiers"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="Client Timeline & ROI"
         placeholder="e.g., Clients typically see 20% efficiency improvement within 30 days, full ROI within 6 months..."
         items={icpData.offerSales.clientTimeline}
         onAdd={(value) => addArrayItem("offerSales.clientTimeline", value)}
         onRemove={(index) => removeArrayItem("offerSales.clientTimeline", index)}
+        fieldType="clientTimeline"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
-      <ArrayField
+      <ArrayFieldWithAI
         label="ROI Requirements"
         placeholder="e.g., Client needs to dedicate 2 hours/week for initial setup, provide access to their current system, assign a point person for implementation..."
         items={icpData.offerSales.roiRequirements}
         onAdd={(value) => addArrayItem("offerSales.roiRequirements", value)}
         onRemove={(index) => removeArrayItem("offerSales.roiRequirements", index)}
+        fieldType="roiRequirements"
+        domain={icpData.domain}
+        cumulativeData={getCumulativeProductData()}
       />
 
       <div>
