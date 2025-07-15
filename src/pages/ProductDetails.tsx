@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Sparkles, Download, Edit } from 'lucide-react';
+import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Download, Edit, AlertTriangle, CheckCircle, Star, Zap, Clock } from 'lucide-react';
 import { icpWizardApi } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -19,8 +19,6 @@ const ProductDetails = () => {
   const [icpData, setIcpData] = useState<ICPData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const { canEdit } = usePermissions();
@@ -150,23 +148,49 @@ const ProductDetails = () => {
     );
   }
   
-  // Parse product content to extract individual products
+  // Parse product content to extract individual products with MongoDB structure
   const parseProducts = () => {
     return rootProducts.map((product: any, idx: number) => {
       // Handle both string and object products
       const productName = typeof product === 'string' ? product : product.name;
       const productData = typeof product === 'string' ? {} : product;
       
+      // Ensure consistent ID handling - use MongoDB _id if available
+      let productId;
+      if (productData._id) {
+        // Handle MongoDB ObjectId format
+        productId = productData._id.$oid || productData._id;
+      } else {
+        productId = productData.id || (idx + 1).toString();
+      }
+      
       return {
-        id: productData._id || productData.id || (idx + 1).toString(),
+        id: productId,
         name: productName,
-        description: productData.description || `Core product offering for ${icpData?.companyName || 'Your Company'}`,
-        problems: productData.problems || productEnrichment?.problems || ['Skills gap in advanced manufacturing', 'Limited internal R&D capabilities'],
-        features: productData.features || productEnrichment?.features || ['Custom technical training programs', 'Industry-academic research partnerships'],
-        solution: productData.solution || productEnrichment?.solution || 'End-to-end technical capability development',
-        usps: productData.usps || productData.uniqueSellingPoints || productEnrichment?.usp || ['Industry-validated curriculum', 'Hands-on project-based learning'],
-        whyNow: productData.whyNow || productEnrichment?.whyNow || ['Industry 4.0 acceleration', 'Post-pandemic digital transformation'],
-        valueProposition: productData.valueProposition || (latestVersion && enrichmentData?.[latestVersion]?.oneLiner) || `${productName} - Core offering`
+        // All the detailed fields from the new MongoDB structure
+        valueProposition: productData.valueProposition || '',
+        valuePropositionVariations: productData.valuePropositionVariations || [],
+        problems: productData.problems || [],
+        problemsWithRootCauses: productData.problemsWithRootCauses || [],
+        features: productData.features || [],
+        keyFeatures: productData.keyFeatures || [],
+        benefits: productData.benefits || [],
+        businessOutcomes: productData.businessOutcomes || [],
+        useCases: productData.useCases || [],
+        competitors: productData.competitors || [],
+        competitorAnalysis: productData.competitorAnalysis || [],
+        uniqueSellingPoints: productData.uniqueSellingPoints || [],
+        usps: productData.usps || [],
+        whyNow: productData.whyNow || [],
+        urgencyConsequences: productData.urgencyConsequences || [],
+        pricingTiers: productData.pricingTiers || [],
+        clientTimeline: productData.clientTimeline || '',
+        roiRequirements: productData.roiRequirements || '',
+        salesDeckUrl: productData.salesDeckUrl || '',
+        status: productData.status || 'active',
+        priority: productData.priority || 'medium',
+        createdAt: productData.createdAt,
+        updatedAt: productData.updatedAt
       };
     });
   };
@@ -174,12 +198,18 @@ const ProductDetails = () => {
   const products = parseProducts();
   console.log('ProductDetails - Parsed products:', products);
   
-  // Find product by ID (handle both string and numeric IDs)
+  // Find product by ID (handle MongoDB ObjectIds and various ID formats)
   const currentProduct = products.find(p => {
-    const productIdNum = parseInt(productId || '1');
-    const productIdStr = productId || '1';
+    // Direct string match for MongoDB ObjectIds
+    if (p.id === productId) return true;
     
-    return p.id === productIdNum || p.id === productIdStr || p.id === productId;
+    // Try numeric comparison for legacy IDs
+    const productIdNum = parseInt(productId || '1');
+    if (!isNaN(productIdNum) && (p.id === productIdNum || p.id === productIdNum.toString())) return true;
+    
+    // Fallback to index-based lookup
+    const productIndex = parseInt(productId || '1') - 1;
+    return products.indexOf(p) === productIndex;
   }) || products[0];
 
   console.log('ProductDetails - Current product:', currentProduct);
@@ -205,28 +235,8 @@ const ProductDetails = () => {
 
   // Function to enhance product with Claude AI
   const enhanceProductWithAI = async () => {
-    if (!icpData || !currentProduct) return;
-    
-    setIsEnhancing(true);
-    const companyData = {
-      companyName: icpData.companyName || workspace?.companyName,
-      products: icpData.products,
-      companyUrl: icpData.companyUrl || workspace?.companyUrl
-    };
-
-    try {
-      console.log(`Enhancing product: ${currentProduct.name}`);
-      const result = await icpWizardApi.generateProductDetails(currentProduct.name, companyData);
-      
-      if (result.success && result.data) {
-        setEnhancedData(result.data);
-        console.log('Enhanced product data:', result.data);
-      }
-    } catch (error) {
-      console.error('Error enhancing product:', error);
-    } finally {
-      setIsEnhancing(false);
-    }
+    // Removed AI enhancement functionality
+    console.log('AI enhancement feature removed');
   };
 
   const handleEditProduct = () => {
@@ -241,12 +251,14 @@ const ProductDetails = () => {
       const response = await icpWizardApi.updateProduct(slug, currentProduct.id.toString(), updatedProductData);
       
       if (response.success && response.product) {
-        // Update local state
+        // Update local state - handle MongoDB ObjectId matching
         const updatedICPData = {
           ...icpData,
-          products: icpData.products.map((p: any) => 
-            p.id === currentProduct.id ? response.product : p
-          )
+          products: icpData.products.map((p: any) => {
+            const productId = p._id?.$oid || p._id || p.id;
+            const currentProductId = currentProduct.id;
+            return productId === currentProductId ? response.product : p;
+          })
         };
         
         setIcpData(updatedICPData);
@@ -263,177 +275,304 @@ const ProductDetails = () => {
     }
   };
 
-  // Use enhanced data when available
-  const displayData = {
-    ...currentProduct,
-    problems: enhancedData?.problems || currentProduct.problems,
-    features: enhancedData?.features || currentProduct.features,
-    usps: enhancedData?.usps || currentProduct.usps,
-    useCases: enhancedData?.useCases || [],
-    benefits: enhancedData?.benefits || []
-  };
+  // Use only the current product data from MongoDB
+  const displayData = currentProduct;
 
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
-          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
-          <ChevronRight className="w-3 h-3" />
-          <Link to={`/workspace/${slug}/products`} className="hover:text-foreground transition-colors">Products</Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-foreground font-medium">{displayData.name}</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-sm text-slate-500 mb-8">
+          <Link 
+            to={`/workspace/${slug}`} 
+            className="hover:text-blue-600 transition-colors duration-200 font-medium"
+          >
+            Dashboard
+          </Link>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+          <Link 
+            to={`/workspace/${slug}/products`} 
+            className="hover:text-blue-600 transition-colors duration-200 font-medium"
+          >
+            Products
+          </Link>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+          <span className="text-slate-900 font-semibold">{displayData.name}</span>
         </nav>
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">{displayData.name}</h1>
-            <p className="text-sm text-slate-600 mt-1">Product Details & Messaging</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {workspace && (
-              <Badge variant="outline" className="text-xs">
-                {workspace.role ? workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1) : 'Workspace'}
-              </Badge>
-            )}
-            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-              onClick={enhanceProductWithAI}
-              disabled={isEnhancing}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
-            </Button>
-            {canEdit() && (
-              <Button 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-                onClick={handleEditProduct}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Product
-              </Button>
-            )}
-            {enhancedData && (
-              <Badge className="bg-purple-100 text-purple-700 text-xs">
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI Enhanced
-              </Badge>
-            )}
+        {/* Enhanced Header */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 mb-8 shadow-lg border border-white/20">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-center space-x-4 mb-3">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
+                  <Building2 className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                    {displayData.name}
+                  </h1>
+                  <div className="flex items-center space-x-3 mt-2">
+                    <Badge 
+                      variant={displayData.status === 'active' ? 'default' : 'secondary'} 
+                      className={`text-sm font-medium ${
+                        displayData.status === 'active' 
+                          ? 'bg-green-100 text-green-800 border-green-300' 
+                          : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                      }`}
+                    >
+                      {displayData.status}
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-sm font-medium ${
+                        displayData.priority === 'high' ? 'bg-red-50 border-red-300 text-red-700' :
+                        displayData.priority === 'medium' ? 'bg-yellow-50 border-yellow-300 text-yellow-700' :
+                        'bg-green-50 border-green-300 text-green-700'
+                      }`}
+                    >
+                      {displayData.priority} priority
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              {displayData.updatedAt && (
+                <p className="text-sm text-slate-500">
+                  Last updated: {new Date(displayData.updatedAt.$date || displayData.updatedAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-3 flex-wrap gap-2">
+              {canEdit() && (
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  onClick={handleEditProduct}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Product
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Side - 2/3 */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Product Overview */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Building2 className="w-4 h-4 text-blue-600" />
-                  <span>Product Overview</span>
+        {/* Enhanced Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Side - 2/3 - Enhanced */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Product Overview - Enhanced */}
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200/50 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold text-slate-800 flex items-center">
+                  <Building2 className="w-6 h-6 text-blue-600 mr-3" />
+                  Product Overview
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                  {displayData.description || 'Product description and overview'}
+              <CardContent>
+                <div className="text-slate-700 text-lg leading-relaxed whitespace-pre-wrap">
+                  {displayData.valueProposition || 'No value proposition available'}
                 </div>
-                {enhancedData && (
-                  <Badge className="bg-purple-100 text-purple-700 text-xs">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    AI Enhanced
-                  </Badge>
+                {displayData.valuePropositionVariations?.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold text-slate-600 mb-2">Value Proposition Variations:</h4>
+                    <div className="space-y-2">
+                      {displayData.valuePropositionVariations.map((variation: string, idx: number) => (
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-3 rounded-lg border border-blue-200/30">
+                          <p className="text-slate-700 text-sm">{variation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Problems & Solutions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Target className="w-4 h-4 text-red-600" />
-                    <span>Problems We Solve</span>
+            {/* Problems & Solutions - Enhanced */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <Target className="w-5 h-5 text-red-600 mr-3" />
+                    Problems We Solve
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {Array.isArray(displayData.problems) ? (
-                      displayData.problems.map((problem: string, idx: number) => (
-                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                          {problem}
+                  <div className="space-y-3">
+                    {displayData.problemsWithRootCauses?.length > 0 ? (
+                      displayData.problemsWithRootCauses.map((problem: string, idx: number) => (
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-red-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-red-100 rounded-lg">
+                              <AlertTriangle className="w-4 h-4 text-red-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{problem}</p>
+                          </div>
                         </div>
                       ))
                     ) : (
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                        {displayData.problems || 'Customer pain points and challenges that this product addresses'}
-                      </div>
+                      <div className="text-slate-500 italic text-sm">No problems with root causes specified</div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Our Solution</span>
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+                    Business Outcomes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {displayData.solution || 'How this product solves the identified problems'}
+                  <div className="space-y-3">
+                    {displayData.businessOutcomes?.length > 0 ? (
+                      displayData.businessOutcomes.map((outcome: string, idx: number) => (
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-green-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-green-100 rounded-lg">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{outcome}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-slate-500 italic text-sm">No business outcomes specified</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Features & USPs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base">Key Features</CardTitle>
+            {/* Features & USPs - Enhanced */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <Star className="w-5 h-5 text-purple-600 mr-3" />
+                    Key Features
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {Array.isArray(displayData.features) ? (
+                  <div className="space-y-3">
+                    {displayData.keyFeatures?.length > 0 ? (
+                      displayData.keyFeatures.map((feature: string, idx: number) => (
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-purple-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-purple-100 rounded-lg">
+                              <Star className="w-4 h-4 text-purple-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{feature}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : displayData.features?.length > 0 ? (
                       displayData.features.map((feature: string, idx: number) => (
-                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                          {feature}
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-purple-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-purple-100 rounded-lg">
+                              <Star className="w-4 h-4 text-purple-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{feature}</p>
+                          </div>
                         </div>
                       ))
                     ) : (
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                        {displayData.features || 'Key features and capabilities of this product'}
-                      </div>
+                      <div className="text-slate-500 italic text-sm">No features specified</div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base">Unique Selling Propositions</CardTitle>
+              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <Zap className="w-5 h-5 text-orange-600 mr-3" />
+                    Unique Selling Points
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {Array.isArray(displayData.usps) ? (
+                  <div className="space-y-3">
+                    {displayData.uniqueSellingPoints?.length > 0 ? (
+                      displayData.uniqueSellingPoints.map((usp: string, idx: number) => (
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-orange-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-orange-100 rounded-lg">
+                              <Zap className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{usp}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : displayData.usps?.length > 0 ? (
                       displayData.usps.map((usp: string, idx: number) => (
-                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                          {usp}
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-orange-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-orange-100 rounded-lg">
+                              <Zap className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{usp}</p>
+                          </div>
                         </div>
                       ))
                     ) : (
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                        {displayData.usps || 'What makes this product unique and compelling'}
+                      <div className="text-slate-500 italic text-sm">No USPs specified</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pricing & Timeline Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+                    Pricing Tiers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.pricingTiers?.length > 0 ? (
+                      displayData.pricingTiers.map((tier: string, idx: number) => (
+                        <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-green-200/30 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="p-1.5 bg-green-100 rounded-lg">
+                              <TrendingUp className="w-4 h-4 text-green-600" />
+                            </div>
+                            <p className="text-slate-700 text-sm">{tier}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-slate-500 italic text-sm">No pricing tiers specified</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <Clock className="w-5 h-5 text-blue-600 mr-3" />
+                    Client Timeline & ROI
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {displayData.clientTimeline && (
+                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-blue-200/30">
+                        <h4 className="text-sm font-semibold text-slate-600 mb-2">Client Timeline:</h4>
+                        <p className="text-slate-700 text-sm">{displayData.clientTimeline}</p>
+                      </div>
+                    )}
+                    {displayData.roiRequirements && (
+                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-blue-200/30">
+                        <h4 className="text-sm font-semibold text-slate-600 mb-2">ROI Requirements:</h4>
+                        <p className="text-slate-700 text-sm">{displayData.roiRequirements}</p>
                       </div>
                     )}
                   </div>
@@ -441,91 +580,109 @@ const ProductDetails = () => {
               </Card>
             </div>
 
-            {/* Why Now */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Why Now & Consequences</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                  {Array.isArray(currentProduct.whyNow)
-                    ? currentProduct.whyNow.join(', ')
-                    : typeof currentProduct.whyNow === 'object' && currentProduct.whyNow !== null
-                    ? JSON.stringify(currentProduct.whyNow)
-                    : currentProduct.whyNow || 'Urgency and consequences of not solving the problem'}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Urgency Consequences */}
+            {displayData.urgencyConsequences?.length > 0 && (
+              <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3" />
+                    Urgency Consequences
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.urgencyConsequences.map((consequence: string, idx: number) => (
+                      <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-yellow-200/30 hover:shadow-md transition-all duration-200">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-1.5 bg-yellow-100 rounded-lg">
+                            <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                          </div>
+                          <p className="text-slate-700 text-sm">{consequence}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Right Side - 1/3 */}
-          <div className="space-y-6">
-            {/* Value Proposition */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Value Proposition</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                  {Array.isArray(currentProduct.valueProposition)
-                    ? currentProduct.valueProposition.join(', ')
-                    : typeof currentProduct.valueProposition === 'object' && currentProduct.valueProposition !== null
-                    ? JSON.stringify(currentProduct.valueProposition)
-                    : currentProduct.valueProposition || 'Clear value proposition for this product'}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Target Segments */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Users className="w-4 h-4 text-purple-600" />
-                  <span>Target Segments</span>
+          {/* Enhanced Right Side - 1/3 */}
+          <div className="space-y-8">
+            {/* Competitor Analysis */}
+            <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200/50 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                  <Building2 className="w-5 h-5 text-red-600 mr-3" />
+                  Competitor Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Building2 className="w-3 h-3 mr-2" />
-                      View Segments
-                    </Button>
-                  </Link>
-                  <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Users className="w-3 h-3 mr-2" />
-                      View Personas
-                    </Button>
-                  </Link>
+                  {displayData.competitorAnalysis?.length > 0 ? (
+                    displayData.competitorAnalysis.map((competitor: any, idx: number) => (
+                      <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-red-200/30 hover:shadow-md transition-all duration-200">
+                        <h4 className="font-semibold text-slate-700 text-sm mb-2">{competitor.domain}</h4>
+                        <p className="text-slate-600 text-sm">{competitor.differentiation}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-slate-500 italic text-sm">No competitor analysis available</div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Product Metrics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Product Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Market Size', value: '$2.5B', icon: '💰' },
-                    { label: 'Growth Rate', value: '15% YoY', icon: '📈' },
-                    { label: 'Competitors', value: '12', icon: '🏢' },
-                    { label: 'Customer LTV', value: '$50K', icon: '💎' }
-                  ].map((metric) => (
-                    <div key={metric.label} className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{metric.icon}</span>
-                        <span className="text-xs font-medium text-slate-700">{metric.label}</span>
+            {/* Sales Resources */}
+            {displayData.salesDeckUrl && (
+              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <Users className="w-5 h-5 text-purple-600 mr-3" />
+                    Sales Resources
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-purple-200/30">
+                    <h4 className="text-sm font-semibold text-slate-600 mb-2">Sales Deck URL:</h4>
+                    <a 
+                      href={displayData.salesDeckUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-purple-600 hover:text-purple-800 text-sm break-all"
+                    >
+                      {displayData.salesDeckUrl}
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Use Cases */}
+            {displayData.useCases?.length > 0 && (
+              <Card className="bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200/50 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+                    <Target className="w-5 h-5 text-indigo-600 mr-3" />
+                    Use Cases
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.useCases.map((useCase: string, idx: number) => (
+                      <div key={idx} className="bg-white/70 backdrop-blur-sm p-4 rounded-xl border border-indigo-200/30 hover:shadow-md transition-all duration-200">
+                        <div className="flex items-start space-x-3">
+                          <div className="p-1.5 bg-indigo-100 rounded-lg">
+                            <Target className="w-4 h-4 text-indigo-600" />
+                          </div>
+                          <p className="text-slate-700 text-sm">{useCase}</p>
+                        </div>
                       </div>
-                      <span className="text-sm font-bold text-slate-900">{metric.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

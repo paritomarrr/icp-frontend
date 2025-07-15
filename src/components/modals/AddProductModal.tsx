@@ -16,16 +16,25 @@ interface AddProductModalProps {
 export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    category: '',
-    targetAudience: '',
     valueProposition: '',
+    valuePropositionVariations: [''],
     problems: [''],
+    problemsWithRootCauses: [''],
     features: [''],
+    keyFeatures: [''],
     benefits: [''],
+    businessOutcomes: [''],
     useCases: [''],
+    competitors: [''],
+    competitorAnalysis: [{ domain: '', differentiation: '' }],
+    uniqueSellingPoints: [''],
     usps: [''],
-    pricing: '',
+    whyNow: [''],
+    urgencyConsequences: [''],
+    pricingTiers: [''],
+    clientTimeline: '',
+    roiRequirements: '',
+    salesDeckUrl: '',
     status: 'active',
     priority: 'medium'
   });
@@ -35,7 +44,12 @@ export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalP
   };
 
   const handleArrayChange = (field: string, index: number, value: string) => {
-    const arrayFields = ['problems', 'features', 'benefits', 'useCases', 'usps'];
+    const arrayFields = [
+      'valuePropositionVariations', 'problems', 'problemsWithRootCauses', 
+      'features', 'keyFeatures', 'benefits', 'businessOutcomes', 
+      'useCases', 'competitors', 'uniqueSellingPoints', 'usps', 
+      'whyNow', 'urgencyConsequences', 'pricingTiers'
+    ];
     if (arrayFields.includes(field)) {
       setFormData(prev => ({
         ...prev,
@@ -46,22 +60,51 @@ export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalP
     }
   };
 
+  const handleCompetitorChange = (index: number, field: 'domain' | 'differentiation', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      competitorAnalysis: prev.competitorAnalysis.map((comp, i) => 
+        i === index ? { ...comp, [field]: value } : comp
+      )
+    }));
+  };
+
   const addArrayItem = (field: string) => {
-    const arrayFields = ['problems', 'features', 'benefits', 'useCases', 'usps'];
+    const arrayFields = [
+      'valuePropositionVariations', 'problems', 'problemsWithRootCauses', 
+      'features', 'keyFeatures', 'benefits', 'businessOutcomes', 
+      'useCases', 'competitors', 'uniqueSellingPoints', 'usps', 
+      'whyNow', 'urgencyConsequences', 'pricingTiers'
+    ];
     if (arrayFields.includes(field)) {
       setFormData(prev => ({
         ...prev,
         [field]: [...(prev[field as keyof typeof prev] as string[]), '']
       }));
+    } else if (field === 'competitorAnalysis') {
+      setFormData(prev => ({
+        ...prev,
+        competitorAnalysis: [...prev.competitorAnalysis, { domain: '', differentiation: '' }]
+      }));
     }
   };
 
   const removeArrayItem = (field: string, index: number) => {
-    const arrayFields = ['problems', 'features', 'benefits', 'useCases', 'usps'];
+    const arrayFields = [
+      'valuePropositionVariations', 'problems', 'problemsWithRootCauses', 
+      'features', 'keyFeatures', 'benefits', 'businessOutcomes', 
+      'useCases', 'competitors', 'uniqueSellingPoints', 'usps', 
+      'whyNow', 'urgencyConsequences', 'pricingTiers'
+    ];
     if (arrayFields.includes(field)) {
       setFormData(prev => ({
         ...prev,
         [field]: (prev[field as keyof typeof prev] as string[]).filter((_: any, i: number) => i !== index)
+      }));
+    } else if (field === 'competitorAnalysis') {
+      setFormData(prev => ({
+        ...prev,
+        competitorAnalysis: prev.competitorAnalysis.filter((_, i) => i !== index)
       }));
     }
   };
@@ -69,31 +112,114 @@ export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalP
   const handleSubmit = () => {
     const cleanedData = {
       ...formData,
+      valuePropositionVariations: formData.valuePropositionVariations.filter(v => v.trim() !== ''),
       problems: formData.problems.filter(p => p.trim() !== ''),
+      problemsWithRootCauses: formData.problemsWithRootCauses.filter(p => p.trim() !== ''),
       features: formData.features.filter(f => f.trim() !== ''),
+      keyFeatures: formData.keyFeatures.filter(f => f.trim() !== ''),
       benefits: formData.benefits.filter(b => b.trim() !== ''),
+      businessOutcomes: formData.businessOutcomes.filter(b => b.trim() !== ''),
       useCases: formData.useCases.filter(u => u.trim() !== ''),
-      usps: formData.usps.filter(u => u.trim() !== '')
+      competitors: formData.competitors.filter(c => c.trim() !== ''),
+      competitorAnalysis: formData.competitorAnalysis.filter(c => c.domain.trim() !== '' || c.differentiation.trim() !== ''),
+      uniqueSellingPoints: formData.uniqueSellingPoints.filter(u => u.trim() !== ''),
+      usps: formData.usps.filter(u => u.trim() !== ''),
+      whyNow: formData.whyNow.filter(w => w.trim() !== ''),
+      urgencyConsequences: formData.urgencyConsequences.filter(u => u.trim() !== ''),
+      pricingTiers: formData.pricingTiers.filter(p => p.trim() !== '')
     };
     
     onSave(cleanedData);
     setFormData({
       name: '',
-      description: '',
-      category: '',
-      targetAudience: '',
       valueProposition: '',
+      valuePropositionVariations: [''],
       problems: [''],
+      problemsWithRootCauses: [''],
       features: [''],
+      keyFeatures: [''],
       benefits: [''],
+      businessOutcomes: [''],
       useCases: [''],
+      competitors: [''],
+      competitorAnalysis: [{ domain: '', differentiation: '' }],
+      uniqueSellingPoints: [''],
       usps: [''],
-      pricing: '',
+      whyNow: [''],
+      urgencyConsequences: [''],
+      pricingTiers: [''],
+      clientTimeline: '',
+      roiRequirements: '',
+      salesDeckUrl: '',
       status: 'active',
       priority: 'medium'
     });
     onOpenChange(false);
   };
+
+  const addCompetitorAnalysisItem = () => {
+    setFormData({
+      ...formData,
+      competitorAnalysis: [...formData.competitorAnalysis, { domain: '', differentiation: '' }]
+    });
+  };
+
+  const removeCompetitorAnalysisItem = (index: number) => {
+    const newItems = formData.competitorAnalysis.filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      competitorAnalysis: newItems.length > 0 ? newItems : [{ domain: '', differentiation: '' }]
+    });
+  };
+
+  const renderCompetitorAnalysisField = () => (
+    <div>
+      <Label>Competitor Analysis</Label>
+      {formData.competitorAnalysis.map((competitor, index) => (
+        <div key={index} className="space-y-2 border p-3 rounded-md">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Competitor domain"
+              value={competitor.domain}
+              onChange={(e) => {
+                const newCompetitors = [...formData.competitorAnalysis];
+                newCompetitors[index] = { ...competitor, domain: e.target.value };
+                setFormData({ ...formData, competitorAnalysis: newCompetitors });
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => removeCompetitorAnalysisItem(index)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <Textarea
+            placeholder="Differentiation strategy"
+            value={competitor.differentiation}
+            onChange={(e) => {
+              const newCompetitors = [...formData.competitorAnalysis];
+              newCompetitors[index] = { ...competitor, differentiation: e.target.value };
+              setFormData({ ...formData, competitorAnalysis: newCompetitors });
+            }}
+            rows={2}
+          />
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={addCompetitorAnalysisItem}
+        className="mt-2"
+      >
+        <Plus className="h-4 w-4 mr-1" />
+        Add Competitor Analysis
+      </Button>
+    </div>
+  );
 
   const renderArrayField = (field: string, label: string, placeholder: string) => {
     const arrayValue = formData[field as keyof typeof formData] as string[];
@@ -159,37 +285,6 @@ export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalP
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Brief description of the product..."
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                placeholder="e.g., Software, Service, Platform"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="targetAudience">Target Audience</Label>
-              <Input
-                id="targetAudience"
-                value={formData.targetAudience}
-                onChange={(e) => handleInputChange('targetAudience', e.target.value)}
-                placeholder="e.g., B2B, Enterprise, SMB"
-              />
-            </div>
-
-            <div>
               <Label htmlFor="valueProposition">Value Proposition</Label>
               <Textarea
                 id="valueProposition"
@@ -201,12 +296,33 @@ export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalP
             </div>
 
             <div>
-              <Label htmlFor="pricing">Pricing Model</Label>
+              <Label htmlFor="clientTimeline">Client Timeline</Label>
               <Input
-                id="pricing"
-                value={formData.pricing}
-                onChange={(e) => handleInputChange('pricing', e.target.value)}
-                placeholder="e.g., Subscription, One-time, Usage-based"
+                id="clientTimeline"
+                value={formData.clientTimeline}
+                onChange={(e) => handleInputChange('clientTimeline', e.target.value)}
+                placeholder="e.g., Q1 2024, 6 months"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="roiRequirements">ROI Requirements</Label>
+              <Textarea
+                id="roiRequirements"
+                value={formData.roiRequirements}
+                onChange={(e) => handleInputChange('roiRequirements', e.target.value)}
+                placeholder="ROI expectations and requirements..."
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="salesDeckUrl">Sales Deck URL</Label>
+              <Input
+                id="salesDeckUrl"
+                value={formData.salesDeckUrl}
+                onChange={(e) => handleInputChange('salesDeckUrl', e.target.value)}
+                placeholder="https://..."
               />
             </div>
 
@@ -243,15 +359,35 @@ export const AddProductModal = ({ open, onOpenChange, onSave }: AddProductModalP
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Product Details</h3>
 
+            {renderArrayField('valuePropositionVariations', 'Value Proposition Variations', 'Add a value proposition variation')}
+
             {renderArrayField('problems', 'Problems Solved', 'What problem does this solve?')}
 
-            {renderArrayField('features', 'Key Features', 'Add a key feature')}
+            {renderArrayField('problemsWithRootCauses', 'Problems with Root Causes', 'Add problem with root cause')}
+
+            {renderArrayField('features', 'Features', 'Add a feature')}
+
+            {renderArrayField('keyFeatures', 'Key Features', 'Add a key feature')}
 
             {renderArrayField('benefits', 'Benefits', 'Add a benefit')}
 
+            {renderArrayField('businessOutcomes', 'Business Outcomes', 'Add a business outcome')}
+
             {renderArrayField('useCases', 'Use Cases', 'Add a use case')}
 
-            {renderArrayField('usps', 'Unique Selling Points', 'Add a USP')}
+            {renderArrayField('competitors', 'Competitors', 'Add a competitor')}
+
+            {renderCompetitorAnalysisField()}
+
+            {renderArrayField('uniqueSellingPoints', 'Unique Selling Points', 'Add a unique selling point')}
+
+            {renderArrayField('usps', 'USPs', 'Add a USP')}
+
+            {renderArrayField('whyNow', 'Why Now', 'Add a timing factor')}
+
+            {renderArrayField('urgencyConsequences', 'Urgency Consequences', 'Add urgency consequence')}
+
+            {renderArrayField('pricingTiers', 'Pricing Tiers', 'Add a pricing tier')}
           </div>
         </div>
 
