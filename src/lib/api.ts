@@ -63,12 +63,15 @@ export interface EnhancedICPData {
     uniqueSellingPoints: string[];
     urgencyConsequences: string[];
     competitorAnalysis: CompetitorAnalysis[];
+    useCases: string[];
+    description: string;
+    category: string;
   };
   offerSales: {
     pricingTiers: string[];
-    clientTimeline: string;
-    roiRequirements: string;
-    salesDeckUrl: string;
+    clientTimeline: string[];
+    roiRequirements: string[];
+    salesDeckUrl: string[];
   };
   socialProof: {
     caseStudies: CaseStudy[];

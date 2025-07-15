@@ -11,7 +11,7 @@ import { storageService } from "@/lib/storage";
 import { enhancedICPApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import LoadingPage from "@/components/LoadingPage";
-import { ChevronLeft, ChevronRight, Plus, X, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 import SocialProofStep from "@/components/SocialProofStep";
 import TargetSegmentsStep from "@/components/TargetSegmentsStep";
 
@@ -47,18 +47,19 @@ const ArrayField = ({ label, placeholder, items, onAdd, onRemove }: {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
+          className="flex-1"
         />
-        <Button onClick={handleAdd} disabled={!inputValue.trim()}>
+        <Button onClick={handleAdd} disabled={!inputValue.trim()} className="bg-black text-white hover:bg-gray-800">
           Add
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
         {items.map((item, index) => (
-          <Badge key={index} variant="secondary">
+          <Badge key={index} variant="secondary" className="flex items-center gap-2">
             {item}
             <button
               onClick={() => onRemove(index)}
-              className="ml-2 text-red-500 hover:text-red-700"
+              className="ml-1 text-red-500 hover:text-red-700 text-sm"
             >
               ×
             </button>
@@ -131,14 +132,17 @@ interface EnhancedICPData {
     uniqueSellingPoints: string[];
     urgencyConsequences: string[];
     competitorAnalysis: CompetitorAnalysis[];
+    useCases: string[];
+    description: string;
+    category: string;
   };
 
   // 4. Offer & Sales
   offerSales: {
     pricingTiers: string[];
-    clientTimeline: string;
-    roiRequirements: string;
-    salesDeckUrl: string;
+    clientTimeline: string[];
+    roiRequirements: string[];
+    salesDeckUrl: string[];
   };
 
   // 5. Social Proof
@@ -169,10 +173,20 @@ const EnhancedICPWizard = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [newSignature, setNewSignature] = useState<EmailSignature>({
+    firstName: "",
+    lastName: "",
+    title: ""
+  });
+  const [newCompetitor, setNewCompetitor] = useState<CompetitorAnalysis>({
+    domain: "",
+    differentiation: ""
+  });
 
   const [icpData, setIcpData] = useState<EnhancedICPData>({
     adminAccess: {
-      emailSignatures: [{ firstName: "", lastName: "", title: "" }],
+      emailSignatures: [],
       platformAccessGranted: false,
     },
     domain: "",
@@ -184,13 +198,16 @@ const EnhancedICPWizard = () => {
       businessOutcomes: [],
       uniqueSellingPoints: [],
       urgencyConsequences: [],
-      competitorAnalysis: [{ domain: "", differentiation: "" }],
+      competitorAnalysis: [],
+      useCases: [],
+      description: "",
+      category: "",
     },
     offerSales: {
       pricingTiers: [],
-      clientTimeline: "",
-      roiRequirements: "",
-      salesDeckUrl: "",
+      clientTimeline: [],
+      roiRequirements: [],
+      salesDeckUrl: [],
     },
     socialProof: {
       caseStudies: [],
@@ -245,16 +262,6 @@ const EnhancedICPWizard = () => {
     fetchWorkspace();
   }, [slug, navigate]);
 
-  const addEmailSignature = () => {
-    setIcpData(prev => ({
-      ...prev,
-      adminAccess: {
-        ...prev.adminAccess,
-        emailSignatures: [...prev.adminAccess.emailSignatures, { firstName: "", lastName: "", title: "" }]
-      }
-    }));
-  };
-
   const removeEmailSignature = (index: number) => {
     setIcpData(prev => ({
       ...prev,
@@ -265,16 +272,44 @@ const EnhancedICPWizard = () => {
     }));
   };
 
-  const updateEmailSignature = (index: number, field: keyof EmailSignature, value: string) => {
+  const removeCompetitor = (index: number) => {
     setIcpData(prev => ({
       ...prev,
-      adminAccess: {
-        ...prev.adminAccess,
-        emailSignatures: prev.adminAccess.emailSignatures.map((sig, i) => 
-          i === index ? { ...sig, [field]: value } : sig
-        )
+      product: {
+        ...prev.product,
+        competitorAnalysis: prev.product.competitorAnalysis.filter((_, i) => i !== index)
       }
     }));
+  };
+
+  const handleAddSignature = () => {
+    if (newSignature.firstName.trim() && newSignature.lastName.trim() && newSignature.title.trim()) {
+      setIcpData(prev => ({
+        ...prev,
+        adminAccess: {
+          ...prev.adminAccess,
+          emailSignatures: [...prev.adminAccess.emailSignatures, { ...newSignature }]
+        }
+      }));
+      
+      // Clear the form fields
+      setNewSignature({ firstName: "", lastName: "", title: "" });
+    }
+  };
+
+  const handleAddCompetitor = () => {
+    if (newCompetitor.domain.trim() && newCompetitor.differentiation.trim()) {
+      setIcpData(prev => ({
+        ...prev,
+        product: {
+          ...prev.product,
+          competitorAnalysis: [...prev.product.competitorAnalysis, { ...newCompetitor }]
+        }
+      }));
+      
+      // Clear the form fields
+      setNewCompetitor({ domain: "", differentiation: "" });
+    }
   };
 
   const addArrayItem = useCallback((path: string, value: string) => {
@@ -401,14 +436,14 @@ const EnhancedICPWizard = () => {
         if (icpData.offerSales.pricingTiers.length === 0) {
           errors.push("At least one pricing tier is required");
         }
-        if (!icpData.offerSales.clientTimeline.trim()) {
-          errors.push("Client timeline is required");
+        if (icpData.offerSales.clientTimeline.length === 0) {
+          errors.push("At least one client timeline is required");
         }
-        if (!icpData.offerSales.roiRequirements.trim()) {
-          errors.push("ROI requirements are required");
+        if (icpData.offerSales.roiRequirements.length === 0) {
+          errors.push("At least one ROI requirement is required");
         }
-        if (!icpData.offerSales.salesDeckUrl.trim()) {
-          errors.push("Sales deck URL is required");
+        if (icpData.offerSales.salesDeckUrl.length === 0) {
+          errors.push("At least one sales deck URL is required");
         }
         break;
         
@@ -475,19 +510,25 @@ const EnhancedICPWizard = () => {
     const validation = validateStep(currentStep);
     
     if (!validation.isValid) {
+      setValidationErrors(validation.errors);
       toast({
         title: "Validation Error",
         description: validation.errors.join(", "),
         variant: "destructive",
       });
+      // Stay on current step to show highlighted required fields
       return;
     }
     
+    // Clear validation errors and move to next step
+    setValidationErrors([]);
     const newStep = Math.min(steps.length - 1, currentStep + 1);
     setCurrentStep(newStep);
   };
 
   const handlePrevStep = () => {
+    // Clear validation errors when going back
+    setValidationErrors([]);
     const newStep = Math.max(0, currentStep - 1);
     setCurrentStep(newStep);
   };
@@ -514,7 +555,17 @@ const EnhancedICPWizard = () => {
       const apiData = {
         ...icpData,
         segments: icpData.targetAccountSegments, // Map targetAccountSegments to segments for API
+        // Remove targetAccountSegments to avoid confusion
+        targetAccountSegments: undefined,
       };
+      
+      console.log("=== FRONTEND ENHANCED ICP DEBUG ===");
+      console.log("Sending data keys:", Object.keys(apiData));
+      console.log("Domain:", apiData.domain);
+      console.log("Product valueProposition:", apiData.product?.valueProposition);
+      console.log("Segments count:", apiData.segments?.length);
+      console.log("AdminAccess data:", apiData.adminAccess);
+      console.log("================================");
       
       const result = await enhancedICPApi.saveEnhancedICP(workspace._id, apiData);
 
@@ -529,7 +580,7 @@ const EnhancedICPWizard = () => {
 
       navigate(`/workspace/${slug}/products`);
     } catch (error) {
-
+      console.error("Submit ICP error:", error);
       toast({
         title: "Error",
         description: "Failed to save ICP data. Please try again.",
@@ -543,87 +594,121 @@ const EnhancedICPWizard = () => {
   if (loading) return <LoadingPage />;
   if (!workspace) return <Navigate to="/login" />;
 
-  const renderAdminAccessStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Email Signatures</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          What should be the email signatures for each sender? (Format: First Name, Last Name, Title)
-        </p>
-        
-        {icpData.adminAccess.emailSignatures.map((signature, index) => (
-          <div key={index} className="flex gap-4 mb-4 items-end">
-            <Input
-              placeholder="First Name"
-              value={signature.firstName}
-              onChange={(e) => updateEmailSignature(index, 'firstName', e.target.value)}
-            />
-            <Input
-              placeholder="Last Name"
-              value={signature.lastName}
-              onChange={(e) => updateEmailSignature(index, 'lastName', e.target.value)}
-            />
-            <Input
-              placeholder="Title"
-              value={signature.title}
-              onChange={(e) => updateEmailSignature(index, 'title', e.target.value)}
-            />
-            {icpData.adminAccess.emailSignatures.length > 1 && (
-              <Button variant="destructive" size="sm" onClick={() => removeEmailSignature(index)}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+  const renderAdminAccessStep = () => {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Email Signatures</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Enter email signature details and click "Add" to save each signature.
+          </p>
+          
+          {/* New signature form */}
+          <div className="space-y-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Input
+                placeholder="First Name"
+                value={newSignature.firstName}
+                onChange={(e) => setNewSignature(prev => ({ ...prev, firstName: e.target.value }))}
+              />
+              <Input
+                placeholder="Last Name"
+                value={newSignature.lastName}
+                onChange={(e) => setNewSignature(prev => ({ ...prev, lastName: e.target.value }))}
+              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Title"
+                  value={newSignature.title}
+                  onChange={(e) => setNewSignature(prev => ({ ...prev, title: e.target.value }))}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleAddSignature}
+                  disabled={!newSignature.firstName.trim() || !newSignature.lastName.trim() || !newSignature.title.trim()}
+                  className="bg-black text-white hover:bg-gray-800"
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
           </div>
-        ))}
-        
-        <Button variant="outline" onClick={addEmailSignature}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Email Signature
-        </Button>
-      </div>
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Platform Access</h3>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="platform-access"
-            checked={icpData.adminAccess.platformAccessGranted}
-            onCheckedChange={(checked) => {
-              setIcpData(prev => {
-                const newData = {
-                  ...prev,
-                  adminAccess: { ...prev.adminAccess, platformAccessGranted: checked as boolean }
-                };
-                return newData;
-              });
-            }}
-          />
-          <label htmlFor="platform-access" className="text-sm">
-            Have you invited team@workflows.io to your product platform?
-          </label>
+          {/* Display added signatures */}
+          {icpData.adminAccess.emailSignatures.length > 0 ? (
+            <div>
+              <h5 className="font-medium mb-3">Added Email Signatures:</h5>
+              {icpData.adminAccess.emailSignatures.map((signature, index) => (
+                <div key={index} className="border p-3 rounded-lg mb-2 bg-gray-50">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">
+                      <strong>{signature.firstName} {signature.lastName}</strong> - {signature.title}
+                    </span>
+                    <Button variant="destructive" size="sm" onClick={() => removeEmailSignature(index)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>No email signatures added yet. Fill in the form above and click "Add Email Signature" to get started.</p>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Platform Access</h3>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="platform-access"
+              checked={icpData.adminAccess.platformAccessGranted}
+              onCheckedChange={(checked) => {
+                setIcpData(prev => {
+                  const newData = {
+                    ...prev,
+                    adminAccess: { ...prev.adminAccess, platformAccessGranted: checked as boolean }
+                  };
+                  return newData;
+                });
+              }}
+            />
+            <label htmlFor="platform-access" className="text-sm">
+              Have you invited team@workflows.io to your product platform?
+            </label>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderDomainStep = () => (
-    <div>
-      <h3 className="text-lg font-semibold mb-4">Company Domain <span className="text-red-500">*</span></h3>
-      <p className="text-sm text-gray-600 mb-4">
-        Provide the domain used by your company
-      </p>
-      <Input
-        placeholder="example.com"
-        value={icpData.domain}          onChange={(e) => {
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Company Domain <span className="text-red-500">*</span></h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Provide the domain used by your company (without http:// or https://)
+        </p>
+        <Input
+          placeholder="example.com"
+          value={icpData.domain}
+          onChange={(e) => {
             setIcpData(prev => {
               const newData = { ...prev, domain: e.target.value };
               return newData;
             });
           }}
-        className={!icpData.domain.trim() ? "border-red-500" : ""}
-      />
-      <div className="mt-2 text-xs text-gray-500">
-        Current value: {icpData.domain}
+          className={!icpData.domain.trim() && validationErrors.some(error => error.includes("Company domain")) ? "border-red-500" : ""}
+        />
+        {icpData.domain && (
+          <div className="mt-2 text-xs text-gray-500">
+            Current value: <span className="font-mono">{icpData.domain}</span>
+          </div>
+        )}
+        <div className="mt-2 text-xs text-gray-400">
+          This will be used for email signatures and outbound messaging consistency.
+        </div>
       </div>
     </div>
   );
@@ -631,23 +716,65 @@ const EnhancedICPWizard = () => {
   const renderProductStep = () => (
     <div className="space-y-6">
       <div>
+        <h3 className="text-lg font-semibold mb-4">Product Description (Optional)</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Provide a brief description of your product or service.
+        </p>
+        <Textarea
+          placeholder="Describe your product or service..."
+          value={icpData.product.description}
+          onChange={(e) => {
+            setIcpData(prev => {
+              const newData = {
+                ...prev,
+                product: { ...prev.product, description: e.target.value }
+              };
+              return newData;
+            });
+          }}
+          className="min-h-[80px]"
+        />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Product Category (Optional)</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          What category does your product belong to?
+        </p>
+        <Input
+          placeholder="e.g., SaaS, Healthcare, Fintech, etc."
+          value={icpData.product.category}
+          onChange={(e) => {
+            setIcpData(prev => {
+              const newData = {
+                ...prev,
+                product: { ...prev.product, category: e.target.value }
+              };
+              return newData;
+            });
+          }}
+        />
+      </div>
+
+      <div>
         <h3 className="text-lg font-semibold mb-4">Value Proposition <span className="text-red-500">*</span></h3>
         <p className="text-sm text-gray-600 mb-4">
           Write your value proposition in 50 characters or less. (You may include variations for different offerings.)
         </p>
         <Input
           placeholder="Your main value proposition..."
-          value={icpData.product.valueProposition}            onChange={(e) => {
-              setIcpData(prev => {
-                const newData = {
-                  ...prev,
-                  product: { ...prev.product, valueProposition: e.target.value }
-                };
-                return newData;
-              });
-            }}
+          value={icpData.product.valueProposition}
+          onChange={(e) => {
+            setIcpData(prev => {
+              const newData = {
+                ...prev,
+                product: { ...prev.product, valueProposition: e.target.value }
+              };
+              return newData;
+            });
+          }}
           maxLength={50}
-          className={!icpData.product.valueProposition.trim() ? "border-red-500" : ""}
+          className={!icpData.product.valueProposition.trim() && validationErrors.some(error => error.includes("Value proposition")) ? "border-red-500" : ""}
         />
         <p className="text-xs text-gray-500 mt-1">
           {icpData.product.valueProposition.length}/50 characters
@@ -666,7 +793,7 @@ const EnhancedICPWizard = () => {
       />
 
       <ArrayField
-        label="Problems Solved"
+        label="Problems Solved (with Root Causes)"
         placeholder="Problem and its root cause..."
         items={icpData.product.problemsWithRootCauses}
         onAdd={(value) => addArrayItem("product.problemsWithRootCauses", value)}
@@ -682,11 +809,19 @@ const EnhancedICPWizard = () => {
       />
 
       <ArrayField
-        label="Business Outcomes"
-        placeholder="Business outcome with metrics..."
+        label="Business Outcomes (with Metrics)"
+        placeholder="Business outcome with specific metrics..."
         items={icpData.product.businessOutcomes}
         onAdd={(value) => addArrayItem("product.businessOutcomes", value)}
         onRemove={(index) => removeArrayItem("product.businessOutcomes", index)}
+      />
+
+      <ArrayField
+        label="Use Cases"
+        placeholder="Specific use case or application..."
+        items={icpData.product.useCases}
+        onAdd={(value) => addArrayItem("product.useCases", value)}
+        onRemove={(index) => removeArrayItem("product.useCases", index)}
       />
 
       <ArrayField
@@ -698,8 +833,8 @@ const EnhancedICPWizard = () => {
       />
 
       <ArrayField
-        label="Urgency / Why Now"
-        placeholder="Consequence of not solving..."
+        label="Urgency / Why Now (Consequences)"
+        placeholder="Consequence of not solving this problem..."
         items={icpData.product.urgencyConsequences}
         onAdd={(value) => addArrayItem("product.urgencyConsequences", value)}
         onRemove={(index) => removeArrayItem("product.urgencyConsequences", index)}
@@ -711,30 +846,54 @@ const EnhancedICPWizard = () => {
           List the domains of your main competitors and briefly explain how you differentiate from them.
         </p>
         
-        {icpData.product.competitorAnalysis.map((competitor, index) => (
-          <div key={index} className="flex gap-4 mb-4 items-end">
+        {/* New competitor form */}
+        <div className="space-y-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input
               placeholder="competitor.com"
-              value={competitor.domain}
-              onChange={(e) => updateCompetitorAnalysis(index, 'domain', e.target.value)}
+              value={newCompetitor.domain}
+              onChange={(e) => setNewCompetitor(prev => ({ ...prev, domain: e.target.value }))}
             />
-            <Input
-              placeholder="How you differentiate..."
-              value={competitor.differentiation}
-              onChange={(e) => updateCompetitorAnalysis(index, 'differentiation', e.target.value)}
-            />
-            {icpData.product.competitorAnalysis.length > 1 && (
-              <Button variant="destructive" size="sm" onClick={() => removeCompetitorAnalysis(index)}>
-                <X className="h-4 w-4" />
+            <div className="flex gap-2">
+              <Input
+                placeholder="How you differentiate..."
+                value={newCompetitor.differentiation}
+                onChange={(e) => setNewCompetitor(prev => ({ ...prev, differentiation: e.target.value }))}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleAddCompetitor}
+                disabled={!newCompetitor.domain.trim() || !newCompetitor.differentiation.trim()}
+                className="bg-black text-white hover:bg-gray-800"
+              >
+                Add
               </Button>
-            )}
+            </div>
           </div>
-        ))}
-        
-        <Button variant="outline" onClick={addCompetitorAnalysis}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Competitor
-        </Button>
+        </div>
+
+        {/* Display added competitors */}
+        {icpData.product.competitorAnalysis.length > 0 ? (
+          <div>
+            <h5 className="font-medium mb-3">Added Competitors:</h5>
+            {icpData.product.competitorAnalysis.map((competitor, index) => (
+              <div key={index} className="border p-3 rounded-lg mb-2 bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">
+                    <strong>{competitor.domain}</strong> - {competitor.differentiation}
+                  </span>
+                  <Button variant="destructive" size="sm" onClick={() => removeCompetitor(index)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            <p>No competitors added yet. Fill in the form above and click "Add" to get started.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -743,77 +902,42 @@ const EnhancedICPWizard = () => {
     <div className="space-y-6">
       <ArrayField
         label="Pricing Packages"
-        placeholder="Describe pricing tier..."
+        placeholder="Describe pricing tier (e.g., Starter Plan - $99/month for up to 10 users)..."
         items={icpData.offerSales.pricingTiers}
         onAdd={(value) => addArrayItem("offerSales.pricingTiers", value)}
         onRemove={(index) => removeArrayItem("offerSales.pricingTiers", index)}
       />
 
-      <div>
-        <h4 className="font-medium mb-2">Client Timeline & ROI <span className="text-red-500">*</span></h4>
-        <p className="text-sm text-gray-600 mb-4">
-          How soon can your clients expect ROI? What is required from their end?
-        </p>
-        <Textarea
-          placeholder="ROI timeline and client requirements..."
-          value={icpData.offerSales.clientTimeline}            onChange={(e) => {
-              setIcpData(prev => {
-                const newData = {
-                  ...prev,
-                  offerSales: { ...prev.offerSales, clientTimeline: e.target.value }
-                };
-                return newData;
-              });
-            }}
-          className={!icpData.offerSales.clientTimeline.trim() ? "border-red-500" : ""}
-        />
-        <div className="mt-2 text-xs text-gray-500">
-          Current value: "{icpData.offerSales.clientTimeline}"
-        </div>
-      </div>
+      <ArrayField
+        label="Client Timeline & ROI"
+        placeholder="e.g., Clients typically see 20% efficiency improvement within 30 days, full ROI within 6 months..."
+        items={icpData.offerSales.clientTimeline}
+        onAdd={(value) => addArrayItem("offerSales.clientTimeline", value)}
+        onRemove={(index) => removeArrayItem("offerSales.clientTimeline", index)}
+      />
+
+      <ArrayField
+        label="ROI Requirements"
+        placeholder="e.g., Client needs to dedicate 2 hours/week for initial setup, provide access to their current system, assign a point person for implementation..."
+        items={icpData.offerSales.roiRequirements}
+        onAdd={(value) => addArrayItem("offerSales.roiRequirements", value)}
+        onRemove={(index) => removeArrayItem("offerSales.roiRequirements", index)}
+      />
 
       <div>
-        <h4 className="font-medium mb-2">ROI Requirements <span className="text-red-500">*</span></h4>
-        <Textarea
-          placeholder="What's required from the client..."
-          value={icpData.offerSales.roiRequirements}            onChange={(e) => {
-              setIcpData(prev => {
-                const newData = {
-                  ...prev,
-                  offerSales: { ...prev.offerSales, roiRequirements: e.target.value }
-                };
-                return newData;
-              });
-            }}
-          className={!icpData.offerSales.roiRequirements.trim() ? "border-red-500" : ""}
-        />
-        <div className="mt-2 text-xs text-gray-500">
-          Current value: "{icpData.offerSales.roiRequirements}"
-        </div>
+        <h4 className="font-medium mb-2">Sales Deck URLs <span className="text-red-500">*</span></h4>
+        <p className="text-sm text-gray-600 mb-4">
+          Include links to your sales decks (not pitch decks). These should show product features and benefits.
+        </p>
       </div>
 
-      <div>
-        <h4 className="font-medium mb-2">Sales Deck URL <span className="text-red-500">*</span></h4>
-        <p className="text-sm text-gray-600 mb-4">
-          Include a link to your sales deck (not a pitch deck).
-        </p>
-        <Input
-          placeholder="https://..."
-          value={icpData.offerSales.salesDeckUrl}            onChange={(e) => {
-              setIcpData(prev => {
-                const newData = {
-                  ...prev,
-                  offerSales: { ...prev.offerSales, salesDeckUrl: e.target.value }
-                };
-                return newData;
-              });
-            }}
-          className={!icpData.offerSales.salesDeckUrl.trim() ? "border-red-500" : ""}
-        />
-        <div className="mt-2 text-xs text-gray-500">
-          Current value: "{icpData.offerSales.salesDeckUrl}"
-        </div>
-      </div>
+      <ArrayField
+        label=""
+        placeholder="https://docs.google.com/presentation/d/..."
+        items={icpData.offerSales.salesDeckUrl}
+        onAdd={(value) => addArrayItem("offerSales.salesDeckUrl", value)}
+        onRemove={(index) => removeArrayItem("offerSales.salesDeckUrl", index)}
+      />
     </div>
   );
 
@@ -845,7 +969,7 @@ const EnhancedICPWizard = () => {
     <div className="space-y-6">
       <ArrayField
         label="Successful Outbound Emails/DMs"
-        placeholder="Email or DM that performed well..."
+        placeholder="Email or DM template that performed well (include subject line and key message)..."
         items={icpData.outboundExperience.successfulEmails}
         onAdd={(value) => addArrayItem("outboundExperience.successfulEmails", value)}
         onRemove={(index) => removeArrayItem("outboundExperience.successfulEmails", index)}
@@ -853,11 +977,21 @@ const EnhancedICPWizard = () => {
 
       <ArrayField
         label="Successful Cold Call Scripts"
-        placeholder="Call script that worked well..."
+        placeholder="Call script or opener that worked well (include opening line and key talking points)..."
         items={icpData.outboundExperience.successfulCallScripts}
         onAdd={(value) => addArrayItem("outboundExperience.successfulCallScripts", value)}
         onRemove={(index) => removeArrayItem("outboundExperience.successfulCallScripts", index)}
       />
+      
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <h4 className="font-medium text-blue-900 mb-2">Tips for better outbound content:</h4>
+        <ul className="text-sm text-blue-800 space-y-1">
+          <li>• Include specific metrics or results when possible</li>
+          <li>• Note the context where this worked (industry, role, etc.)</li>
+          <li>• Mention response rates if you have them</li>
+          <li>• Include both the message and any follow-up sequences</li>
+        </ul>
+      </div>
     </div>
   );
 

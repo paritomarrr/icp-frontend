@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface CaseStudy {
   url: string;
@@ -29,27 +30,54 @@ interface SocialProofStepProps {
 }
 
 export default function SocialProofStep({ socialProof, onUpdate }: SocialProofStepProps) {
-  const addCaseStudy = () => {
-    const newCaseStudy: CaseStudy = {
-      url: "",
-      marketSegment: "",
-      title: "",
-      description: ""
-    };
-    onUpdate({
-      ...socialProof,
-      caseStudies: [...socialProof.caseStudies, newCaseStudy]
-    });
+  const [newCaseStudy, setNewCaseStudy] = useState<CaseStudy>({
+    url: "",
+    marketSegment: "",
+    title: "",
+    description: ""
+  });
+
+  const [newTestimonial, setNewTestimonial] = useState<Testimonial>({
+    content: "",
+    author: "",
+    company: "",
+    title: "",
+    metrics: ""
+  });
+
+  const handleAddCaseStudy = () => {
+    if (newCaseStudy.url.trim() && newCaseStudy.title.trim() && newCaseStudy.description.trim()) {
+      onUpdate({
+        ...socialProof,
+        caseStudies: [...socialProof.caseStudies, { ...newCaseStudy }]
+      });
+      
+      // Clear the form fields
+      setNewCaseStudy({
+        url: "",
+        marketSegment: "",
+        title: "",
+        description: ""
+      });
+    }
   };
 
-  const updateCaseStudy = (index: number, field: keyof CaseStudy, value: string) => {
-    const updatedCaseStudies = socialProof.caseStudies.map((caseStudy, i) =>
-      i === index ? { ...caseStudy, [field]: value } : caseStudy
-    );
-    onUpdate({
-      ...socialProof,
-      caseStudies: updatedCaseStudies
-    });
+  const handleAddTestimonial = () => {
+    if (newTestimonial.content.trim() && newTestimonial.author.trim()) {
+      onUpdate({
+        ...socialProof,
+        testimonials: [...socialProof.testimonials, { ...newTestimonial }]
+      });
+      
+      // Clear the form fields
+      setNewTestimonial({
+        content: "",
+        author: "",
+        company: "",
+        title: "",
+        metrics: ""
+      });
+    }
   };
 
   const removeCaseStudy = (index: number) => {
@@ -57,30 +85,6 @@ export default function SocialProofStep({ socialProof, onUpdate }: SocialProofSt
     onUpdate({
       ...socialProof,
       caseStudies: updatedCaseStudies
-    });
-  };
-
-  const addTestimonial = () => {
-    const newTestimonial: Testimonial = {
-      content: "",
-      author: "",
-      company: "",
-      title: "",
-      metrics: ""
-    };
-    onUpdate({
-      ...socialProof,
-      testimonials: [...socialProof.testimonials, newTestimonial]
-    });
-  };
-
-  const updateTestimonial = (index: number, field: keyof Testimonial, value: string) => {
-    const updatedTestimonials = socialProof.testimonials.map((testimonial, i) =>
-      i === index ? { ...testimonial, [field]: value } : testimonial
-    );
-    onUpdate({
-      ...socialProof,
-      testimonials: updatedTestimonials
     });
   };
 
@@ -97,106 +101,151 @@ export default function SocialProofStep({ socialProof, onUpdate }: SocialProofSt
       <div>
         <h4 className="font-medium mb-4">Case Studies</h4>
         <p className="text-sm text-gray-600 mb-4">
-          Provide links to case studies, categorized by market segment.
+          Provide links to case studies, categorized by market segment. Fill in the form below and click "Add" to save each case study.
         </p>
         
-        {socialProof.caseStudies.map((caseStudy, index) => (
-          <div key={index} className="border p-4 rounded-lg space-y-3 mb-4">
-            <div className="flex justify-between items-center">
-              <h5 className="font-medium">Case Study {index + 1}</h5>
-              {socialProof.caseStudies.length > 1 && (
-                <Button variant="destructive" size="sm" onClick={() => removeCaseStudy(index)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input
-                placeholder="Case study URL"
-                value={caseStudy.url}
-                onChange={(e) => updateCaseStudy(index, 'url', e.target.value)}
-              />
-              <Input
-                placeholder="Market segment"
-                value={caseStudy.marketSegment}
-                onChange={(e) => updateCaseStudy(index, 'marketSegment', e.target.value)}
-              />
-            </div>
-            
+        {/* New case study form */}
+        <div className="space-y-3 mb-4 border p-4 rounded-lg bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input
-              placeholder="Case study title"
-              value={caseStudy.title}
-              onChange={(e) => updateCaseStudy(index, 'title', e.target.value)}
+              placeholder="Case study URL"
+              value={newCaseStudy.url}
+              onChange={(e) => setNewCaseStudy(prev => ({ ...prev, url: e.target.value }))}
             />
-            
-            <Textarea
-              placeholder="Brief description"
-              value={caseStudy.description}
-              onChange={(e) => updateCaseStudy(index, 'description', e.target.value)}
+            <Input
+              placeholder="Market segment"
+              value={newCaseStudy.marketSegment}
+              onChange={(e) => setNewCaseStudy(prev => ({ ...prev, marketSegment: e.target.value }))}
             />
           </div>
-        ))}
-        
-        <Button variant="outline" onClick={addCaseStudy}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Case Study
-        </Button>
+          
+          <Input
+            placeholder="Case study title"
+            value={newCaseStudy.title}
+            onChange={(e) => setNewCaseStudy(prev => ({ ...prev, title: e.target.value }))}
+          />
+          
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Brief description"
+              value={newCaseStudy.description}
+              onChange={(e) => setNewCaseStudy(prev => ({ ...prev, description: e.target.value }))}
+              className="flex-1"
+              rows={3}
+            />
+            <Button 
+              onClick={handleAddCaseStudy}
+              disabled={!newCaseStudy.url.trim() || !newCaseStudy.title.trim() || !newCaseStudy.description.trim()}
+              className="bg-black text-white hover:bg-gray-800 self-start"
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+
+        {/* Display added case studies */}
+        {socialProof.caseStudies.length > 0 ? (
+          <div>
+            <h5 className="font-medium mb-3">Added Case Studies:</h5>
+            {socialProof.caseStudies.map((caseStudy, index) => (
+              <div key={index} className="border p-3 rounded-lg mb-2 bg-white">
+                <div className="flex justify-between items-start">
+                  <div className="text-sm flex-1">
+                    <div><strong>{caseStudy.title}</strong></div>
+                    <div className="text-gray-600">{caseStudy.marketSegment}</div>
+                    <div className="text-gray-500 text-xs mt-1">{caseStudy.url}</div>
+                    <div className="text-gray-700 mt-1">{caseStudy.description}</div>
+                  </div>
+                  <Button variant="destructive" size="sm" onClick={() => removeCaseStudy(index)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            <p>No case studies added yet. Fill in the form above and click "Add" to get started.</p>
+          </div>
+        )}
       </div>
 
       <div>
         <h4 className="font-medium mb-4">Testimonials</h4>
         <p className="text-sm text-gray-600 mb-4">
-          List notable testimonials (ideally with metrics).
+          List notable testimonials (ideally with metrics). Fill in the form below and click "Add" to save each testimonial.
         </p>
         
-        {socialProof.testimonials.map((testimonial, index) => (
-          <div key={index} className="border p-4 rounded-lg space-y-3 mb-4">
-            <div className="flex justify-between items-center">
-              <h5 className="font-medium">Testimonial {index + 1}</h5>
-              {socialProof.testimonials.length > 1 && (
-                <Button variant="destructive" size="sm" onClick={() => removeTestimonial(index)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            <Textarea
-              placeholder="Testimonial content"
-              value={testimonial.content}
-              onChange={(e) => updateTestimonial(index, 'content', e.target.value)}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Input
-                placeholder="Author name"
-                value={testimonial.author}
-                onChange={(e) => updateTestimonial(index, 'author', e.target.value)}
-              />
-              <Input
-                placeholder="Company"
-                value={testimonial.company}
-                onChange={(e) => updateTestimonial(index, 'company', e.target.value)}
-              />
-              <Input
-                placeholder="Author title"
-                value={testimonial.title}
-                onChange={(e) => updateTestimonial(index, 'title', e.target.value)}
-              />
-            </div>
-            
+        {/* New testimonial form */}
+        <div className="space-y-3 mb-4 border p-4 rounded-lg bg-gray-50">
+          <Textarea
+            placeholder="Testimonial content"
+            value={newTestimonial.content}
+            onChange={(e) => setNewTestimonial(prev => ({ ...prev, content: e.target.value }))}
+            rows={3}
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Input
-              placeholder="Metrics (e.g., '50% increase in efficiency')"
-              value={testimonial.metrics}
-              onChange={(e) => updateTestimonial(index, 'metrics', e.target.value)}
+              placeholder="Author name"
+              value={newTestimonial.author}
+              onChange={(e) => setNewTestimonial(prev => ({ ...prev, author: e.target.value }))}
+            />
+            <Input
+              placeholder="Company"
+              value={newTestimonial.company}
+              onChange={(e) => setNewTestimonial(prev => ({ ...prev, company: e.target.value }))}
+            />
+            <Input
+              placeholder="Author title"
+              value={newTestimonial.title}
+              onChange={(e) => setNewTestimonial(prev => ({ ...prev, title: e.target.value }))}
             />
           </div>
-        ))}
-        
-        <Button variant="outline" onClick={addTestimonial}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Testimonial
-        </Button>
+          
+          <div className="flex gap-2">
+            <Input
+              placeholder="Metrics (e.g., '50% increase in efficiency')"
+              value={newTestimonial.metrics}
+              onChange={(e) => setNewTestimonial(prev => ({ ...prev, metrics: e.target.value }))}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleAddTestimonial}
+              disabled={!newTestimonial.content.trim() || !newTestimonial.author.trim()}
+              className="bg-black text-white hover:bg-gray-800"
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+
+        {/* Display added testimonials */}
+        {socialProof.testimonials.length > 0 ? (
+          <div>
+            <h5 className="font-medium mb-3">Added Testimonials:</h5>
+            {socialProof.testimonials.map((testimonial, index) => (
+              <div key={index} className="border p-3 rounded-lg mb-2 bg-white">
+                <div className="flex justify-between items-start">
+                  <div className="text-sm flex-1">
+                    <div className="text-gray-700 mb-2">"{testimonial.content}"</div>
+                    <div><strong>{testimonial.author}</strong></div>
+                    {testimonial.title && <div className="text-gray-600">{testimonial.title}</div>}
+                    {testimonial.company && <div className="text-gray-600">{testimonial.company}</div>}
+                    {testimonial.metrics && <div className="text-blue-600 font-medium">{testimonial.metrics}</div>}
+                  </div>
+                  <Button variant="destructive" size="sm" onClick={() => removeTestimonial(index)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            <p>No testimonials added yet. Fill in the form above and click "Add" to get started.</p>
+          </div>
+        )}
       </div>
     </div>
   );

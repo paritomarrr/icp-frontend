@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 
 // Array field component for managing lists
 const ArrayField = ({ values, onChange, placeholder }: {
@@ -35,9 +35,15 @@ const ArrayField = ({ values, onChange, placeholder }: {
               addItem();
             }
           }}
+          className="flex-1"
         />
-        <Button type="button" variant="outline" size="sm" onClick={addItem}>
-          <Plus className="h-4 w-4" />
+        <Button 
+          type="button" 
+          onClick={addItem} 
+          disabled={!inputValue.trim()}
+          className="bg-black text-white hover:bg-gray-800"
+        >
+          Add
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -258,11 +264,9 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
             <div className="flex justify-between items-center">
               <h5 className="font-medium text-lg">Personas for this segment</h5>
               <Button 
-                variant="outline" 
-                size="sm" 
                 onClick={() => addPersonaToSegment(segmentIndex)}
+                className="bg-black text-white hover:bg-gray-800"
               >
-                <Plus className="h-4 w-4 mr-2" />
                 Add Persona
               </Button>
             </div>
@@ -334,8 +338,7 @@ export default function TargetSegmentsStep({ segments, onUpdate }: TargetSegment
         </div>
       ))}
 
-      <Button variant="outline" onClick={addSegment}>
-        <Plus className="h-4 w-4 mr-2" />
+      <Button onClick={addSegment} className="bg-black text-white hover:bg-gray-800">
         Add Another Segment
       </Button>
     </div>
