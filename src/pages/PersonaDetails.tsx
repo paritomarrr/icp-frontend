@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Users, Download, Edit, Save, X, Plus, Trash2, Eye, Copy, MoreHorizontal, ChevronRight, Target, TrendingUp, Building2, User, Briefcase, Award, Clock, MapPin, Phone, Mail, Linkedin, Sparkles } from 'lucide-react';
+import { Users, Edit, Save, X, Plus, Trash2, ChevronRight, Target, TrendingUp, Building2, User, Briefcase } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -27,8 +27,6 @@ const PersonaDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editedPersona, setEditedPersona] = useState<any>(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
   const { canEdit, canView, getUserRole } = usePermissions();
 
   useEffect(() => {
@@ -119,18 +117,28 @@ const PersonaDetails = () => {
     );
   }
 
-  // Get personas from the workspace data and ICP enrichment versions
+  // Get personas from the workspace data - check both root personas and personas within segments
   const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
+  const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
   
-  // Find persona by _id instead of array index
-  const currentPersona = rootPersonas.find((persona: any) => {
+  // Collect all personas from segments
+  const segmentPersonas: any[] = [];
+  segments.forEach((segment: any) => {
+    if (segment.personas && Array.isArray(segment.personas)) {
+      segmentPersonas.push(...segment.personas);
+    }
+  });
+  
+  // Combine all personas
+  const allPersonas = [...rootPersonas, ...segmentPersonas];
+  
+  // Find persona by _id
+  const currentPersona = allPersonas.find((persona: any) => {
     if (typeof persona === 'string') {
       return false; // Skip string personas, we need object personas with _id
     }
-    return persona._id === personaId;
+    const personaIdToMatch = typeof persona._id === 'object' && persona._id.$oid ? persona._id.$oid : persona._id;
+    return personaIdToMatch === personaId;
   });
 
   if (!currentPersona) {
@@ -154,90 +162,35 @@ const PersonaDetails = () => {
   }
 
   // Handle both old string format and new object format
-  const personaDesc = typeof currentPersona === 'string' ? currentPersona : currentPersona.name;
-  const currentPersonaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
+  const personaData = typeof currentPersona === 'string' ? {} : currentPersona as any;
   
-  // Extract title from the persona description (everything before the first '-')
-  const titleMatch = personaDesc.match(/^([^-]+)/);
-  const title = titleMatch ? titleMatch[1].trim() : currentPersonaData.title || `Persona ${personaId}`;
-  
-  // Try to find matching enrichment data
-  const enrichmentMatch = personasTable.find((p: any) => 
-    p.title && title.toLowerCase().includes(p.title.toLowerCase())
-  );
-  
-  const personaData = {
-    id: currentPersonaData._id || personaId,
-    name: title,
-    title: title,
-    description: currentPersonaData.description || personaDesc,
-    summary: currentPersonaData.description || personaDesc,
-    company: currentPersonaData.company || icpData?.companyName || 'Your Company',
-    industry: currentPersonaData.industry || 'Technology',
-    role: enrichmentMatch?.title || title,
-    department: currentPersonaData.department || 'Leadership',
-    seniority: currentPersonaData.seniority || 'Senior',
-    reportingStructure: 'C-Level',
-    location: currentPersonaData.location || 'Global',
-    teamSize: currentPersonaData.teamSize || '10-50',
-    budget: currentPersonaData.budget || '$500K-2M',
-    decisionInfluence: currentPersonaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
-    influence: currentPersonaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
-    painPoints: enhancedData?.painPoints || currentPersonaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
-    goals: enhancedData?.goals || currentPersonaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
-    triggers: enhancedData?.triggers || currentPersonaData.triggers || enrichmentMatch?.triggers || ['Budget planning', 'Performance reviews', 'Strategic initiatives'],
-    channels: currentPersonaData.channels || ['Email', 'LinkedIn', 'Industry Events', 'Webinars'],
-    objections: enhancedData?.objections || currentPersonaData.objections || ['Budget constraints', 'Change resistance', 'ROI concerns'],
-    messaging: enhancedData?.messaging || currentPersonaData.messaging || `Tailored messaging for ${title} focused on business value and strategic outcomes`,
-    responsibilities: enhancedData?.responsibilities || currentPersonaData.responsibilities || ['Strategic planning', 'Budget allocation', 'Team leadership', 'Performance management'],
-    challenges: enhancedData?.challenges || currentPersonaData.challenges || ['Limited resources', 'Time constraints', 'Complex decision-making', 'Stakeholder alignment'],
-    created: currentPersonaData.createdAt ? new Date(currentPersonaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
-    status: currentPersonaData.status || 'active',
-    priority: currentPersonaData.priority || (enrichmentMatch ? 'high' : 'medium'),
-    contactInfo: currentPersonaData.contactInfo || {
-      email: 'persona@company.com',
-      phone: '+1 (555) 123-4567',
-      linkedin: 'linkedin.com/in/persona',
-      location: 'Global'
-    },
-    demographics: currentPersonaData.demographics || {
-      age: '35-50',
-      experience: '10+ years',
-      education: 'MBA or equivalent',
-      industry: 'Technology'
-    },
-    buyingBehavior: currentPersonaData.buyingBehavior || {
-      researchTime: '3-6 months',
-      decisionFactors: enhancedData?.decisionFactors || ['ROI', 'Ease of implementation', 'Vendor reputation'],
-      preferredChannels: ['LinkedIn', 'Industry events', 'Peer recommendations']
-    }
+  // Use persona data directly from MongoDB structure - map correct fields
+  const displayPersona = {
+    id: currentPersona._id || personaId,
+    name: personaData.name || 'Unnamed Persona',
+    title: personaData.title || '',
+    description: personaData.description || '',
+    summary: personaData.summary || '',
+    painPoints: personaData.painPoints || [],
+    goals: personaData.goals || [],
+    triggers: personaData.triggers || [],
+    channels: personaData.channels || [],
+    objections: personaData.objections || [],
+    messaging: personaData.messaging || '',
+    created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : '',
+    status: personaData.status || 'active',
+    priority: personaData.priority || 'medium',
+    influence: personaData.decisionInfluence || '',
+    jobTitles: personaData.jobTitles || [],
+    okrs: personaData.okrs || [],
+    // Map backend fields correctly
+    seniority: personaData.seniority || '',
+    primaryResponsibilities: personaData.primaryResponsibilities || [],
+    responsibilities: personaData.responsibilities || personaData.primaryResponsibilities || [],
+    challenges: personaData.challenges || []
   };
 
-  // Function to enhance persona with Claude AI
-  const enhancePersonaWithAI = async () => {
-    if (!icpData) return;
-    
-    setIsEnhancing(true);
-    const companyData = {
-      companyName: icpData.companyName || workspace?.companyName,
-      products: icpData.products,
-      companyUrl: icpData.companyUrl || workspace?.companyUrl
-    };
-
-    try {
-      console.log(`Enhancing persona: ${title}`);
-      const result = await icpWizardApi.generatePersonaDetails(title, companyData);
-      
-      if (result.success && result.data) {
-        setEnhancedData(result.data);
-        console.log('Enhanced persona data:', result.data);
-      }
-    } catch (error) {
-      console.error('Error enhancing persona:', error);
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
+  // Function to enhance persona with Claude AI - REMOVED
 
   const handleEdit = () => {
     setEditedPersona({ ...personaData });
@@ -288,29 +241,11 @@ const PersonaDetails = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
   const getInfluenceColor = (influence: string) => {
     switch (influence) {
       case 'Decision Maker': return 'bg-purple-100 text-purple-800';
-      case 'Influencer': return 'bg-blue-100 text-blue-800';
-      case 'User': return 'bg-green-100 text-green-800';
+      case 'Champion': return 'bg-blue-100 text-blue-800';
+      case 'End User': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -339,20 +274,6 @@ const PersonaDetails = () => {
                 {getUserRole() === 'owner' ? 'Owner' : getUserRole() === 'editor' ? 'Editor' : 'Viewer'}
               </Badge>
             )}
-            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-              onClick={enhancePersonaWithAI}
-              disabled={isEnhancing}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
-            </Button>
             {canEdit() && (
               <Button 
                 size="sm" 
@@ -376,269 +297,279 @@ const PersonaDetails = () => {
           {/* Left Side - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Persona Overview */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <User className="w-4 h-4 text-blue-600" />
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <User className="w-5 h-5 text-blue-600" />
                   <span>Persona Overview</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                  {personaData.summary}
+                <div className="text-sm text-gray-700 leading-relaxed">
+                  {displayPersona.description || displayPersona.summary || 'No description available'}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={`${getPriorityColor(personaData.priority)} text-xs`}>
-                    {personaData.priority} Priority
-                  </Badge>
-                  <Badge className={`${getStatusColor(personaData.status)} text-xs`}>
-                    {personaData.status}
-                  </Badge>
-                  <Badge className={`${getInfluenceColor(personaData.influence)} text-xs`}>
-                    {personaData.influence}
-                  </Badge>
-                  {enhancedData && (
-                    <Badge className="bg-purple-100 text-purple-700 text-xs">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      AI Enhanced
+                <div className="flex items-center space-x-2 flex-wrap">
+                  {displayPersona.influence && (
+                    <Badge className={`${getInfluenceColor(displayPersona.influence)} text-xs`}>
+                      {displayPersona.influence}
                     </Badge>
                   )}
                 </div>
+                {displayPersona.title && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-1">Job Title</h4>
+                    <p className="text-sm text-gray-600">{displayPersona.title}</p>
+                  </div>
+                )}
+                {displayPersona.seniority && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-1">Seniority Level</h4>
+                    <p className="text-sm text-gray-600">{displayPersona.seniority}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Demographics & Contact */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Briefcase className="w-4 h-4 text-purple-600" />
-                    <span>Demographics</span>
+            {/* Primary Responsibilities */}
+            {displayPersona.primaryResponsibilities && displayPersona.primaryResponsibilities.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Briefcase className="w-5 h-5 text-blue-600" />
+                    <span>Primary Responsibilities</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(personaData.demographics).map(([key, value]) => (
-                      <div key={key} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                        <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
-                        <span className="text-xs text-slate-600">{value}</span>
+                    {displayPersona.primaryResponsibilities.map((responsibility: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{responsibility}</p>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Mail className="w-4 h-4 text-green-600" />
-                    <span>Contact Info</span>
+            {/* OKRs (Objectives & Key Results) */}
+            {displayPersona.okrs && displayPersona.okrs.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>OKRs (Objectives & Key Results)</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(personaData.contactInfo).map(([key, value]) => (
-                      <div key={key} className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
-                        {key === 'email' && <Mail className="w-3 h-3 text-slate-500" />}
-                        {key === 'phone' && <Phone className="w-3 h-3 text-slate-500" />}
-                        {key === 'linkedin' && <Linkedin className="w-3 h-3 text-slate-500" />}
-                        {key === 'location' && <MapPin className="w-3 h-3 text-slate-500" />}
-                        <span className="text-xs font-medium text-slate-700 capitalize">{key}</span>
-                        <span className="text-xs text-slate-600 ml-auto">{value}</span>
+                    {displayPersona.okrs.map((okr: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{okr}</p>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Pain Points & Goals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Target className="w-4 h-4 text-red-600" />
+            {/* Pain Points */}
+            {displayPersona.painPoints && displayPersona.painPoints.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-red-600" />
                     <span>Pain Points</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {personaData.painPoints?.map((point: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {point}
+                  <div className="space-y-3">
+                    {displayPersona.painPoints.map((point: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{point}</p>
                       </div>
-                    )) || <div className="text-xs text-slate-500">No pain points defined</div>}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
+            {/* Goals & Objectives */}
+            {displayPersona.goals && displayPersona.goals.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-green-600" />
                     <span>Goals & Objectives</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {personaData.goals?.map((goal: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {goal}
+                  <div className="space-y-3">
+                    {displayPersona.goals.map((goal: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{goal}</p>
                       </div>
-                    )) || <div className="text-xs text-slate-500">No goals defined</div>}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Responsibilities & Challenges */}
+            {/* Additional Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Award className="w-4 h-4 text-blue-600" />
-                    <span>Responsibilities</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {personaData.responsibilities?.map((resp: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {resp}
-                      </div>
-                    )) || <div className="text-xs text-slate-500">No responsibilities defined</div>}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Triggers */}
+              {displayPersona.triggers && displayPersona.triggers.length > 0 && (
+                <Card className="border border-gray-200 bg-white">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                      <Target className="w-5 h-5 text-purple-600" />
+                      <span>Triggers</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {displayPersona.triggers.map((trigger: string, idx: number) => (
+                        <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          • {trigger}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Clock className="w-4 h-4 text-orange-600" />
-                    <span>Challenges</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {personaData.challenges?.map((challenge: string, idx: number) => (
-                      <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-2 rounded">
-                        • {challenge}
-                      </div>
-                    )) || <div className="text-xs text-slate-500">No challenges defined</div>}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Preferred Channels */}
+              {displayPersona.channels && displayPersona.channels.length > 0 && (
+                <Card className="border border-gray-200 bg-white">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                      <Building2 className="w-5 h-5 text-blue-600" />
+                      <span>Preferred Channels</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {displayPersona.channels.map((channel: string, idx: number) => (
+                        <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          • {channel}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-
-            {/* Buying Behavior */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Buying Behavior</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Decision Timeline</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    Research Time: {personaData.buyingBehavior.researchTime}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Key Decision Factors</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {personaData.buyingBehavior.decisionFactors?.map((factor: string, idx: number) => (
-                      <div key={idx}>• {factor}</div>
-                    )) || <div>No decision factors defined</div>}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Preferred Channels</h4>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                    {personaData.buyingBehavior.preferredChannels?.map((channel: string, idx: number) => (
-                      <div key={idx}>• {channel}</div>
-                    )) || <div>No preferred channels defined</div>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Side - 1/3 */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <User className="w-4 h-4 text-purple-600" />
-                  <span>Quick Actions</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Eye className="w-3 h-3 mr-2" />
-                    View Contacts
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Copy className="w-3 h-3 mr-2" />
-                    Copy Persona
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    <Download className="w-3 h-3 mr-2" />
-                    Export Data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Related Pages */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Building2 className="w-4 h-4 text-purple-600" />
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Building2 className="w-5 h-5 text-purple-600" />
                   <span>Related Pages</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Target className="w-3 h-3 mr-2" />
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Target className="w-4 h-4 mr-2" />
                       View Segments
                     </Button>
                   </Link>
                   <Link to={`/workspace/${slug}/products`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Building2 className="w-3 h-3 mr-2" />
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Building2 className="w-4 h-4 mr-2" />
                       View Products
+                    </Button>
+                  </Link>
+                  <Link to={`/workspace/${slug}/personas`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      All Personas
                     </Button>
                   </Link>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Persona Metrics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Persona Metrics</CardTitle>
+            {/* Persona Summary */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold">Quick Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { metric: 'Total Contacts', value: '1,247' },
-                    { metric: 'Engagement Rate', value: '87%' },
-                    { metric: 'Meetings Held', value: '324' },
-                    { metric: 'Deals Influenced', value: '156' }
-                  ].map((item) => (
-                    <div key={item.metric} className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                      <div>
-                        <p className="text-xs font-medium text-slate-700">{item.metric}</p>
-                        <p className="text-sm font-bold text-slate-900">{item.value}</p>
-                      </div>
+                <div className="space-y-4">
+                  {displayPersona.title && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Job Title</h4>
+                      <p className="text-sm text-gray-600">{displayPersona.title}</p>
                     </div>
-                  ))}
+                  )}
+                  {displayPersona.seniority && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Seniority</h4>
+                      <p className="text-sm text-gray-600">{displayPersona.seniority}</p>
+                    </div>
+                  )}
+                  {displayPersona.influence && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Decision Influence</h4>
+                      <Badge className={`${getInfluenceColor(displayPersona.influence)} text-xs`}>
+                        {displayPersona.influence}
+                      </Badge>
+                    </div>
+                  )}
+                  {displayPersona.created && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Created</h4>
+                      <p className="text-sm text-gray-600">{displayPersona.created}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Job Titles */}
+            {displayPersona.jobTitles && displayPersona.jobTitles.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold">Job Titles</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayPersona.jobTitles.map((title: string, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        {title}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Objections */}
+            {displayPersona.objections && displayPersona.objections.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold">Common Objections</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayPersona.objections.map((objection: string, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        • {objection}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

@@ -64,6 +64,19 @@ export default {
 				'9xl': ['8rem', { lineHeight: '1' }],
 			},
 			colors: {
+				// Octave Brand Colors - Global palette
+				octave: {
+					// Light grays
+					'light-1': '#F4F6F6',
+					'light-2': '#D6DBDB', 
+					'light-3': '#BBC2C3',
+					// Dark grays
+					'dark-1': '#6B787A',
+					'dark-2': '#3C4344',
+					'dark-3': '#0C0D0E',
+					// Accent color
+					'accent': '#E0FC04',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

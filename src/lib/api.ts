@@ -16,10 +16,74 @@ export interface StepData {
 
 export interface StepResponse {
   success: boolean;
-  airtableRecordId?: string;
   suggestions?: any;
   nextStep?: number;
   error?: string;
+}
+
+// Enhanced ICP Data interfaces
+export interface EmailSignature {
+  firstName: string;
+  lastName: string;
+  title: string;
+}
+
+export interface CompetitorAnalysis {
+  domain: string;
+  differentiation: string;
+}
+
+export interface CaseStudy {
+  url: string;
+  marketSegment: string;
+  title: string;
+  description: string;
+}
+
+export interface Testimonial {
+  content: string;
+  author: string;
+  company: string;
+  metrics: string;
+  title: string;
+}
+
+export interface EnhancedICPData {
+  adminAccess: {
+    emailSignatures: EmailSignature[];
+    platformAccessGranted: boolean;
+  };
+  domain: string;
+  product: {
+    valueProposition: string;
+    valuePropositionVariations: string[];
+    problemsWithRootCauses: string[];
+    keyFeatures: string[];
+    businessOutcomes: string[];
+    uniqueSellingPoints: string[];
+    urgencyConsequences: string[];
+    competitorAnalysis: CompetitorAnalysis[];
+    useCases: string[];
+    description: string;
+    category: string;
+  };
+  offerSales: {
+    pricingTiers: string[];
+    clientTimeline: string[];
+    roiRequirements: string[];
+    salesDeckUrl: string[];
+  };
+  socialProof: {
+    caseStudies: CaseStudy[];
+    testimonials: Testimonial[];
+  };
+  numberOfSegments: number;
+  segments: any[];
+  personas: any[];
+  outboundExperience: {
+    successfulEmails: string[];
+    successfulCallScripts: string[];
+  };
 }
 
 // New interfaces for detailed items
@@ -54,7 +118,7 @@ export interface PersonaData {
   goals?: string[];
   responsibilities?: string[];
   challenges?: string[];
-  decisionInfluence?: 'Decision Maker' | 'Influencer' | 'User' | 'Gatekeeper';
+  decisionInfluence?: 'Decision Maker' | 'Champion' | 'End User';
   budget?: string;
   teamSize?: string;
   channels?: string[];
@@ -108,67 +172,6 @@ export interface SegmentData {
 }
 
 export const icpWizardApi = {
-  async submitStep(stepData: StepData, currentStep: number, workspaceSlug: string, airtableRecordId?: string): Promise<StepResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/icp-wizard/step`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authService.getToken()}`,
-        },
-        body: JSON.stringify({
-          stepData,
-          currentStep,
-          workspaceSlug,
-          airtableRecordId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit step');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Step submission error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  },
-
-  async updateStep(recordId: string, stepData: StepData, currentStep: number, isComplete: boolean): Promise<StepResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/icp-wizard/step/${recordId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authService.getToken()}`,
-        },
-        body: JSON.stringify({
-          stepData,
-          currentStep,
-          isComplete,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update step');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Step update error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  },
-
   async generateSuggestions(currentStep: number, formData: StepData, companyName: string): Promise<StepResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/icp-wizard/generate-suggestions`, {
@@ -510,6 +513,65 @@ export const icpWizardApi = {
       return await response.json();
     } catch (error) {
       console.error('Delete segment error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
+};
+
+// Enhanced ICP Wizard API
+export const enhancedICPApi = {
+  async saveEnhancedICP(workspaceId: string, icpData: EnhancedICPData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/enhanced-icp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+        body: JSON.stringify(icpData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save enhanced ICP data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Save enhanced ICP error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
+  
+  async generateProductFieldSuggestions(fieldType: string, domain: string, cumulativeData: any = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/icp-wizard/generate-product-field-suggestions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+        body: JSON.stringify({
+          fieldType,
+          domain,
+          cumulativeData
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate suggestions');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Generate product field suggestions error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

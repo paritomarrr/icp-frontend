@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Sparkles, Download, Edit } from 'lucide-react';
+import { ArrowLeft, Building2, Target, TrendingUp, Users, ChevronRight, Download, Edit } from 'lucide-react';
 import { icpWizardApi } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -19,8 +19,6 @@ const ProductDetails = () => {
   const [icpData, setIcpData] = useState<ICPData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const { canEdit } = usePermissions();
@@ -109,7 +107,7 @@ const ProductDetails = () => {
             <p className="text-lg font-semibold mb-2">No ICP Data Found</p>
             <p>Please generate ICP data first.</p>
             <Button 
-              onClick={() => navigate(`/workspace/${slug}/icp-wizard`)}
+              onClick={() => navigate(`/workspace/${slug}/enhanced-icp-wizard`)}
               className="mt-4"
             >
               Generate ICP Data
@@ -120,18 +118,10 @@ const ProductDetails = () => {
     );
   }
 
-  // Get products from the workspace data and ICP enrichment versions
-  const rootProducts = Array.isArray(icpData?.products) ? icpData.products : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const productEnrichment = latestVersion && enrichmentData?.[latestVersion]?.products;
-  
-  console.log('ProductDetails - icpData:', icpData);
-  console.log('ProductDetails - Root products:', rootProducts);
-  console.log('ProductDetails - Product enrichment:', productEnrichment);
-  console.log('ProductDetails - productId:', productId);
+  // Get products directly from MongoDB structure
+  const products = Array.isArray(icpData?.products) ? icpData.products : [];
 
-  if (!rootProducts.length) {
+  if (!products.length) {
     return (
       <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
         <div className="max-w-7xl mx-auto">
@@ -150,37 +140,11 @@ const ProductDetails = () => {
     );
   }
   
-  // Parse product content to extract individual products
-  const parseProducts = () => {
-    return rootProducts.map((product: any, idx: number) => {
-      // Handle both string and object products
-      const productName = typeof product === 'string' ? product : product.name;
-      const productData = typeof product === 'string' ? {} : product;
-      
-      return {
-        id: productData._id || productData.id || (idx + 1).toString(),
-        name: productName,
-        description: productData.description || `Core product offering for ${icpData?.companyName || 'Your Company'}`,
-        problems: productData.problems || productEnrichment?.problems || ['Skills gap in advanced manufacturing', 'Limited internal R&D capabilities'],
-        features: productData.features || productEnrichment?.features || ['Custom technical training programs', 'Industry-academic research partnerships'],
-        solution: productData.solution || productEnrichment?.solution || 'End-to-end technical capability development',
-        usps: productData.usps || productData.uniqueSellingPoints || productEnrichment?.usp || ['Industry-validated curriculum', 'Hands-on project-based learning'],
-        whyNow: productData.whyNow || productEnrichment?.whyNow || ['Industry 4.0 acceleration', 'Post-pandemic digital transformation'],
-        valueProposition: productData.valueProposition || (latestVersion && enrichmentData?.[latestVersion]?.oneLiner) || `${productName} - Core offering`
-      };
-    });
-  };
-
-  const products = parseProducts();
-  console.log('ProductDetails - Parsed products:', products);
-  
-  // Find product by ID (handle both string and numeric IDs)
-  const currentProduct = products.find(p => {
-    const productIdNum = parseInt(productId || '1');
-    const productIdStr = productId || '1';
-    
-    return p.id === productIdNum || p.id === productIdStr || p.id === productId;
-  }) || products[0];
+  // Find the specific product using MongoDB structure
+  const currentProduct = products.find((product: any) => {
+    const productIdToMatch = product._id?.$oid || product._id;
+    return productIdToMatch === productId;
+  });
 
   console.log('ProductDetails - Current product:', currentProduct);
 
@@ -205,28 +169,8 @@ const ProductDetails = () => {
 
   // Function to enhance product with Claude AI
   const enhanceProductWithAI = async () => {
-    if (!icpData || !currentProduct) return;
-    
-    setIsEnhancing(true);
-    const companyData = {
-      companyName: icpData.companyName || workspace?.companyName,
-      products: icpData.products,
-      companyUrl: icpData.companyUrl || workspace?.companyUrl
-    };
-
-    try {
-      console.log(`Enhancing product: ${currentProduct.name}`);
-      const result = await icpWizardApi.generateProductDetails(currentProduct.name, companyData);
-      
-      if (result.success && result.data) {
-        setEnhancedData(result.data);
-        console.log('Enhanced product data:', result.data);
-      }
-    } catch (error) {
-      console.error('Error enhancing product:', error);
-    } finally {
-      setIsEnhancing(false);
-    }
+    // Removed AI enhancement functionality
+    console.log('AI enhancement feature removed');
   };
 
   const handleEditProduct = () => {
@@ -238,15 +182,17 @@ const ProductDetails = () => {
     if (!icpData || !currentProduct || !slug) return;
     
     try {
-      const response = await icpWizardApi.updateProduct(slug, currentProduct.id.toString(), updatedProductData);
+      const currentProductId = (currentProduct as any)._id?.$oid || (currentProduct as any)._id;
+      const response = await icpWizardApi.updateProduct(slug, currentProductId.toString(), updatedProductData);
       
       if (response.success && response.product) {
-        // Update local state
+        // Update local state - handle MongoDB ObjectId matching
         const updatedICPData = {
           ...icpData,
-          products: icpData.products.map((p: any) => 
-            p.id === currentProduct.id ? response.product : p
-          )
+          products: icpData.products.map((p: any) => {
+            const productId = p._id?.$oid || p._id || p.id;
+            return productId === currentProductId ? response.product : p;
+          })
         };
         
         setIcpData(updatedICPData);
@@ -263,24 +209,27 @@ const ProductDetails = () => {
     }
   };
 
-  // Use enhanced data when available
-  const displayData = {
-    ...currentProduct,
-    problems: enhancedData?.problems || currentProduct.problems,
-    features: enhancedData?.features || currentProduct.features,
-    usps: enhancedData?.usps || currentProduct.usps,
-    useCases: enhancedData?.useCases || [],
-    benefits: enhancedData?.benefits || []
-  };
+  // Use only the current product data from MongoDB
+  const displayData = currentProduct as any;
 
   return (
     <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
-          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
+          <Link 
+            to={`/workspace/${slug}`} 
+            className="hover:text-foreground transition-colors"
+          >
+            Dashboard
+          </Link>
           <ChevronRight className="w-3 h-3" />
-          <Link to={`/workspace/${slug}/products`} className="hover:text-foreground transition-colors">Products</Link>
+          <Link 
+            to={`/workspace/${slug}/products`} 
+            className="hover:text-foreground transition-colors"
+          >
+            Products
+          </Link>
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground font-medium">{displayData.name}</span>
         </nav>
@@ -289,43 +238,18 @@ const ProductDetails = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-semibold text-slate-800">{displayData.name}</h1>
-            <p className="text-sm text-slate-600 mt-1">Product Details & Messaging</p>
+            <p className="text-sm text-slate-600 mt-1">Product Details & Specifications</p>
           </div>
           <div className="flex items-center space-x-3">
-            {workspace && (
-              <Badge variant="outline" className="text-xs">
-                {workspace.role ? workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1) : 'Workspace'}
-              </Badge>
-            )}
-            <Button variant="outline" size="sm" className="border-slate-200 hover:bg-slate-50">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-              onClick={enhanceProductWithAI}
-              disabled={isEnhancing}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
-            </Button>
             {canEdit() && (
               <Button 
                 size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                className="bg-blue-600 hover:bg-blue-700"
                 onClick={handleEditProduct}
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Product
               </Button>
-            )}
-            {enhancedData && (
-              <Badge className="bg-purple-100 text-purple-700 text-xs">
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI Enhanced
-              </Badge>
             )}
           </div>
         </div>
@@ -335,197 +259,391 @@ const ProductDetails = () => {
           {/* Left Side - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Product Overview */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Building2 className="w-4 h-4 text-blue-600" />
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Building2 className="w-5 h-5 text-blue-600" />
                   <span>Product Overview</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                  {displayData.description || 'Product description and overview'}
+                <div className="text-sm text-gray-700 leading-relaxed">
+                  {displayData.valueProposition || 'No value proposition available'}
                 </div>
-                {enhancedData && (
-                  <Badge className="bg-purple-100 text-purple-700 text-xs">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    AI Enhanced
-                  </Badge>
+                {displayData.valuePropositionVariations?.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Value Proposition Variations</h4>
+                    <div className="space-y-3">
+                      {displayData.valuePropositionVariations.map((variation: string, idx: number) => (
+                        <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                          <p className="text-sm text-gray-700 leading-relaxed">{variation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Problems & Solutions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <Target className="w-4 h-4 text-red-600" />
+            {/* Why Now */}
+            {displayData.whyNow?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-green-600" />
+                    <span>Why Now</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.whyNow.map((reason: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Problems We Solve */}
+            {displayData.problemsWithRootCauses?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-red-600" />
                     <span>Problems We Solve</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {Array.isArray(displayData.problems) ? (
-                      displayData.problems.map((problem: string, idx: number) => (
-                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                          {problem}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                        {displayData.problems || 'Customer pain points and challenges that this product addresses'}
+                  <div className="space-y-3">
+                    {displayData.problemsWithRootCauses.map((problem: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{problem}</p>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-base">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Our Solution</span>
+            {/* Business Outcomes */}
+            {displayData.businessOutcomes?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>Business Outcomes</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                    {displayData.solution || 'How this product solves the identified problems'}
+                  <div className="space-y-3">
+                    {displayData.businessOutcomes.map((outcome: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{outcome}</p>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Features & USPs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base">Key Features</CardTitle>
+            {/* Benefits */}
+            {displayData.benefits?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>Benefits</span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {Array.isArray(displayData.features) ? (
-                      displayData.features.map((feature: string, idx: number) => (
-                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                          {feature}
+                  <div className="space-y-3">
+                    {displayData.benefits.map((benefit: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{benefit}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Key Features */}
+            {(displayData.keyFeatures?.length > 0 || displayData.features?.length > 0) && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Building2 className="w-5 h-5 text-blue-600" />
+                    <span>Key Features</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(displayData.keyFeatures?.length > 0 ? displayData.keyFeatures : displayData.features || []).map((feature: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{feature}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Unique Selling Points */}
+            {(displayData.uniqueSellingPoints?.length > 0 || displayData.usps?.length > 0) && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-purple-600" />
+                    <span>Unique Selling Points</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(displayData.uniqueSellingPoints?.length > 0 ? displayData.uniqueSellingPoints : displayData.usps || []).map((usp: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{usp}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pricing Tiers */}
+            {displayData.pricingTiers?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <span>Pricing Tiers</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.pricingTiers.map((tier: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{tier}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Client Timeline & ROI */}
+            {(displayData.clientTimeline?.length > 0 || displayData.roiRequirements?.length > 0) && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <span>Client Timeline & ROI</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {displayData.clientTimeline?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">Client Timeline</h4>
+                        <div className="space-y-3">
+                          {displayData.clientTimeline.map((timeline: string, idx: number) => (
+                            <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <p className="text-sm text-gray-700 leading-relaxed">{timeline}</p>
+                            </div>
+                          ))}
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                        {displayData.features || 'Key features and capabilities of this product'}
+                      </div>
+                    )}
+                    {displayData.roiRequirements?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">ROI Requirements</h4>
+                        <div className="space-y-3">
+                          {displayData.roiRequirements.map((requirement: string, idx: number) => (
+                            <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                              <p className="text-sm text-gray-700 leading-relaxed">{requirement}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base">Unique Selling Propositions</CardTitle>
+            {/* Competitors */}
+            {displayData.competitors?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Users className="w-5 h-5 text-red-600" />
+                    <span>Competitors</span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {Array.isArray(displayData.usps) ? (
-                      displayData.usps.map((usp: string, idx: number) => (
-                        <div key={idx} className="text-xs text-slate-600 bg-slate-50 p-3 rounded">
-                          {usp}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                        {displayData.usps || 'What makes this product unique and compelling'}
+                  <div className="space-y-3">
+                    {displayData.competitors.map((competitor: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{competitor}</p>
                       </div>
-                    )}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Why Now */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Why Now & Consequences</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                  {Array.isArray(currentProduct.whyNow)
-                    ? currentProduct.whyNow.join(', ')
-                    : typeof currentProduct.whyNow === 'object' && currentProduct.whyNow !== null
-                    ? JSON.stringify(currentProduct.whyNow)
-                    : currentProduct.whyNow || 'Urgency and consequences of not solving the problem'}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Target Audience */}
+            {displayData.targetAudience && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <span>Target Audience</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-700 leading-relaxed">{displayData.targetAudience}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Urgency Consequences */}
+            {displayData.urgencyConsequences?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <Target className="w-5 h-5 text-orange-600" />
+                    <span>Urgency Consequences</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {displayData.urgencyConsequences.map((consequence: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-sm text-gray-700 leading-relaxed">{consequence}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Right Side - 1/3 */}
           <div className="space-y-6">
-            {/* Value Proposition */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Value Proposition</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-slate-600 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-                  {Array.isArray(currentProduct.valueProposition)
-                    ? currentProduct.valueProposition.join(', ')
-                    : typeof currentProduct.valueProposition === 'object' && currentProduct.valueProposition !== null
-                    ? JSON.stringify(currentProduct.valueProposition)
-                    : currentProduct.valueProposition || 'Clear value proposition for this product'}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Target Segments */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-base">
-                  <Users className="w-4 h-4 text-purple-600" />
-                  <span>Target Segments</span>
+            {/* Related Pages */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <Building2 className="w-5 h-5 text-purple-600" />
+                  <span>Related Pages</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Building2 className="w-3 h-3 mr-2" />
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Target className="w-4 h-4 mr-2" />
                       View Segments
                     </Button>
                   </Link>
                   <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Users className="w-3 h-3 mr-2" />
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Users className="w-4 h-4 mr-2" />
                       View Personas
+                    </Button>
+                  </Link>
+                  <Link to={`/workspace/${slug}/products`}>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      All Products
                     </Button>
                   </Link>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Product Metrics */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Product Metrics</CardTitle>
+            {/* Product Summary */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold">Quick Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Market Size', value: '$2.5B', icon: '💰' },
-                    { label: 'Growth Rate', value: '15% YoY', icon: '📈' },
-                    { label: 'Competitors', value: '12', icon: '🏢' },
-                    { label: 'Customer LTV', value: '$50K', icon: '💎' }
-                  ].map((metric) => (
-                    <div key={metric.label} className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{metric.icon}</span>
-                        <span className="text-xs font-medium text-slate-700">{metric.label}</span>
-                      </div>
-                      <span className="text-sm font-bold text-slate-900">{metric.value}</span>
+                <div className="space-y-4">
+                  {displayData.category && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Category</h4>
+                      <p className="text-sm text-gray-600">{displayData.category}</p>
                     </div>
-                  ))}
+                  )}
+                  {displayData.targetAudience && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Target Audience</h4>
+                      <p className="text-sm text-gray-600">{displayData.targetAudience}</p>
+                    </div>
+                  )}
+                  {displayData.createdAt && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 mb-1">Created</h4>
+                      <p className="text-sm text-gray-600">
+                        {new Date((displayData.createdAt as any)?.$date || displayData.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Competitor Analysis */}
+            {displayData.competitorAnalysis?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold">Competitor Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayData.competitorAnalysis.map((competitor: any, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        <strong>{competitor.domain}:</strong> {competitor.differentiation}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Use Cases */}
+            {displayData.useCases?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold">Use Cases</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {displayData.useCases.map((useCase: string, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        • {useCase}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

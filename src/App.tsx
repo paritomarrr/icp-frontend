@@ -13,7 +13,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import CreateWorkspace from "@/pages/CreateWorkspace";
 import ICPWizard from "@/pages/ICPWizard";
-import AirtableWizard from "@/pages/AirtableWizard";
+import EnhancedICPWizard from "@/pages/EnhancedICPWizard";
 import Products from "@/pages/Products";
 import Segments from "@/pages/Segments";
 import Personas from "@/pages/Personas";
@@ -55,10 +55,10 @@ const App = () => (
               <ICPWizard />
             </ProtectedRoute>
           } />
-
-          <Route path="/workspace/:slug/airtable-wizard" element={
+          
+          <Route path="/workspace/:slug/enhanced-icp-wizard" element={
             <ProtectedRoute requiredPermission="canEdit">
-              <AirtableWizard />
+              <EnhancedICPWizard />
             </ProtectedRoute>
           } />
           

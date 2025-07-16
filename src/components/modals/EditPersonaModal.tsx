@@ -19,12 +19,15 @@ export const EditPersonaModal = ({ open, onOpenChange, onSave, personaData }: Ed
   const [formData, setFormData] = useState({
     name: '',
     title: '',
+    jobTitles: [''],
     department: '',
     seniority: '',
     industry: '',
     company: '',
     location: '',
     description: '',
+    primaryResponsibilities: [''],
+    okrs: [''],
     painPoints: [''],
     goals: [''],
     responsibilities: [''],
@@ -42,12 +45,15 @@ export const EditPersonaModal = ({ open, onOpenChange, onSave, personaData }: Ed
       setFormData({
         name: personaData.name || '',
         title: personaData.title || '',
+        jobTitles: personaData.jobTitles && personaData.jobTitles.length > 0 ? personaData.jobTitles : [''],
         department: personaData.department || '',
         seniority: personaData.seniority || '',
         industry: personaData.industry || '',
         company: personaData.company || '',
         location: personaData.location || '',
         description: personaData.description || '',
+        primaryResponsibilities: personaData.primaryResponsibilities && personaData.primaryResponsibilities.length > 0 ? personaData.primaryResponsibilities : [''],
+        okrs: personaData.okrs && personaData.okrs.length > 0 ? personaData.okrs : [''],
         painPoints: personaData.painPoints && personaData.painPoints.length > 0 ? personaData.painPoints : [''],
         goals: personaData.goals && personaData.goals.length > 0 ? personaData.goals : [''],
         responsibilities: personaData.responsibilities && personaData.responsibilities.length > 0 ? personaData.responsibilities : [''],
@@ -66,7 +72,7 @@ export const EditPersonaModal = ({ open, onOpenChange, onSave, personaData }: Ed
   };
 
   const handleArrayChange = (field: string, index: number, value: string) => {
-    const arrayFields = ['painPoints', 'goals', 'responsibilities', 'challenges', 'channels', 'objections'];
+    const arrayFields = ['jobTitles', 'primaryResponsibilities', 'okrs', 'painPoints', 'goals', 'responsibilities', 'challenges', 'channels', 'objections'];
     if (arrayFields.includes(field)) {
       setFormData(prev => ({
         ...prev,
@@ -265,9 +271,8 @@ export const EditPersonaModal = ({ open, onOpenChange, onSave, personaData }: Ed
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Decision Maker">Decision Maker</SelectItem>
-                  <SelectItem value="Influencer">Influencer</SelectItem>
-                  <SelectItem value="User">User</SelectItem>
-                  <SelectItem value="Gatekeeper">Gatekeeper</SelectItem>
+                  <SelectItem value="Champion">Champion</SelectItem>
+                  <SelectItem value="End User">End User</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -2,12 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Octave Brand Design System - All colors, gradients, fonts, etc defined here. 
+All colors MUST be HSL values for consistency.
 */
 
 @layer base {
   :root {
+    /* Octave Brand Colors Override */
+    --octave-light-1: #F4F6F6;
+    --octave-light-2: #D6DBDB; 
+    --octave-light-3: #BBC2C3;
+    --octave-dark-1: #6B787A;
+    --octave-dark-2: #3C4344;
+    --octave-dark-3: #0C0D0E;
+    --octave-accent: #E0FC04;
+    
     --background: 0 0% 100%;
     --foreground: 220 13% 18%;
 

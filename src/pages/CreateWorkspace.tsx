@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Logo from '@/components/ui/logo';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { Target, ArrowLeft } from 'lucide-react';
@@ -82,8 +83,8 @@ const CreateWorkspace = () => {
       localStorage.setItem("workspaceSlug", data.slug);
 
   
-      // Navigate to the ICP wizard step
-      navigate(`/workspace/${data.slug}/icp-wizard`);
+      // Navigate to the Enhanced ICP wizard step
+      navigate(`/workspace/${data.slug}/enhanced-icp-wizard`);
     } catch (error) {
       toast({
         title: "Error",
@@ -104,26 +105,24 @@ const CreateWorkspace = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-octave-light-1 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border border-octave-light-2 bg-white">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Target className="w-5 h-5 text-white" />
-            </div>
+            <Logo size="xl" />
           </div>
-          <CardTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl font-bold text-octave-dark-3">
             Create New Workspace
           </CardTitle>
-          <CardDescription className="text-xs">
-            Set up a new ICP project for your client
+          <CardDescription className="text-xs text-octave-dark-1">
+            Set up a new ICP project
           </CardDescription>
         </CardHeader>
         
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs">Workspace Name</Label>
+              <Label htmlFor="name" className="text-xs text-octave-dark-2">Workspace Name</Label>
               <Input
                 id="name"
                 name="name"
@@ -132,12 +131,12 @@ const CreateWorkspace = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="border-slate-200 focus:border-blue-500 text-xs"
+                className="border-octave-light-3 focus:border-octave-dark-2 text-xs"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="clientCompany" className="text-xs">Client Company Name</Label>
+              <Label htmlFor="clientCompany" className="text-xs text-octave-dark-2">Client Company Name</Label>
               <Input
                 id="clientCompany"
                 name="clientCompany"
@@ -146,12 +145,12 @@ const CreateWorkspace = () => {
                 value={formData.clientCompany}
                 onChange={handleChange}
                 required
-                className="border-slate-200 focus:border-blue-500 text-xs"
+                className="border-octave-light-3 focus:border-octave-dark-2 text-xs"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="clientWebsite" className="text-xs">Client Website</Label>
+              <Label htmlFor="clientWebsite" className="text-xs text-octave-dark-2">Client Website</Label>
               <Input
                 id="clientWebsite"
                 name="clientWebsite"
@@ -159,7 +158,7 @@ const CreateWorkspace = () => {
                 placeholder="https://example.com"
                 value={formData.clientWebsite}
                 onChange={handleChange}
-                className="border-slate-200 focus:border-blue-500 text-xs"
+                className="border-octave-light-3 focus:border-octave-dark-2 text-xs"
               />
             </div>
           </CardContent>
@@ -167,7 +166,7 @@ const CreateWorkspace = () => {
           <CardContent className="flex flex-col space-y-4 pt-0">
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-xs"
+              className="w-full bg-octave-dark-2 hover:bg-octave-dark-3 text-white text-xs font-semibold"
               disabled={isLoading}
             >
               {isLoading ? 'Creating Workspace...' : 'Create Workspace'}
@@ -177,7 +176,7 @@ const CreateWorkspace = () => {
               type="button"
               variant="outline"
               onClick={() => navigate('/dashboard')}
-              className="w-full border-slate-200 hover:bg-slate-50 text-xs"
+              className="w-full border-octave-light-3 hover:bg-octave-light-1 text-octave-dark-2 text-xs"
             >
               <ArrowLeft className="w-3 h-3 mr-2" />
               Back to Dashboard

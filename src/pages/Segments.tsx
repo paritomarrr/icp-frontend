@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Building2, Users, Download, ArrowRight, Target, TrendingUp, Search, Filter, Plus, MoreHorizontal, Eye, Copy, Trash2, ChevronRight, BarChart3, Users2, Globe } from 'lucide-react';
+import { Building2, Users, ArrowRight, Target, TrendingUp, Search, Filter, Plus, MoreHorizontal, ChevronRight, BarChart3, Users2, Globe } from 'lucide-react';
 import { axiosInstance } from '@/lib/axios';
 import { AddSegmentModal } from '@/components/modals';
 import { icpWizardApi, SegmentData } from '@/lib/api';
@@ -123,249 +123,65 @@ const Segments = () => {
     );
   }
 
-  // Parse segments from the ICP data structure
-  const parseSegments = (segmentsData: any) => {
-    if (!segmentsData || !Array.isArray(segmentsData)) {
-      console.log('parseSegments: segmentsData is not an array:', segmentsData);
-      return [];
-    }
-    
-    console.log('parseSegments: Processing segments:', segmentsData);
-    
-    return segmentsData.map((segment, index) => {
-      try {
-
-        
-        // Handle both old string format and new object format
-        const segmentDesc = typeof segment === 'string' ? segment : segment.name;
-        const segmentData = typeof segment === 'string' ? {} : segment;
-        
-        const segmentName = segmentData.name || segmentData.title || `Segment ${index + 1}`;
-        const revenue = segmentData.revenue || segmentData.criteria || '';
-        
-        // Ensure characteristics is an array and handle different data types
-        let characteristics = segmentData.characteristics || [];
-        if (!Array.isArray(characteristics)) {
-          // If characteristics is a string, split it into an array
-          if (typeof characteristics === 'string') {
-            characteristics = characteristics.split(',').map(c => c.trim());
-          } else if (characteristics && typeof characteristics === 'object') {
-            // If it's an object, try to extract values
-            characteristics = Object.values(characteristics).filter(v => typeof v === 'string');
-          } else {
-            characteristics = [];
-          }
-        }
-        
-        const priority = segmentData.priority || 'Medium';
-        const firmographics = segmentData.firmographics || [];
-        
-        // Add default firmographics if none exist
-        if (firmographics.length === 0) {
-          if (revenue) {
-            firmographics.push({ label: 'Revenue', value: revenue });
-          }
-          if (segmentData.employees) {
-            firmographics.push({ label: 'Employees', value: segmentData.employees });
-          }
-          if (characteristics && characteristics.length > 0) {
-            characteristics.forEach((char: string) => {
-              firmographics.push({ label: 'Characteristic', value: char });
-            });
-          }
-          if (firmographics.length === 0) {
-            firmographics.push(
-              { label: 'Revenue', value: '$10M - $100M ARR' },
-              { label: 'Industry', value: 'B2B Technology' },
-              { label: 'Employees', value: '50 - 500 employees' }
-            );
-          }
-        }
-        return {
-          id: segmentData._id || index + 1,
-          name: segmentName,
-          description: segmentData.description || `Target segment for ${workspace.name}`,
-          firmographics: firmographics,
-          benefits: segmentData.benefits || `High-value customers with proven need for ${workspace.name} solutions`,
-          awarenessLevel: segmentData.awarenessLevel || 'Solution',
-          priority: segmentData.priority || priority,
-          status: segmentData.status || 'active',
-          marketSize: segmentData.marketSize || '$500M - $2B',
-          growthRate: segmentData.growthRate || '12% YoY',
-          qualification: segmentData.qualification || {
-            idealCriteria: ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
-            lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
-            disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
-          },
-          size: segmentData.size || '',
-          region: segmentData.region || '',
-          budget: segmentData.budget || '',
-          focus: segmentData.focus || '',
-          industry: segmentData.industry || '',
-          companySize: segmentData.companySize || '',
-          revenue: segmentData.revenue || '',
-          geography: segmentData.geography || '',
-          employees: segmentData.employees || '',
-          customerCount: segmentData.customerCount || '',
-          competitiveIntensity: segmentData.competitiveIntensity || '',
-          characteristics: characteristics,
-          industries: segmentData.industries || [],
-          companySizes: segmentData.companySizes || [],
-          technologies: segmentData.technologies || [],
-          qualificationCriteria: segmentData.qualificationCriteria || [],
-          painPoints: segmentData.painPoints || [],
-          buyingProcesses: segmentData.buyingProcesses || []
-        };
-      } catch (error) {
-
-        // Return a fallback segment object
-        return {
-          id: index + 1,
-          name: `Segment ${index + 1}`,
-          description: `Target segment for ${workspace.name}`,
-          firmographics: [
-            { label: 'Revenue', value: '$10M - $100M ARR' },
-            { label: 'Industry', value: 'B2B Technology' },
-            { label: 'Employees', value: '50 - 500 employees' }
-          ],
-          benefits: `High-value customers with proven need for ${workspace.name} solutions`,
-          awarenessLevel: 'Solution',
-          priority: 'Medium',
-          status: 'active',
-          marketSize: '$500M - $2B',
-          growthRate: '12% YoY',
-          qualification: {
-            tier1Criteria: ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
-            lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
-            disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
-          }
-        };
-      }
-    });
-  };
-
-  // Get segments from the workspace data and ICP enrichment versions
-  const rootSegments = Array.isArray(icpData?.segments) ? icpData.segments : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const segmentsEnrichment = latestVersion && enrichmentData?.[latestVersion]?.segments || [];
+  // Get segments directly from MongoDB structure
+  const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
   
-  console.log('Segments - Root segments:', rootSegments);
-  console.log('Segments - Enrichment data:', segmentsEnrichment);
-  
-  // Transform the segments array into the expected format
-  const allSegments = rootSegments.map((segment: any, index: number) => {
-    // Handle both old string format and new object format
-    const segmentDesc = typeof segment === 'string' ? segment : segment.name;
-    const segmentData = typeof segment === 'string' ? {} : segment;
-    
-    // Extract meaningful segment name from description
-    // Try to extract company type/industry from the description
-    let segmentName = segmentData.name || `Segment ${index + 1}`;
-    
-    // If no name in segmentData, try to extract from description
-    if (!segmentData.name && typeof segmentDesc === 'string') {
-      if (segmentDesc.includes('manufacturing')) {
-        segmentName = 'Enterprise Manufacturing';
-      } else if (segmentDesc.includes('engineering firms')) {
-        segmentName = 'Mid-size Engineering Firms';
-      } else if (segmentDesc.includes('construction')) {
-        segmentName = 'Construction & Infrastructure';
-      } else if (segmentDesc.includes('technology startups') || segmentDesc.includes('startups')) {
-        segmentName = 'Technology Startups';
-      } else {
-        // Extract the first part before any size/region descriptors
-        const match = segmentDesc.match(/^([^(]+)/);
-        if (match) {
-          segmentName = match[1].trim();
-          // Clean up common prefixes
-          segmentName = segmentName.replace(/^(Large|Mid-sized|Small)\s+/, '');
-        }
-      }
-    }
-    
-    // Try to find matching enrichment data
-    const enrichmentMatch = segmentsEnrichment.find((s: any) => 
-      s.name && (segmentDesc.toLowerCase().includes(s.name.toLowerCase()) ||
-                 s.name.toLowerCase().includes(segmentName.toLowerCase()))
-    );
+  // Transform segments to match display format using only backend data
+  const allSegments = segments.map((segment: any, index: number) => {
+    // Build firmographics from segment data
+    const firmographics = [];
+    if (segment.industry) firmographics.push({ label: 'Industry', value: segment.industry });
+    if (segment.companySize) firmographics.push({ label: 'Company Size', value: segment.companySize });
+    if (segment.geography) firmographics.push({ label: 'Geography', value: segment.geography });
     
     return {
-      id: segmentData._id || index + 1,
-      name: enrichmentMatch?.name || segmentName,
-      description: segmentData.description || segmentDesc,
-      firmographics: segmentData.firmographics || [
-        { label: 'Size', value: enrichmentMatch?.size || segmentData.size || '100-500 employees' },
-        { label: 'Region', value: enrichmentMatch?.region || segmentData.region || 'Global' },
-        { label: 'Budget', value: enrichmentMatch?.budget || segmentData.budget || '$200K-500K' },
-        { label: 'Focus', value: enrichmentMatch?.focus || segmentData.focus || 'Growth' }
-      ],
-      benefits: segmentData.benefits || `High-value customers with proven need for ${icpData?.companyName || 'Your Company'} solutions`,
-      awarenessLevel: segmentData.awarenessLevel || 'Solution',
-      priority: segmentData.priority || 'High',
-      status: segmentData.status || 'active',
-      marketSize: segmentData.marketSize || '$500M - $2B',
-      growthRate: segmentData.growthRate || '12% YoY',
-                qualification: segmentData.qualification || {
-            idealCriteria: enrichmentMatch?.criteria?.split(',') || ['Revenue > $10M', 'Technology adoption', 'Growth stage'],
-            lookalikeCompanies: ['salesforce.com', 'hubspot.com', 'slack.com'],
-            disqualifyingCriteria: ['Less than 50 employees', 'Pre-revenue stage', 'Legacy systems only']
-          },
-      size: segmentData.size || '',
-      region: segmentData.region || '',
-      budget: segmentData.budget || '',
-      focus: segmentData.focus || '',
-      industry: segmentData.industry || '',
-      companySize: segmentData.companySize || '',
-      revenue: segmentData.revenue || '',
-      geography: segmentData.geography || '',
-      employees: segmentData.employees || '',
-      customerCount: segmentData.customerCount || '',
-      competitiveIntensity: segmentData.competitiveIntensity || '',
-      characteristics: segmentData.characteristics || [],
-      industries: segmentData.industries || [],
-      companySizes: segmentData.companySizes || [],
-      technologies: segmentData.technologies || [],
-      qualificationCriteria: segmentData.qualificationCriteria || [],
-      painPoints: segmentData.painPoints || [],
-      buyingProcesses: segmentData.buyingProcesses || []
+      _id: segment._id,
+      id: segment._id?.$oid || segment._id || index + 1,
+      name: segment.name || `Segment ${index + 1}`,
+      industry: segment.industry || '',
+      companySize: segment.companySize || '',
+      geography: segment.geography || '',
+      awarenessLevel: segment.awarenessLevel || '',
+      priority: segment.priority || 'medium',
+      status: segment.status || 'active',
+      firmographics: firmographics,
+      locations: segment.locations || [],
+      characteristics: segment.characteristics || [],
+      industries: segment.industries || [],
+      companySizes: segment.companySizes || [],
+      technologies: segment.technologies || [],
+      qualificationCriteria: segment.qualificationCriteria || [],
+      signals: segment.signals || [],
+      painPoints: segment.painPoints || [],
+      buyingProcesses: segment.buyingProcesses || [],
+      specificBenefits: segment.specificBenefits || [],
+      ctaOptions: segment.ctaOptions || [],
+      qualification: segment.qualification || {
+        tier1Criteria: [],
+        idealCriteria: [],
+        lookalikeCompanies: [],
+        disqualifyingCriteria: []
+      },
+      personas: segment.personas || [],
+      createdAt: segment.createdAt,
+      updatedAt: segment.updatedAt
     };
   });
 
   // Filter segments based on search and filter
   const filteredSegments = allSegments.filter(segment => {
     const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         segment.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         segment.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         segment.geography.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = selectedFilter === 'all' || segment.priority.toLowerCase() === selectedFilter;
     return matchesSearch && matchesFilter;
   });
 
-  // Debug: Log the actual segment data to see what we're working with
-  console.log('icpData:', icpData);
-  console.log('Root segments:', rootSegments);
-  console.log('Transformed segments:', allSegments);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
 
   return (
     <>
-      <div className="p-8 bg-background min-h-screen">
+      <div className="p-6 bg-octave-light-1 min-h-screen">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
@@ -380,10 +196,6 @@ const Segments = () => {
               <p className="text-xs text-muted-foreground">Segment your audience and craft targeted messages</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
-                <Download className="w-3 h-3 mr-2" />
-                Export
-              </Button>
               <Button 
                 size="sm" 
                 className="bg-primary hover:bg-primary/90 text-xs"
@@ -463,10 +275,7 @@ const Segments = () => {
               <CardContent>
                 <div className="space-y-3">
                   {[
-                    { metric: 'Total Segments', value: filteredSegments.length.toString(), icon: '🎯' },
-                    { metric: 'High Priority', value: filteredSegments.filter(s => s.priority.toLowerCase() === 'high').length.toString(), icon: '🔥' },
-                    { metric: 'Market Coverage', value: '85%', icon: '🌍' },
-                    { metric: 'Avg. Market Size', value: '$1.2B', icon: '💰' }
+                    { metric: 'Total Segments', value: filteredSegments.length.toString(), icon: '🎯' }
                   ].map((item) => (
                     <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center space-x-2">
@@ -491,7 +300,7 @@ const Segments = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="text-xs text-slate-700">
-                    Chief Marketing Officer, Vice President of Marketing, Head of Content Strategy
+                    Total personas across segments: {allSegments.reduce((total, segment) => total + (segment.personas?.length || 0), 0)}
                   </div>
                   <Link to={`/workspace/${slug}/personas`}>
                     <Button variant="outline" size="sm" className="w-full text-xs">
@@ -514,7 +323,7 @@ const Segments = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="text-xs text-slate-700">
-                    {workspace.name} - Main product offering
+                    {icpData?.products?.length ? `${icpData.products.length} product(s) configured` : 'No products configured'}
                   </div>
                   <Link to={`/workspace/${slug}/products`}>
                     <Button variant="outline" size="sm" className="w-full text-xs">

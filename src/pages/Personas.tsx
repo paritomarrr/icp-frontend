@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
-import { Users, Download, ArrowRight, Search, Plus, MoreHorizontal, Eye, Copy, ChevronRight, Users2, Target, TrendingUp, Building2 } from 'lucide-react';
+import { Users, Search, Plus, Building2 } from 'lucide-react';
 import { AddPersonaModal } from '@/components/modals';
 import { icpWizardApi, PersonaData } from '@/lib/api';
 
@@ -57,52 +57,53 @@ const Personas = () => {
     return <Navigate to="/login" />;
   }
 
-  // Get personas from the workspace data and ICP enrichment versions
+  // Get personas from the workspace data - include both root personas and personas within segments
   const rootPersonas = Array.isArray(icpData?.personas) ? icpData.personas : [];
-  const enrichmentData = icpData?.icpEnrichmentVersions;
-  const latestVersion = enrichmentData ? Math.max(...Object.keys(enrichmentData).map(Number)) : null;
-  const personasTable = latestVersion && enrichmentData?.[latestVersion]?.personasTable || [];
+  const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
   
-  console.log('Personas - Root personas:', rootPersonas);
-  console.log('Personas - Enrichment data:', personasTable);
+  // Collect all personas from segments
+  const segmentPersonas: any[] = [];
+  segments.forEach((segment: any) => {
+    if (segment.personas && Array.isArray(segment.personas)) {
+      // Add segment info to each persona to identify which segment they belong to
+      const personasWithSegment = segment.personas.map((persona: any) => ({
+        ...persona,
+        segmentName: segment.name,
+        segmentId: segment._id
+      }));
+      segmentPersonas.push(...personasWithSegment);
+    }
+  });
   
-  // Transform the personas array into the expected format
-  const allPersonas = rootPersonas.map((persona: any, index: number) => {
-    // Handle both old string format and new object format
-    const personaDesc = typeof persona === 'string' ? persona : persona.name;
-    const personaData = typeof persona === 'string' ? {} : persona;
-    
-    // Extract title from the persona description (everything before the first '-')
-    const titleMatch = personaDesc.match(/^([^-]+)/);
-    const title = titleMatch ? titleMatch[1].trim() : personaData.title || `Persona ${index + 1}`;
-    
-    // Try to find matching enrichment data
-    const enrichmentMatch = personasTable.find((p: any) => 
-      p.title && title.toLowerCase().includes(p.title.toLowerCase())
-    );
-    
+  // Combine all personas
+  const allPersonasRaw = [...rootPersonas, ...segmentPersonas];
+  
+  // Transform the personas array into the expected format using MongoDB structure
+  const allPersonas = allPersonasRaw.map((persona: any, index: number) => {
     return {
-      id: personaData._id || index + 1,
-      title: title,
-      summary: personaDesc,
-      created: personaData.createdAt ? new Date(personaData.createdAt).toLocaleDateString() : 'Jul 12, 2025',
-      status: personaData.status || 'active',
-      priority: personaData.priority || (enrichmentMatch ? 'high' : 'medium'),
-      influence: personaData.decisionInfluence || enrichmentMatch?.influence || 'Decision Maker',
-      painPoints: personaData.painPoints || enrichmentMatch?.painPoints || ['Revenue growth', 'Operational efficiency', 'Digital transformation'],
-      goals: personaData.goals || enrichmentMatch?.goals || ['Improve business outcomes', 'Scale operations', 'Enhance customer experience'],
-      department: personaData.department || '',
-      seniority: personaData.seniority || '',
-      industry: personaData.industry || '',
-      company: personaData.company || '',
-      location: personaData.location || '',
-      description: personaData.description || '',
-      budget: personaData.budget || '',
-      teamSize: personaData.teamSize || '',
-      channels: personaData.channels || [],
-      objections: personaData.objections || [],
-      responsibilities: personaData.responsibilities || [],
-      challenges: personaData.challenges || []
+      id: persona._id?.$oid || persona._id || index + 1,
+      title: persona.name || persona.title || `Persona ${index + 1}`,
+      summary: `${persona.name || 'Unknown Name'} - ${persona.title || 'Unknown Title'}${persona.segmentName ? ` (${persona.segmentName} segment)` : ''}`,
+      created: persona.createdAt ? new Date(persona.createdAt).toLocaleDateString() : 'Jul 12, 2025',
+      status: persona.status || 'active',
+      priority: persona.priority || 'medium',
+      influence: persona.decisionInfluence || 'Decision Maker',
+      painPoints: persona.painPoints || [],
+      goals: persona.goals || [],
+      department: '',
+      seniority: persona.seniority || '',
+      industry: '',
+      company: '',
+      location: '',
+      description: `${persona.name} - ${persona.title}`,
+      budget: '',
+      teamSize: '',
+      channels: persona.channels || [],
+      objections: persona.objections || [],
+      responsibilities: persona.primaryResponsibilities || persona.responsibilities || [],
+      challenges: persona.challenges || [],
+      segmentName: persona.segmentName || '',
+      segmentId: persona.segmentId || ''
     };
   });
 
@@ -114,59 +115,37 @@ const Personas = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
-
   const getInfluenceColor = (influence: string) => {
     switch (influence) {
       case 'Decision Maker': return 'bg-purple-100 text-purple-800';
-      case 'Influencer': return 'bg-blue-100 text-blue-800';
-      case 'User': return 'bg-green-100 text-green-800';
+      case 'Champion': return 'bg-blue-100 text-blue-800';
+      case 'End User': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="p-8 bg-background min-h-screen">
+    <div className="p-6 bg-octave-light-1 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
-          <Link to={`/workspace/${slug}`} className="hover:text-foreground transition-colors">Dashboard</Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-foreground font-medium">Personas</span>
+        <nav className="flex items-center space-x-1 text-xs text-slate-400 mb-6">
+          <Link to={`/workspace/${slug}`} className="hover:text-slate-600 transition-colors">Dashboard</Link>
+          <span>/</span>
+          <span className="text-slate-700">Personas</span>
         </nav>
 
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl font-bold text-foreground mb-1">
+            <h1 className="text-xl font-semibold text-slate-900 mb-1">
               Buyer Personas
             </h1>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Understand your target audience and their decision-making process
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" className="border-border hover:bg-accent text-xs">
-              <Download className="w-3 h-3 mr-2" />
-              Export
-            </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs" onClick={() => setAddPersonaModalOpen(true)}>
-              <Plus className="w-3 h-3 mr-2" />
+            <Button size="sm" variant="outline" className="text-xs" onClick={() => setAddPersonaModalOpen(true)}>
+              <Plus className="w-3 h-3 mr-1" />
               Add Persona
             </Button>
           </div>
@@ -217,56 +196,31 @@ const Personas = () => {
           {filteredPersonas.map((persona, idx) => (
             <Card
               key={persona.title}
-              className={`cursor-pointer border-0 transition-all duration-200 group shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl`}
+              className="cursor-pointer shadow-md border hover:shadow-lg transition-all duration-200"
               onClick={() => navigate(`/workspace/${slug}/personas/${persona.id}`)}
             >
-              <CardHeader className="pb-2">
-                {/* Colored header bar for persona role/title */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="inline-block bg-sky-200 text-sky-800 text-xs font-semibold px-3 py-1 rounded-t-md rounded-b mb-1 tracking-wide">
-                    {persona.title}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Eye className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                        <MoreHorizontal className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                {/* Prominent persona name/title */}
-                <CardTitle className="text-base font-bold text-slate-900 mb-1 truncate">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-slate-800 mb-2">
                   {persona.title}
                 </CardTitle>
-                {/* Pill-shaped, color-coded badges in a single row */}
-                <div className="flex items-center space-x-2 mt-1 mb-1">
-                  <Badge className={`${getPriorityColor(persona.priority)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.priority} Priority</Badge>
-                  <Badge className={`${getStatusColor(persona.status)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.status}</Badge>
-                  <Badge className={`${getInfluenceColor(persona.influence)} text-xs rounded-full px-2 py-0.5 font-medium`}>{persona.influence}</Badge>
-                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-3">
-                  <div className="text-xs text-slate-600 mb-2 line-clamp-2">
-                    {persona.summary}
-                  </div>
-                  {/* Divider before metrics */}
-                  <div className="border-t border-slate-100 my-2"></div>
-                  {/* Metrics row */}
-                  <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="flex items-center"><Target className="w-3 h-3 text-blue-500 mr-1" />Pain Points: {(persona.painPoints || []).length}</span>
-                      <span className="flex items-center"><TrendingUp className="w-3 h-3 text-green-500 mr-1" />Goals</span>
+                  {persona.summary && (
+                    <div className="text-xs text-slate-600 line-clamp-2">
+                      {persona.summary}
                     </div>
-                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                  )}
+                  
+                  {/* Simple metrics */}
+                  <div className="text-xs text-slate-500 space-y-1">
+                    {persona.painPoints?.length > 0 && (
+                      <div>Pain Points: {persona.painPoints.length}</div>
+                    )}
+                    {persona.goals?.length > 0 && (
+                      <div>Goals: {persona.goals.length}</div>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">Created: {persona.created}</div>
                 </div>
               </CardContent>
             </Card>
@@ -278,18 +232,13 @@ const Personas = () => {
           {/* Persona Overview */}
           <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span className="text-xl">👥</span>
-                <span className="text-base">Persona Overview</span>
-              </CardTitle>
+              <CardTitle className="text-base">Persona Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[
                   { metric: 'Total Personas', value: filteredPersonas.length.toString(), icon: '👤' },
-                  { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' },
-                  { metric: 'Avg. Pain Points', value: '3.2', icon: '💡' },
-                  { metric: 'Engagement Rate', value: '87%', icon: '📈' }
+                  { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' }
                 ].map((item) => (
                   <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                     <div className="flex items-center space-x-2">

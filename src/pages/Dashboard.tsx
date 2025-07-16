@@ -72,7 +72,7 @@ const Dashboard = () => {
       if (hasIcpData) {
         navigate(`/workspace/${workspaceSlug}/products`);
       } else {
-        navigate(`/workspace/${workspaceSlug}/icp-wizard`);
+        navigate(`/workspace/${workspaceSlug}/enhanced-icp-wizard`);
       }
     } catch (error) {
       console.error('Error navigating to workspace:', error);
@@ -132,20 +132,20 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-octave-light-1">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-1">
+            <h1 className="text-2xl font-bold text-octave-dark-3 mb-1">
               Welcome back, {user.name}
             </h1>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-octave-dark-1">
               Manage your ICP workspaces and generate insights
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/workspace/new">
-              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-xs">
+              <Button className="bg-octave-dark-2 hover:bg-octave-dark-3 text-white text-xs">
                 <Plus className="w-3 h-3 mr-2" />
                 New Workspace
               </Button>
@@ -153,7 +153,7 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs"
+              className="border-octave-light-3 text-octave-dark-1 hover:bg-octave-light-2 text-xs"
             >
               <LogOut className="w-3 h-3 mr-2" />
               Logout
@@ -163,12 +163,12 @@ const Dashboard = () => {
 
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-3 h-3" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-octave-dark-1 w-3 h-3" />
             <Input
               placeholder="Search workspaces..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 text-xs"
+              className="pl-8 text-xs border-octave-light-3 focus:border-octave-dark-2"
             />
           </div>
         </div>
@@ -202,6 +202,26 @@ const Dashboard = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/workspace/${workspace.slug}/icp-wizard`);
+                          }}
+                          className="text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-2" />
+                          ICP Wizard (Classic)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/workspace/${workspace.slug}/enhanced-icp-wizard`);
+                          }}
+                          className="text-xs"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-2" />
+                          Enhanced ICP Wizard
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(e) => handleDeleteWorkspace(workspace, e)}
                           className="text-red-600 focus:text-red-600 focus:bg-red-50 text-xs"

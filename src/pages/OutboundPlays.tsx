@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,12 +6,58 @@ import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 
 const OutboundPlays = () => {
-  const { slug } = useParams();  const user = authService.getCurrentUser();
+  const { slug } = useParams();  
+  const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
+  
+  // State to manage checkbox values
+  const [playRelevance, setPlayRelevance] = useState<{[key: string]: boolean}>({});
+  
+  // Storage key for this workspace
+  const storageKey = `outbound-plays-${slug}`;
+  
+  // Load saved checkbox states on component mount
+  useEffect(() => {
+    if (slug) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const parsedData = JSON.parse(saved);
+          setPlayRelevance(parsedData);
+        } catch (error) {
+          console.error('Error loading saved checkbox states:', error);
+        }
+      }
+    }
+  }, [slug, storageKey]);
 
   if (!user || !workspace) {
     return <Navigate to="/login" />;
   }
+
+  // Function to handle checkbox changes
+  const handleRelevanceChange = (categoryIndex: number, itemIndex: number, checked: boolean) => {
+    const key = `${categoryIndex}-${itemIndex}`;
+    const newState = {
+      ...playRelevance,
+      [key]: checked
+    };
+    
+    setPlayRelevance(newState);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newState));
+    } catch (error) {
+      console.error('Error saving checkbox states:', error);
+    }
+  };
+
+  // Function to get checkbox state
+  const getRelevanceState = (categoryIndex: number, itemIndex: number, defaultValue: boolean) => {
+    const key = `${categoryIndex}-${itemIndex}`;
+    return playRelevance[key] !== undefined ? playRelevance[key] : defaultValue;
+  };
 
   const plays = [
     {
@@ -41,8 +86,8 @@ const OutboundPlays = () => {
       ]
     },
     {
-      category: 'Signal-based',
-      color: 'bg-yellow-100',
+      category: 'Technographic',
+      color: 'bg-blue-100',
       items: [
         { name: 'Technographic Signals', tools: 'Tools', relevant: true, howTo: 'Monitor tech stack' },
         { name: 'Integrations overlap', tools: 'APIs', relevant: true, howTo: 'Find integration opportunities' },
@@ -51,97 +96,63 @@ const OutboundPlays = () => {
       ]
     },
     {
-      category: 'Signal-based',
-      color: 'bg-yellow-100',
-      items: [
-        { name: 'Employment Signals', tools: 'LinkedIn', relevant: true, howTo: 'Target job changes' },
-        { name: 'Champions that changed jobs', tools: 'LinkedIn', relevant: true, howTo: 'Follow champions' },
-        { name: 'Previous companies of champions from', tools: 'LinkedIn', relevant: false, howTo: 'Target previous companies' },
-        { name: 'Alumni from your best Won Account', tools: 'LinkedIn', relevant: true, howTo: 'Leverage alumni network' },
-        { name: 'New hires', tools: 'LinkedIn', relevant: false, howTo: 'Target new hires' },
-        { name: 'Promoted', tools: 'LinkedIn', relevant: true, howTo: 'Congratulate promotions' },
-        { name: 'Open jobs', tools: 'Job boards', relevant: true, howTo: 'Target hiring companies' },
-        { name: 'No specific department', tools: 'General', relevant: false, howTo: 'Broad targeting' }
-      ]
-    },
-    {
-      category: 'Signal-based',
-      color: 'bg-yellow-100',
-      items: [
-        { name: 'Funding & News', tools: 'News', relevant: true, howTo: 'Target funded companies' },
-        { name: 'Fundraise Announcements posts /press', tools: 'Press', relevant: true, howTo: 'Leverage funding news' },
-        { name: 'Last series funding', tools: 'Funding data', relevant: false, howTo: 'Target by funding stage' },
-        { name: 'News', tools: 'News alerts', relevant: true, howTo: 'Use news triggers' },
-        { name: 'M&A Events', tools: 'M&A data', relevant: false, howTo: 'Target M&A activity' },
-        { name: '10K Reports Mention', tools: 'SEC filings', relevant: false, howTo: 'Monitor filings' }
-      ]
-    },
-    {
-      category: 'Signal-based',
-      color: 'bg-yellow-100',
-      items: [
-        { name: 'Review Signals', tools: 'Review sites', relevant: true, howTo: 'Monitor reviews' },
-        { name: 'G2 Profile Visits', tools: 'G2', relevant: true, howTo: 'Track profile visits' },
-        { name: 'Bad reviews on G2 against competitors', tools: 'G2', relevant: true, howTo: 'Target unhappy customers' },
-        { name: 'Bad reviews on google my business', tools: 'Google', relevant: false, howTo: 'Local review targeting' },
-        { name: 'Glassdoor reviews', tools: 'Glassdoor', relevant: false, howTo: 'Employee satisfaction intel' }
-      ]
-    },
-    {
       category: 'Cold',
-      color: 'bg-blue-100',
+      color: 'bg-red-100',
       items: [
-        { name: 'ICP Fit', tools: 'CRM', relevant: true, howTo: 'Target ICP matches' }
+        { name: 'Research-based outreach', tools: 'Research', relevant: true, howTo: 'Deep company research' },
+        { name: 'Content engagement', tools: 'Social', relevant: true, howTo: 'Engage with content first' },
+        { name: 'Industry events follow-up', tools: 'Events', relevant: false, howTo: 'Reference event attendance' },
+        { name: 'Direct cold outreach', tools: 'Email/LinkedIn', relevant: false, howTo: 'Personalized messaging' }
       ]
     }
   ];
 
   return (
-    <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <div className="p-8 bg-octave-light-1 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-bold text-slate-800">Pre-Sales Outbound Plays</h1>
-          <p className="text-xs text-slate-600">Strategic outbound plays categorized by warmth and signal strength</p>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-octave-dark-3">Pre-Sales Outbound Plays</h1>
+          <p className="text-xs text-octave-dark-1">Strategic outbound plays categorized by warmth and signal strength</p>
         </div>
-
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        
+        <Card className="shadow-xl border border-octave-light-2 bg-white">
           <CardHeader>
-            <CardTitle className="text-base">Outbound Strategy Playbook</CardTitle>
-            <p className="text-xs text-slate-600">
-              The list is the strategy. Each play has specific tools, relevance scoring, and how-to guidance.
-            </p>
+            <CardTitle className="text-base text-octave-dark-3">Outbound Strategy Playbook</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               {plays.map((category, categoryIndex) => (
                 <div key={categoryIndex}>
-                  <div className={`${category.color} px-4 py-2 rounded-lg mb-3`}>
-                    <h3 className="font-bold text-slate-800 text-sm">{category.category}</h3>
+                  <div className={`${category.color} p-3 rounded-t-lg border border-slate-200`}>
+                    <h3 className="font-semibold text-slate-800 text-sm">{category.category}</h3>
                   </div>
                   
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse border border-slate-200">
                       <thead>
-                        <tr className="bg-slate-50">
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">Play Name</th>
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">Tools</th>
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">Relevant</th>
-                          <th className="border border-slate-200 p-3 text-left font-semibold text-slate-700 text-xs">How-to</th>
+                        <tr className="bg-octave-light-1">
+                          <th className="border border-octave-light-2 p-3 text-left font-semibold text-octave-dark-2 text-xs">Play Name</th>
+                          <th className="border border-octave-light-2 p-3 text-left font-semibold text-octave-dark-2 text-xs">Tools</th>
+                          <th className="border border-octave-light-2 p-3 text-left font-semibold text-octave-dark-2 text-xs">Relevant</th>
+                          <th className="border border-octave-light-2 p-3 text-left font-semibold text-octave-dark-2 text-xs">How-to</th>
                         </tr>
                       </thead>
                       <tbody>
                         {category.items.map((item, itemIndex) => (
-                          <tr key={itemIndex} className="hover:bg-slate-25">
-                            <td className="border border-slate-200 p-3 text-xs text-slate-700">
+                          <tr key={itemIndex} className="hover:bg-octave-light-1/50">
+                            <td className="border border-octave-light-2 p-3 text-xs text-octave-dark-2">
                               {item.name}
                             </td>
-                            <td className="border border-slate-200 p-3 text-xs text-slate-600">
+                            <td className="border border-octave-light-2 p-3 text-xs text-octave-dark-1">
                               {item.tools}
                             </td>
-                            <td className="border border-slate-200 p-3 text-center">
-                              <Checkbox checked={item.relevant} disabled />
+                            <td className="border border-octave-light-2 p-3 text-center">
+                              <Checkbox 
+                                checked={getRelevanceState(categoryIndex, itemIndex, item.relevant)} 
+                                onCheckedChange={(checked) => handleRelevanceChange(categoryIndex, itemIndex, checked as boolean)}
+                              />
                             </td>
-                            <td className="border border-slate-200 p-3 text-xs text-slate-600">
+                            <td className="border border-octave-light-2 p-3 text-xs text-octave-dark-1">
                               {item.howTo}
                             </td>
                           </tr>
