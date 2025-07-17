@@ -265,8 +265,8 @@ const PersonaDetails = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">{personaData.name}</h1>
-            <p className="text-sm text-slate-600 mt-1">Persona Details & Messaging</p>
+            <h1 className="text-lg font-semibold text-slate-800">{personaData.name}</h1>
+            <p className="text-xs text-slate-600 mt-1">Persona Details & Messaging</p>
           </div>
           <div className="flex items-center space-x-3">
             {getUserRole() && (
@@ -277,7 +277,7 @@ const PersonaDetails = () => {
             {canEdit() && (
               <Button 
                 size="sm" 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-black text-white hover:bg-gray-800"
                 onClick={handleEdit}
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -299,13 +299,13 @@ const PersonaDetails = () => {
             {/* Persona Overview */}
             <Card className="border border-gray-200 bg-white">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                   <User className="w-5 h-5 text-blue-600" />
                   <span>Persona Overview</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-sm text-gray-700 leading-relaxed">
+                <div className="text-xs text-gray-700 leading-relaxed">
                   {displayPersona.description || displayPersona.summary || 'No description available'}
                 </div>
                 <div className="flex items-center space-x-2 flex-wrap">
@@ -317,14 +317,14 @@ const PersonaDetails = () => {
                 </div>
                 {displayPersona.title && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-1">Job Title</h4>
-                    <p className="text-sm text-gray-600">{displayPersona.title}</p>
+                    <h4 className="text-xs font-medium text-gray-900 mb-1">Job Title</h4>
+                    <p className="text-xs text-gray-600">{displayPersona.title}</p>
                   </div>
                 )}
                 {displayPersona.seniority && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-1">Seniority Level</h4>
-                    <p className="text-sm text-gray-600">{displayPersona.seniority}</p>
+                    <h4 className="text-xs font-medium text-gray-900 mb-1">Seniority Level</h4>
+                    <p className="text-xs text-gray-600">{displayPersona.seniority}</p>
                   </div>
                 )}
               </CardContent>
@@ -334,7 +334,7 @@ const PersonaDetails = () => {
             {displayPersona.primaryResponsibilities && displayPersona.primaryResponsibilities.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                     <Briefcase className="w-5 h-5 text-blue-600" />
                     <span>Primary Responsibilities</span>
                   </CardTitle>
@@ -344,7 +344,7 @@ const PersonaDetails = () => {
                     {displayPersona.primaryResponsibilities.map((responsibility: string, idx: number) => (
                       <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{responsibility}</p>
+                        <p className="text-xs text-gray-700 leading-relaxed">{responsibility}</p>
                       </div>
                     ))}
                   </div>
@@ -356,7 +356,7 @@ const PersonaDetails = () => {
             {displayPersona.okrs && displayPersona.okrs.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                     <TrendingUp className="w-5 h-5 text-green-600" />
                     <span>OKRs (Objectives & Key Results)</span>
                   </CardTitle>
@@ -366,7 +366,7 @@ const PersonaDetails = () => {
                     {displayPersona.okrs.map((okr: string, idx: number) => (
                       <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{okr}</p>
+                        <p className="text-xs text-gray-700 leading-relaxed">{okr}</p>
                       </div>
                     ))}
                   </div>
@@ -378,7 +378,7 @@ const PersonaDetails = () => {
             {displayPersona.painPoints && displayPersona.painPoints.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                     <Target className="w-5 h-5 text-red-600" />
                     <span>Pain Points</span>
                   </CardTitle>
@@ -388,7 +388,7 @@ const PersonaDetails = () => {
                     {displayPersona.painPoints.map((point: string, idx: number) => (
                       <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{point}</p>
+                        <p className="text-xs text-gray-700 leading-relaxed">{point}</p>
                       </div>
                     ))}
                   </div>
@@ -400,7 +400,7 @@ const PersonaDetails = () => {
             {displayPersona.goals && displayPersona.goals.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                     <Target className="w-5 h-5 text-green-600" />
                     <span>Goals & Objectives</span>
                   </CardTitle>
@@ -410,7 +410,7 @@ const PersonaDetails = () => {
                     {displayPersona.goals.map((goal: string, idx: number) => (
                       <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{goal}</p>
+                        <p className="text-xs text-gray-700 leading-relaxed">{goal}</p>
                       </div>
                     ))}
                   </div>
@@ -424,7 +424,7 @@ const PersonaDetails = () => {
               {displayPersona.triggers && displayPersona.triggers.length > 0 && (
                 <Card className="border border-gray-200 bg-white">
                   <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                       <Target className="w-5 h-5 text-purple-600" />
                       <span>Triggers</span>
                     </CardTitle>
@@ -432,7 +432,7 @@ const PersonaDetails = () => {
                   <CardContent>
                     <div className="space-y-2">
                       {displayPersona.triggers.map((trigger: string, idx: number) => (
-                        <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                           • {trigger}
                         </div>
                       ))}
@@ -445,7 +445,7 @@ const PersonaDetails = () => {
               {displayPersona.channels && displayPersona.channels.length > 0 && (
                 <Card className="border border-gray-200 bg-white">
                   <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                    <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                       <Building2 className="w-5 h-5 text-blue-600" />
                       <span>Preferred Channels</span>
                     </CardTitle>
@@ -453,7 +453,7 @@ const PersonaDetails = () => {
                   <CardContent>
                     <div className="space-y-2">
                       {displayPersona.channels.map((channel: string, idx: number) => (
-                        <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                           • {channel}
                         </div>
                       ))}
@@ -469,7 +469,7 @@ const PersonaDetails = () => {
             {/* Related Pages */}
             <Card className="border border-gray-200 bg-white">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
                   <Building2 className="w-5 h-5 text-purple-600" />
                   <span>Related Pages</span>
                 </CardTitle>
@@ -477,19 +477,19 @@ const PersonaDetails = () => {
               <CardContent>
                 <div className="space-y-3">
                   <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
                       <Target className="w-4 h-4 mr-2" />
                       View Segments
                     </Button>
                   </Link>
                   <Link to={`/workspace/${slug}/products`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
                       <Building2 className="w-4 h-4 mr-2" />
                       View Products
                     </Button>
                   </Link>
                   <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
                       <Users className="w-4 h-4 mr-2" />
                       All Personas
                     </Button>
@@ -501,25 +501,25 @@ const PersonaDetails = () => {
             {/* Persona Summary */}
             <Card className="border border-gray-200 bg-white">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold">Quick Summary</CardTitle>
+                <CardTitle className="text-sm font-semibold">Quick Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {displayPersona.title && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">Job Title</h4>
-                      <p className="text-sm text-gray-600">{displayPersona.title}</p>
+                      <h4 className="text-xs font-medium text-gray-900 mb-1">Job Title</h4>
+                      <p className="text-xs text-gray-600">{displayPersona.title}</p>
                     </div>
                   )}
                   {displayPersona.seniority && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">Seniority</h4>
-                      <p className="text-sm text-gray-600">{displayPersona.seniority}</p>
+                      <h4 className="text-xs font-medium text-gray-900 mb-1">Seniority</h4>
+                      <p className="text-xs text-gray-600">{displayPersona.seniority}</p>
                     </div>
                   )}
                   {displayPersona.influence && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">Decision Influence</h4>
+                      <h4 className="text-xs font-medium text-gray-900 mb-1">Decision Influence</h4>
                       <Badge className={`${getInfluenceColor(displayPersona.influence)} text-xs`}>
                         {displayPersona.influence}
                       </Badge>
@@ -527,8 +527,8 @@ const PersonaDetails = () => {
                   )}
                   {displayPersona.created && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">Created</h4>
-                      <p className="text-sm text-gray-600">{displayPersona.created}</p>
+                      <h4 className="text-xs font-medium text-gray-900 mb-1">Created</h4>
+                      <p className="text-xs text-gray-600">{displayPersona.created}</p>
                     </div>
                   )}
                 </div>
@@ -539,12 +539,12 @@ const PersonaDetails = () => {
             {displayPersona.jobTitles && displayPersona.jobTitles.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Job Titles</CardTitle>
+                  <CardTitle className="text-sm font-semibold">Job Titles</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {displayPersona.jobTitles.map((title: string, idx: number) => (
-                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                      <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                         {title}
                       </div>
                     ))}
@@ -557,12 +557,12 @@ const PersonaDetails = () => {
             {displayPersona.objections && displayPersona.objections.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Common Objections</CardTitle>
+                  <CardTitle className="text-sm font-semibold">Common Objections</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {displayPersona.objections.map((objection: string, idx: number) => (
-                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                      <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                         • {objection}
                       </div>
                     ))}
@@ -585,4 +585,4 @@ const PersonaDetails = () => {
   );
 };
 
-export default PersonaDetails; 
+export default PersonaDetails;

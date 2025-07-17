@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,6 @@ const Personas = () => {
   const [icpData, setIcpData] = useState<ICPData | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
   const [addPersonaModalOpen, setAddPersonaModalOpen] = useState(false);
 
   useEffect(() => {
@@ -107,12 +105,12 @@ const Personas = () => {
     };
   });
 
-  // Filter personas based on search and filter
+  // Filter personas based on search
   const filteredPersonas = allPersonas.filter(persona => {
-    const matchesSearch = persona.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const titleString = Array.isArray(persona.title) ? persona.title.join(' ') : persona.title;
+    const matchesSearch = titleString.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          persona.summary.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || persona.priority === selectedFilter;
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   const getInfluenceColor = (influence: string) => {
@@ -136,7 +134,7 @@ const Personas = () => {
 
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900 mb-1">
+            <h1 className="text-lg font-semibold text-slate-900 mb-1">
               Buyer Personas
             </h1>
             <p className="text-xs text-slate-500">
@@ -162,33 +160,6 @@ const Personas = () => {
               className="pl-8 text-xs"
             />
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-medium text-foreground">Filter:</span>
-            <Button
-              variant={selectedFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('all')}
-            >
-              All Personas
-            </Button>
-            <Button
-              variant={selectedFilter === 'high' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('high')}
-            >
-              High Priority
-            </Button>
-            <Button
-              variant={selectedFilter === 'medium' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs"
-              onClick={() => setSelectedFilter('medium')}
-            >
-              Medium Priority
-            </Button>
-          </div>
         </div>
 
         {/* Persona Cards Grid */}
@@ -200,7 +171,7 @@ const Personas = () => {
               onClick={() => navigate(`/workspace/${slug}/personas/${persona.id}`)}
             >
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold text-slate-800 mb-2">
+                <CardTitle className="text-sm font-semibold text-slate-800 mb-2">
                   {persona.title}
                 </CardTitle>
               </CardHeader>
@@ -211,7 +182,6 @@ const Personas = () => {
                       {persona.summary}
                     </div>
                   )}
-                  
                   {/* Simple metrics */}
                   <div className="text-xs text-slate-500 space-y-1">
                     {persona.painPoints?.length > 0 && (
@@ -228,11 +198,14 @@ const Personas = () => {
         </div>
 
         {/* Enhanced Metrics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
           {/* Persona Overview */}
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-lg border bg-white rounded-lg">
             <CardHeader>
-              <CardTitle className="text-base">Persona Overview</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <span className="text-xl">👤</span>
+                <span className="text-sm font-semibold text-gray-800">Persona Overview</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -240,12 +213,12 @@ const Personas = () => {
                   { metric: 'Total Personas', value: filteredPersonas.length.toString(), icon: '👤' },
                   { metric: 'Decision Makers', value: filteredPersonas.filter(p => p.influence === 'Decision Maker').length.toString(), icon: '🎯' }
                 ].map((item) => (
-                  <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                  <div key={item.metric} className="flex items-center justify-between p-2 bg-gray-100 rounded">
                     <div className="flex items-center space-x-2">
                       <span className="text-base">{item.icon}</span>
-                      <span className="text-xs font-medium text-slate-700">{item.metric}</span>
+                      <span className="text-xs font-medium text-gray-700">{item.metric}</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                    <span className="text-sm font-bold text-gray-900">{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -253,16 +226,16 @@ const Personas = () => {
           </Card>
 
           {/* Segments */}
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-lg border bg-white rounded-lg">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <span className="text-xl">🔀</span>
-                <span className="text-base">Market Segments</span>
+                <span className="text-sm font-semibold text-gray-800">Market Segments</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="text-xs text-slate-700">
+                <div className="text-xs text-gray-700">
                   Enterprise, Mid-Market, SMB segments
                 </div>
                 <Link to={`/workspace/${slug}/segments`}>
@@ -276,16 +249,16 @@ const Personas = () => {
           </Card>
 
           {/* Products */}
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <Card className="shadow-lg border bg-white rounded-lg">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <span className="text-xl">📦</span>
-                <span className="text-base">Products</span>
+                <span className="text-sm font-semibold text-gray-800">Products</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="text-xs text-slate-700">
+                <div className="text-xs text-gray-700">
                   {workspace.name} - Main product offering
                 </div>
                 <Link to={`/workspace/${slug}/products`}>
@@ -298,14 +271,14 @@ const Personas = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      {/* Add Persona Modal */}
-      <AddPersonaModal
-        open={addPersonaModalOpen}
-        onOpenChange={setAddPersonaModalOpen}
-        onSave={handleAddPersona}
-      />
+        {/* Add Persona Modal */}
+        <AddPersonaModal
+          open={addPersonaModalOpen}
+          onOpenChange={setAddPersonaModalOpen}
+          onSave={handleAddPersona}
+        />
+      </div>
     </div>
   );
 };

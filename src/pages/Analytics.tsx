@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ const Analytics = () => {
   const { slug } = useParams();  
   const user = authService.getCurrentUser();
   const workspace = slug ? storageService.getWorkspace(slug) : null;
+  const domain = workspace?.domain || 'URL Not Available';
   const [icpData, setIcpData] = useState<ICPData | null>(null);
 
   useEffect(() => {
@@ -31,6 +31,9 @@ const Analytics = () => {
   const latestVersionKey = enrichment ? Object.keys(enrichment).sort().pop() : null;
   const latestVersion = latestVersionKey ? enrichment[latestVersionKey] : null;
 
+  const segmentCount = workspace?.segments?.length || 0;
+  const personaCount = workspace?.segments?.reduce((total, segment) => total + (segment.personas?.length || 0), 0);
+
   return (
     <div className="p-8 bg-octave-light-1 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -38,16 +41,16 @@ const Analytics = () => {
         <Card className="shadow-xl border-0 bg-octave-dark-1">
           <CardContent className="p-6">
             <div className="space-y-3">
-              <h1 className="text-2xl font-bold text-white">{workspace.companyName}</h1>
+              <h1 className="text-2xl font-bold text-white">{workspace.name || 'Company Name Not Available'}</h1>
               <div className="flex items-center space-x-2 text-white/90">
                 <Globe className="w-3 h-3" />
-                <span className="text-xs">{workspace.companyUrl}</span>
+                <span className="text-xs">{domain}</span>
               </div>
               <p className="text-white/95 text-xs max-w-3xl leading-relaxed">
-                {latestVersion?.products?.solution?.split('.')[0] || 'Company description from Claude analysis'}
+                {workspace.companyDescription || 'Company description not available'}
               </p>
               <p className="text-white/85 text-xs max-w-4xl leading-relaxed">
-                {latestVersion?.differentiation?.split('.').slice(0, 2).join('.') || 'Company value and mission summary'}
+                {workspace.companyValueAndMissionSummary || 'Company value and mission summary not available'}
               </p>
             </div>
           </CardContent>
@@ -65,7 +68,7 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="text-xl font-bold text-octave-dark-3">
-                {latestVersion?.segments?.length || 3}
+                {segmentCount}
               </div>
               <p className="text-xs text-octave-dark-1">Active segments</p>
             </CardContent>
@@ -79,7 +82,9 @@ const Analytics = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-octave-dark-3">9</div>
+              <div className="text-xl font-bold text-octave-dark-3">
+                {personaCount}
+              </div>
               <p className="text-xs text-octave-dark-1">Mapped personas</p>
             </CardContent>
           </Card>

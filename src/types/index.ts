@@ -14,6 +14,9 @@ export interface Workspace {
   creatorId: string;
   collaborators: string[];
   createdAt: string;
+  domain: string; // Added field
+  companyDescription: string; // Added field
+  companyValueAndMissionSummary: string; // Added field
 
   // ICP data fields (optional)
   products?: Product[];
