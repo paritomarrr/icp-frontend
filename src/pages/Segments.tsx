@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +22,6 @@ const Segments = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
   const [addSegmentModalOpen, setAddSegmentModalOpen] = useState(false);
 
   useEffect(() => {
@@ -168,13 +166,14 @@ const Segments = () => {
     };
   });
 
-  // Filter segments based on search and filter
+  // Filter segments based on search term
   const filteredSegments = allSegments.filter(segment => {
-    const matchesSearch = segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         segment.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         segment.geography.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || segment.priority.toLowerCase() === selectedFilter;
-    return matchesSearch && matchesFilter;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      segment.name.toLowerCase().includes(searchLower) ||
+      segment.industry.toLowerCase().includes(searchLower) ||
+      segment.geography.toLowerCase().includes(searchLower)
+    );
   });
 
 
@@ -207,82 +206,55 @@ const Segments = () => {
             </div>
           </div>
 
-          {/* Search and Filter Bar */}
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
-              <Input
-                placeholder="Search segments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 text-xs"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-medium text-foreground">Filter:</span>
-              <Button
-                variant={selectedFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs"
-                onClick={() => setSelectedFilter('all')}
-              >
-                All Segments
-              </Button>
-              <Button
-                variant={selectedFilter === 'high' ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs"
-                onClick={() => setSelectedFilter('high')}
-              >
-                High Priority
-              </Button>
-              <Button
-                variant={selectedFilter === 'medium' ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs"
-                onClick={() => setSelectedFilter('medium')}
-              >
-                Medium Priority
-              </Button>
-              <Button
-                variant={selectedFilter === 'low' ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs"
-                onClick={() => setSelectedFilter('low')}
-              >
-                Low Priority
-              </Button>
-            </div>
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
+            <Input
+              placeholder="Search segments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 text-xs"
+            />
           </div>
 
           {/* Segment Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSegments.map((segment) => (
-              <SegmentCard key={segment._id?.$oid || segment._id || segment.id} segment={segment} />
-            ))}
+            {segments.filter(segment => {
+              const searchLower = searchTerm.toLowerCase();
+              return (
+                segment.name.toLowerCase().includes(searchLower) ||
+                segment.industry.toLowerCase().includes(searchLower) ||
+                segment.geography.toLowerCase().includes(searchLower)
+              );
+            }).map((segment, index) => {
+              const segmentId = segment._id ? (typeof segment._id === 'object' && segment._id.$oid ? segment._id.$oid : segment._id) : index + 1;
+              return (
+                <SegmentCard key={segmentId} segment={segment} />
+              );
+            })}
           </div>
 
           {/* Enhanced Metrics Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
             {/* Segment Overview */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="shadow-lg border bg-white rounded-lg">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <span className="text-xl">📊</span>
-                  <span className="text-base">Segment Overview</span>
+                  <span className="text-base font-semibold text-gray-800">Segment Overview</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {[
-                    { metric: 'Total Segments', value: filteredSegments.length.toString(), icon: '🎯' }
+                    { metric: 'Total Segments', value: segments.length.toString(), icon: '🎯' }
                   ].map((item) => (
-                    <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                    <div key={item.metric} className="flex items-center justify-between p-2 bg-gray-100 rounded">
                       <div className="flex items-center space-x-2">
                         <span className="text-base">{item.icon}</span>
-                        <span className="text-xs font-medium text-slate-700">{item.metric}</span>
+                        <span className="text-xs font-medium text-gray-700">{item.metric}</span>
                       </div>
-                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                      <span className="text-sm font-bold text-gray-900">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -290,45 +262,44 @@ const Segments = () => {
             </Card>
 
             {/* Personas */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="shadow-lg border bg-white rounded-lg">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <span className="text-xl">👥</span>
-                  <span className="text-base">Personas</span>
+                  <span className="text-base font-semibold text-gray-800">Personas</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="text-xs text-slate-700">
-                    Total personas across segments: {allSegments.reduce((total, segment) => total + (segment.personas?.length || 0), 0)}
+                  <div className="text-xs text-gray-700">
+                    Total personas across segments: {segments.reduce((total, segment) => total + (segment.personas?.length || 0), 0)}
                   </div>
-                  <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full text-xs">
-                      <Users2 className="w-3 h-3 mr-2" />
-                      View All Personas
-                    </Button>
-                  </Link>
+                  <div className="pt-2">
+                    <Link to={`/workspace/${slug}/personas`}>
+                      <Button variant="outline" size="sm" className="w-full text-xs">
+                        <Users2 className="w-3 h-3 mr-2" />
+                        View All Personas
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Products */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="shadow-lg border bg-white rounded-lg">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <span className="text-xl">📦</span>
-                  <span className="text-base">Products</span>
+                  <span className="text-base font-semibold text-gray-800">Product</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="text-xs text-slate-700">
-                    {icpData?.products?.length ? `${icpData.products.length} product(s) configured` : 'No products configured'}
-                  </div>
-                  <Link to={`/workspace/${slug}/products`}>
+                  <Link to={`/workspace/${slug}/product`}>
                     <Button variant="outline" size="sm" className="w-full text-xs">
                       <Building2 className="w-3 h-3 mr-2" />
-                      View All Products
+                      View Product
                     </Button>
                   </Link>
                 </div>

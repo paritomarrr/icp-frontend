@@ -148,39 +148,38 @@ const SegmentDetails = () => {
     awarenessLevel: currentSegment.awarenessLevel || '',
     priority: currentSegment.priority || 'medium',
     status: currentSegment.status || 'active',
-    budget: (currentSegment as any).budget || '',
-    description: (currentSegment as any).description || `${currentSegment.name} - ${currentSegment.industry} segment`,
-    marketSize: (currentSegment as any).marketSize || 'Not specified',
-    growthRate: (currentSegment as any).growthRate || 'Not specified',
-    customerCount: (currentSegment as any).customerCount || 'Not specified',
-    locations: (currentSegment as any).locations || [],
+    budget: currentSegment.budget || '',
+    description: currentSegment.description || `${currentSegment.name} - ${currentSegment.industry} segment`,
+    marketSize: currentSegment.marketSize || 'Not specified',
+    growthRate: currentSegment.growthRate || 'Not specified',
+    customerCount: currentSegment.customerCount || 'Not specified',
+    locations: currentSegment.locations || [],
     characteristics: currentSegment.characteristics || [],
-    industries: (currentSegment as any).industries || [],
-    companySizes: (currentSegment as any).companySizes || [],
-    technologies: (currentSegment as any).technologies || [],
-    qualificationCriteria: (currentSegment as any).qualificationCriteria || [],
-    signals: (currentSegment as any).signals || [],
+    industries: currentSegment.industries || [],
+    companySizes: currentSegment.companySizes || [],
+    technologies: currentSegment.technologies || [],
+    qualificationCriteria: currentSegment.qualificationCriteria || [],
+    signals: currentSegment.signals || [],
     painPoints: currentSegment.painPoints || [],
-    buyingProcesses: (currentSegment as any).buyingProcesses || [],
-    specificBenefits: (currentSegment as any).specificBenefits || [],
-    ctaOptions: (currentSegment as any).ctaOptions || [],
-    qualification: (currentSegment as any).qualification || {
+    buyingProcesses: currentSegment.buyingProcesses || [],
+    specificBenefits: currentSegment.specificBenefits || [],
+    ctaOptions: currentSegment.ctaOptions || [],
+    qualification: currentSegment.qualification || {
       tier1Criteria: [],
       idealCriteria: [],
       lookalikeCompanies: [],
       disqualifyingCriteria: []
     },
-    personas: (currentSegment as any).personas || [],
-    createdAt: (currentSegment as any).createdAt,
-    updatedAt: (currentSegment as any).updatedAt,
-    // Firmographics object structure from backend
-    firmographics: (currentSegment as any).firmographics || {
+    personas: currentSegment.personas || [],
+    createdAt: currentSegment.createdAt,
+    updatedAt: currentSegment.updatedAt,
+    firmographics: currentSegment.firmographics || {
       industry: currentSegment.industry || '',
       employees: currentSegment.companySize || '',
-      location: (currentSegment as any).geography ? [(currentSegment as any).geography] : [],
-      signals: (currentSegment as any).signals || []
+      location: currentSegment.geography ? [currentSegment.geography] : [],
+      signals: currentSegment.signals || []
     },
-    benefits: (currentSegment as any).specificBenefits?.join(', ') || 'Benefits not specified'
+    benefits: currentSegment.specificBenefits?.join(', ') || 'Benefits not specified'
   };
 
 
@@ -200,7 +199,7 @@ const SegmentDetails = () => {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/30 p-4 mb-6">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h1 className="text-xl font-semibold text-slate-900 mb-1">
+              <h1 className="text-lg font-semibold text-slate-900 mb-1">
                 {segmentData.name}
               </h1>
               <p className="text-xs text-slate-600">
@@ -220,43 +219,40 @@ const SegmentDetails = () => {
 
         {/* Main Content - Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Side - 2/3 */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left Column */}
+          <div className="space-y-6">
             {/* Firmographics */}
             <Card className="border border-gray-200 bg-white">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                  <Building2 className="w-5 h-5 text-blue-600" />
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
+                  <Building2 className="w-4 h-4 text-blue-600" />
                   <span>Firmographics</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Industry</p>
-                    <p className="text-sm text-gray-600">{segmentData.firmographics?.industry || segmentData.industry || 'Not specified'}</p>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Industry</p>
+                    <p className="text-xs text-gray-600">{segmentData.firmographics?.industry || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Company Size</p>
-                    <p className="text-sm text-gray-600">{segmentData.firmographics?.employees || segmentData.companySize || 'Not specified'}</p>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Company Size</p>
+                    <p className="text-xs text-gray-600">{segmentData.firmographics?.employees || 'Not specified'}</p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-sm font-medium text-gray-900 mb-1">Location</p>
-                    <p className="text-sm text-gray-600">
-                      {segmentData.firmographics?.location && segmentData.firmographics.location.length > 0 
-                        ? segmentData.firmographics.location.join(', ') 
-                        : segmentData.geography || 'Not specified'}
+                    <p className="text-xs font-medium text-gray-900 mb-1">Location</p>
+                    <p className="text-xs text-gray-600">
+                      {segmentData.firmographics?.location?.join(', ') || 'Not specified'}
                     </p>
                   </div>
                 </div>
-                {segmentData.firmographics?.signals && segmentData.firmographics.signals.length > 0 && (
+                {segmentData.firmographics && 'signals' in segmentData.firmographics && Array.isArray(segmentData.firmographics.signals) && segmentData.firmographics.signals.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Qualifying Signals</p>
+                    <p className="text-xs font-medium text-gray-900 mb-2">Qualifying Signals</p>
                     <div className="space-y-2">
-                      {segmentData.firmographics.signals.map((signal: string, idx: number) => (
+                      {segmentData.firmographics.signals.map((signal, idx) => (
                         <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                          <p className="text-sm text-gray-700 leading-relaxed">{signal}</p>
+                          <p className="text-xs text-gray-600">{signal}</p>
                         </div>
                       ))}
                     </div>
@@ -265,371 +261,105 @@ const SegmentDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Segment Overview */}
+            {/* Specific Benefits */}
             <Card className="border border-gray-200 bg-white">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                  <Target className="w-5 h-5 text-blue-600" />
-                  <span>Segment Overview</span>
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
+                  <Target className="w-4 h-4 text-blue-600" />
+                  <span>Specific Benefits</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-gray-700 leading-relaxed">
-                  {segmentData.description || 'No description available'}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Market Size</p>
-                    <p className="text-sm text-gray-600">{segmentData.marketSize || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Growth Rate</p>
-                    <p className="text-sm text-gray-600">{segmentData.growthRate || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Customer Count</p>
-                    <p className="text-sm text-gray-600">{segmentData.customerCount || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Awareness Level</p>
-                    <p className="text-sm text-gray-600">{segmentData.awarenessLevel || 'Not specified'}</p>
-                  </div>
-                </div>
-                {segmentData.budget && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">Budget Range</p>
-                    <p className="text-sm text-gray-600">{segmentData.budget}</p>
-                  </div>
-                )}
+              <CardContent>
+                <p className="text-xs text-gray-600">
+                  {segmentData.specificBenefits?.join(', ') || 'No benefits specified'}
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Awareness Level */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <span>Awareness Level</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-gray-600">
+                  {segmentData.awarenessLevel || 'Not specified'}
+                </p>
               </CardContent>
             </Card>
 
             {/* CTA Options */}
-            {segmentData.ctaOptions && segmentData.ctaOptions.length > 0 && (
-              <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <TrendingUp className="w-5 h-5 text-orange-600" />
-                    <span>CTA Options (Ranked by Priority)</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {segmentData.ctaOptions.map((cta: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div className="w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
-                          {idx + 1}
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{cta}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Buying Processes */}
-            {segmentData.buyingProcesses && segmentData.buyingProcesses.length > 0 && (
-              <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Building2 className="w-5 h-5 text-indigo-600" />
-                    <span>Buying Processes</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {segmentData.buyingProcesses.map((process: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                        <div className="w-2 h-2 bg-indigo-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{process}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Technologies */}
-            {segmentData.technologies && segmentData.technologies.length > 0 && (
-              <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Building2 className="w-5 h-5 text-gray-600" />
-                    <span>Technologies</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {segmentData.technologies.map((tech: string, idx: number) => (
-                      <div key={idx} className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg border">
-                        {tech}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Pain Points */}
-            {segmentData.painPoints && segmentData.painPoints.length > 0 && (
-              <Card className="shadow-sm border border-slate-200/60 bg-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
-                    <Target className="w-4 h-4 text-red-600" />
-                    <span>Pain Points</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {segmentData.painPoints.map((point: string, idx: number) => (
-                      <div key={idx} className="text-sm text-slate-700 p-3 bg-slate-50 rounded-lg border">
-                        • {point}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Specific Benefits */}
-            {segmentData.specificBenefits && segmentData.specificBenefits.length > 0 && (
-              <Card className="shadow-sm border border-slate-200/60 bg-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Specific Benefits</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {segmentData.specificBenefits.map((benefit: string, idx: number) => (
-                      <div key={idx} className="text-sm text-slate-700 p-3 bg-green-50 rounded-lg border border-green-200">
-                        • {benefit}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Qualification Criteria */}
-            {segmentData.qualification && Object.keys(segmentData.qualification).some(key => 
-              segmentData.qualification[key] && segmentData.qualification[key].length > 0
-            ) && (
-              <Card className="shadow-sm border border-slate-200/60 bg-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
-                    <Building2 className="w-4 h-4 text-purple-600" />
-                    <span>Qualification Criteria</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {segmentData.qualification.tier1Criteria && segmentData.qualification.tier1Criteria.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-600 mb-2">Tier 1 Criteria</p>
-                      <div className="space-y-1">
-                        {segmentData.qualification.tier1Criteria.map((criteria: string, idx: number) => (
-                          <div key={idx} className="text-sm text-slate-700 p-2 bg-blue-50 rounded border border-blue-200">
-                            • {criteria}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {segmentData.qualification.idealCriteria && segmentData.qualification.idealCriteria.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-600 mb-2">Ideal Criteria</p>
-                      <div className="space-y-1">
-                        {segmentData.qualification.idealCriteria.map((criteria: string, idx: number) => (
-                          <div key={idx} className="text-sm text-slate-700 p-2 bg-purple-50 rounded border border-purple-200">
-                            • {criteria}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {segmentData.qualification.lookalikeCompanies && segmentData.qualification.lookalikeCompanies.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-600 mb-2">Lookalike Companies</p>
-                      <div className="space-y-1">
-                        {segmentData.qualification.lookalikeCompanies.map((company: string, idx: number) => (
-                          <div key={idx} className="text-sm text-slate-700 p-2 bg-orange-50 rounded border border-orange-200">
-                            • {company}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {segmentData.qualification.disqualifyingCriteria && segmentData.qualification.disqualifyingCriteria.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-600 mb-2">Disqualifying Criteria</p>
-                      <div className="space-y-1">
-                        {segmentData.qualification.disqualifyingCriteria.map((criteria: string, idx: number) => (
-                          <div key={idx} className="text-sm text-slate-700 p-2 bg-red-50 rounded border border-red-200">
-                            • {criteria}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {segmentData.qualification.lookalikeCompaniesUrl && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-600 mb-2">Lookalike Companies URL</p>
-                      <a 
-                        href={segmentData.qualification.lookalikeCompaniesUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm break-all"
-                      >
-                        {segmentData.qualification.lookalikeCompaniesUrl}
-                      </a>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Personas in this Segment */}
-            {segmentData.personas && segmentData.personas.length > 0 && (
-              <Card className="shadow-sm border border-slate-200/60 bg-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-base font-medium">
-                    <User className="w-4 h-4 text-indigo-600" />
-                    <span>Personas ({segmentData.personas.length})</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {segmentData.personas.map((persona: any, idx: number) => (
-                      <div
-                        key={persona._id?.$oid || persona._id || idx}
-                        className="p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/workspace/${slug}/personas/${persona._id?.$oid || persona._id}`)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-slate-900 mb-1">{persona.name}</h4>
-                            <p className="text-xs text-slate-600 mb-2">{persona.title}</p>
-                            {persona.seniority && (
-                              <Badge variant="outline" className="text-xs">
-                                {persona.seniority}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {persona.decisionInfluence && (
-                              <Badge className="text-xs bg-purple-100 text-purple-700">
-                                {persona.decisionInfluence}
-                              </Badge>
-                            )}
-                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Right Side - 1/3 */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="shadow-sm border border-slate-200/60 bg-white">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <span>CTA Options</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <Link to={`/workspace/${slug}/products`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Building2 className="w-3 h-3 mr-2" />
-                      View Products
-                    </Button>
-                  </Link>
-                  <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <User className="w-3 h-3 mr-2" />
-                      View All Personas
-                    </Button>
-                  </Link>
-                  <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                      <Target className="w-3 h-3 mr-2" />
-                      Back to Segments
-                    </Button>
-                  </Link>
+                <p className="text-xs text-gray-600">
+                  {segmentData.ctaOptions?.join(', ') || 'No CTA options specified'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Qualification */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
+                  <Target className="w-4 h-4 text-blue-600" />
+                  <span>Qualification</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Tier 1 Criteria</p>
+                    <p className="text-xs text-gray-600">{segmentData.qualification?.tier1Criteria?.join(', ') || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Lookalike Companies</p>
+                    <p className="text-xs text-gray-600">{segmentData.qualification?.lookalikeCompanies?.join(', ') || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Disqualifying Criteria</p>
+                    <p className="text-xs text-gray-600">{segmentData.qualification?.disqualifyingCriteria?.join(', ') || 'Not specified'}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Additional Segment Data */}
-            {(segmentData.characteristics?.length > 0 || segmentData.industries?.length > 0 || segmentData.companySizes?.length > 0) && (
-              <Card className="shadow-sm border border-slate-200/60 bg-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium">Additional Data</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {segmentData.characteristics?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-700 mb-2">Characteristics</p>
-                      <div className="flex flex-wrap gap-1">
-                        {segmentData.characteristics.map((char: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {char}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {segmentData.industries?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-700 mb-2">Industries</p>
-                      <div className="flex flex-wrap gap-1">
-                        {segmentData.industries.map((industry: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {industry}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {segmentData.companySizes?.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-slate-700 mb-2">Company Sizes</p>
-                      <div className="flex flex-wrap gap-1">
-                        {segmentData.companySizes.map((size: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {size}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Segment Metadata */}
-            <Card className="shadow-sm border border-slate-200/60 bg-white">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">Segment Info</CardTitle>
+            {/* Total Companies */}
+            <Card className="border border-gray-200 bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-sm font-semibold">
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <span>Total Companies</span>
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                    <span className="text-xs font-medium text-slate-700">Created</span>
-                    <span className="text-xs text-slate-600">
-                      {segmentData.createdAt ? new Date(segmentData.createdAt).toLocaleDateString() : 'N/A'}
-                    </span>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Total Account Number</p>
+                    <p className="text-xs text-gray-600">CSV</p>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
-                    <span className="text-xs font-medium text-slate-700">Last Updated</span>
-                    <span className="text-xs text-slate-600">
-                      {segmentData.updatedAt ? new Date(segmentData.updatedAt).toLocaleDateString() : 'N/A'}
-                    </span>
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Account Reached</p>
+                    <p className="text-xs text-gray-600">CSV</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Account Meetings</p>
+                    <p className="text-xs text-gray-600">CSV</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-900 mb-1">Deals Open</p>
+                    <p className="text-xs text-gray-600">CSV</p>
                   </div>
                 </div>
               </CardContent>
@@ -641,4 +371,4 @@ const SegmentDetails = () => {
   );
 };
 
-export default SegmentDetails; 
+export default SegmentDetails;

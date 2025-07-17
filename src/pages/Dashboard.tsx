@@ -210,26 +210,6 @@ const Dashboard = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/workspace/${workspace.slug}/icp-wizard`);
-                          }}
-                          className="text-xs"
-                        >
-                          <ExternalLink className="w-3 h-3 mr-2" />
-                          ICP Wizard (Classic)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/workspace/${workspace.slug}/enhanced-icp-wizard`);
-                          }}
-                          className="text-xs"
-                        >
-                          <ExternalLink className="w-3 h-3 mr-2" />
-                          Enhanced ICP Wizard
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
                           onClick={(e) => handleDeleteWorkspace(workspace, e)}
                           className="text-red-600 focus:text-red-600 focus:bg-red-50 text-xs"
                           disabled={deletingWorkspaceId === workspace._id}
