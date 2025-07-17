@@ -1380,33 +1380,26 @@ const EnhancedICPWizard = () => {
   const renderOutboundStep = () => (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold mb-4">Previous Outbound Experience</h3>
-      <ArrayField
-        label={null}
-        placeholder=""
-        items={icpData.outboundExperience.successfulEmails}
-        onAdd={(value) => addArrayItem("outboundExperience.successfulEmails", value)}
-        onRemove={(index) => removeArrayItem("outboundExperience.successfulEmails", index)}
-        renderInput={({ inputProps }) => (
-          <div>
-            <label className="block text-md font-medium mb-2">Do you have any outbound emails / DMs that have performed well? <span className="text-red-500">*</span></label>
-            <input {...inputProps} className="w-full p-3 border rounded-md" />
-          </div>
-        )}
-      />
+      
+      <div className="space-y-4">
+        <ArrayField
+          label="Do you have any outbound emails / DMs that have performed well?"
+          placeholder="Paste your successful email/DM template here..."
+          items={icpData.outboundExperience.successfulEmails}
+          onAdd={(value) => addArrayItem("outboundExperience.successfulEmails", value)}
+          onRemove={(index) => removeArrayItem("outboundExperience.successfulEmails", index)}
+        />
+      </div>
 
-      <ArrayField
-        label={null}
-        placeholder=""
-        items={icpData.outboundExperience.successfulCallScripts}
-        onAdd={(value) => addArrayItem("outboundExperience.successfulCallScripts", value)}
-        onRemove={(index) => removeArrayItem("outboundExperience.successfulCallScripts", index)}
-        renderInput={({ inputProps }) => (
-          <div>
-            <label className="block text-md font-medium mb-2">Do you have any outbound cold call scripts that have worked well? <span className="text-red-500">*</span></label>
-            <input {...inputProps} className="w-full p-3 border rounded-md" />
-          </div>
-        )}
-      />
+      <div className="space-y-4">
+        <ArrayField
+          label="Do you have any outbound cold call scripts that have worked well?"
+          placeholder="Paste your successful call script here..."
+          items={icpData.outboundExperience.successfulCallScripts}
+          onAdd={(value) => addArrayItem("outboundExperience.successfulCallScripts", value)}
+          onRemove={(index) => removeArrayItem("outboundExperience.successfulCallScripts", index)}
+        />
+      </div>
     </div>
   );
 

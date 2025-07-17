@@ -65,13 +65,17 @@ const Dashboard = () => {
   if (!user) return null;
 
   const handleWorkspaceClick = (workspace: Workspace) => {
-    const hasIcpData = workspace.products?.length > 0 || workspace.personas?.length > 0;
     const workspaceSlug = workspace.slug;
 
     try {
-      if (hasIcpData) {
-        navigate(`/workspace/${workspaceSlug}/products`);
+      if (workspace.product) {
+        // Redirect to product page/home page if ICP generation is complete
+        navigate(`/workspace/${workspaceSlug}/product`);
+      } else if (workspace.product || workspace.personas?.length > 0) {
+        // Redirect to product page/home page if products or personas exist
+        navigate(`/workspace/${workspaceSlug}/product`);
       } else {
+        // Redirect to enhanced ICP wizard if setup is required
         navigate(`/workspace/${workspaceSlug}/enhanced-icp-wizard`);
       }
     } catch (error) {
@@ -122,10 +126,13 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  const filteredWorkspaces = workspaces.filter(workspace =>
-    workspace.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workspace.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredWorkspaces = workspaces.map(workspace => {
+    const hasIcpData = Boolean(workspace.product || workspace.personas?.length > 0);
+    return {
+      ...workspace,
+      icpStatus: hasIcpData ? 'ICP Complete' : 'Setup Required',
+    };
+  });
 
   if (!user) {
     return null;
@@ -175,7 +182,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredWorkspaces.map((workspace) => {
-            const hasIcpData = workspace.products?.length > 0 || workspace.personas?.length > 0;
+            const hasIcpData = workspace.product || workspace.personas?.length > 0;
             return (
               <Card 
                 key={workspace._id} 

@@ -56,6 +56,14 @@ const Products = () => {
     fetchICPData();
   }, [slug]);
 
+    // Redirect to product details if product exists
+  useEffect(() => {
+    if (icpData?.product && slug && !loading) {
+      // Navigate to product details page with simplified route
+      navigate(`/workspace/${slug}/product`);
+    }
+  }, [icpData, slug, navigate, loading]);
+
   const handleAddProduct = async (productData: ProductData) => {
     if (!slug) return;
     
@@ -200,45 +208,33 @@ const Products = () => {
     );
   }
 
-  // Get products directly from MongoDB structure
-  const products = Array.isArray(icpData?.products) ? icpData.products : [];
+  // Get product directly from MongoDB structure (single product object)
+  const product = icpData?.product;
   
-  // Transform products using only MongoDB data
-  const transformedProducts = products.map((product: any, index: number) => {
-    // Ensure consistent ID handling - use MongoDB _id if available
-    const productId = product._id?.$oid || product._id || (index + 1).toString();
-    
-    return {
-      _id: product._id,
-      id: productId,
-      name: product.name || `Product ${index + 1}`,
-      valueProposition: product.valueProposition || '',
-      valuePropositionVariations: product.valuePropositionVariations || [],
-      problems: product.problems || [],
-      problemsWithRootCauses: product.problemsWithRootCauses || [],
-      features: product.features || [],
-      keyFeatures: product.keyFeatures || [],
-      benefits: product.benefits || [],
-      businessOutcomes: product.businessOutcomes || [],
-      useCases: product.useCases || [],
-      competitors: product.competitors || [],
-      competitorAnalysis: product.competitorAnalysis || [],
-      uniqueSellingPoints: product.uniqueSellingPoints || [],
-      usps: product.usps || [],
-      whyNow: product.whyNow || [],
-      urgencyConsequences: product.urgencyConsequences || [],
-      pricingTiers: product.pricingTiers || [],
-      clientTimeline: product.clientTimeline || [],
-      roiRequirements: product.roiRequirements || [],
-      salesDeckUrl: product.salesDeckUrl || [],
-      status: product.status || 'active',
-      priority: product.priority || 'medium',
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt
-    };
-  });
+  // Transform single product into array for UI consistency
+  const products = icpData?.product ? [{
+    id: 'main-product',
+    _id: 'main-product',
+    name: 'Main Product',
+    description: icpData.product.valueProposition || 'Product description',
+    category: icpData.product.category || 'General',
+    features: icpData.product.keyFeatures || [],
+    benefits: icpData.product.businessOutcomes || [],
+    useCases: icpData.product.useCases || [],
+    competitorAnalysis: icpData.product.competitorAnalysis || [],
+    pricing: icpData.offerSales?.pricingTiers || [],
+    valueProposition: icpData.product.valueProposition || '',
+    problemsWithRootCauses: icpData.product.problemsWithRootCauses || [],
+    businessOutcomes: icpData.product.businessOutcomes || [],
+    uniqueSellingPoints: icpData.product.uniqueSellingPoints || [],
+    urgencyConsequences: icpData.product.urgencyConsequences || [],
+    keyFeatures: icpData.product.keyFeatures || [],
+    valuePropositionVariations: icpData.product.valuePropositionVariations || [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }] : [];
 
-  const filteredProducts = transformedProducts.filter((product: any) => {
+  const filteredProducts = products.filter((product: any) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       product.name.toLowerCase().includes(searchLower) ||
@@ -311,8 +307,8 @@ const Products = () => {
               key={product.name}
               className="bg-white shadow-sm border-0 cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-[1.02]"
               onClick={() => {
-                console.log('Navigating to product:', product.id, 'for product:', product.name);
-                navigate(`/workspace/${slug}/products/${product.id}`);
+                console.log('Navigating to product details');
+                navigate(`/workspace/${slug}/product`);
               }}
             >
               <CardHeader className="pb-3">

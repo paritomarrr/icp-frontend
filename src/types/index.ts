@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   fullName: string;
@@ -29,6 +28,17 @@ export interface Workspace {
   }>;
   icpEnrichmentVersions?: {
     [key: number]: any;
+  };
+  product?: {
+    valueProposition: string;
+    keyFeatures: string[];
+    businessOutcomes: string[];
+    uniqueSellingPoints: string[];
+    urgencyConsequences: string[];
+    competitorAnalysis: {
+      domain: string;
+      differentiation: string;
+    }[];
   };
 }
 
@@ -161,6 +171,61 @@ export interface ICPData {
   companyUrl?: string;
   ownerId?: string;
   slug?: string;
+  
+  // New enhanced ICP structure
+  domain?: string;
+  adminAccess?: {
+    emailSignatures: Array<{
+      firstName: string;
+      lastName: string;
+      title: string;
+    }>;
+    platformAccessGranted: boolean;
+  };
+  product?: {
+    valueProposition: string;
+    valuePropositionVariations: string[];
+    problemsWithRootCauses: string[];
+    keyFeatures: string[];
+    businessOutcomes: string[];
+    uniqueSellingPoints: string[];
+    urgencyConsequences: string[];
+    competitorAnalysis: Array<{
+      domain: string;
+      differentiation: string;
+    }>;
+    useCases: string[];
+    description: string;
+    category: string;
+  };
+  offerSales?: {
+    pricingTiers: string[];
+    clientTimeline: string[];
+    roiRequirements: string[];
+    salesDeckUrl: string[];
+  };
+  socialProof?: {
+    caseStudies: Array<{
+      url: string;
+      marketSegment: string;
+      title: string;
+      description: string;
+    }>;
+    testimonials: Array<{
+      content: string;
+      author: string;
+      company: string;
+      metrics: string;
+      title: string;
+    }>;
+  };
+  outboundExperience?: {
+    successfulEmails: string[];
+    successfulCallScripts: string[];
+  };
+  numberOfSegments?: number;
+  
+  // Legacy fields for backward compatibility
   products?: Product[];
   personas?: Persona[];
   segments?: Segment[];
