@@ -232,97 +232,103 @@ const ArrayFieldWithAI = ({ label, placeholder, items, onAdd, onRemove, fieldTyp
 };
 
 // Enhanced input field with auto AI suggestions for single values
-const InputFieldWithAI = ({ label, placeholder, value, onChange, fieldType, domain, cumulativeData, maxLength, isTextarea = false }: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-  fieldType: string;
-  domain: string;
-  cumulativeData: any;
-  maxLength?: number;
-  isTextarea?: boolean;
-}) => {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
-  const { toast } = useToast();
+  const InputFieldWithAI = ({ label, placeholder, value, onChange, fieldType, domain, cumulativeData, maxLength, isTextarea = false }: {
+    label: string;
+    placeholder: string;
+    value: string;
+    onChange: (value: string) => void;
+    fieldType: string;
+    domain: string;
+    cumulativeData: any;
+    maxLength?: number;
+    isTextarea?: boolean;
+  }) => {
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [hasFetched, setHasFetched] = useState(false);
+    const { toast } = useToast();
 
-  const generateSuggestions = async () => {
-    if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
+    const generateSuggestions = async () => {
+      if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
 
-    setIsLoadingSuggestions(true);
-    setHasFetched(true);
-    try {
-      const result = await enhancedICPApi.generateProductFieldSuggestions(fieldType, domain, cumulativeData);
-      
-      if (result.success) {
-        setSuggestions([result.suggestions]);
-      } else {
-        console.warn('Failed to generate suggestions:', result.error);
+      setIsLoadingSuggestions(true);
+      setHasFetched(true);
+      try {
+        const result = await enhancedICPApi.generateProductFieldSuggestions(fieldType, domain, cumulativeData);
+        if (result.success) {
+          let suggestion = result.suggestions;
+          // If suggestion is a string with surrounding quotes, strip them
+          if (typeof suggestion === 'string' && suggestion.length > 1 && ((suggestion.startsWith('"') && suggestion.endsWith('"')) || (suggestion.startsWith("'") && suggestion.endsWith("'")))) {
+            suggestion = suggestion.slice(1, -1);
+          }
+          setSuggestions([suggestion]);
+        } else {
+          console.warn('Failed to generate suggestions:', result.error);
+        }
+      } catch (error) {
+        console.warn('AI suggestions error:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
       }
-    } catch (error) {
-      console.warn('AI suggestions error:', error);
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
-  };
+    };
 
-  const handleInputFocus = () => {
-    if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
-      generateSuggestions();
-    }
-  };
+    const handleInputFocus = () => {
+      if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
+        generateSuggestions();
+      }
+    };
 
-  const applySuggestion = (suggestion: string) => {
-    onChange(suggestion);
-    setSuggestions([]);
-  };
+    const applySuggestion = (suggestion: string) => {
+      // Remove surrounding quotes if present
+      let clean = suggestion;
+      if (typeof clean === 'string' && clean.length > 1 && ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'")))) {
+        clean = clean.slice(1, -1);
+      }
+      onChange(clean);
+      setSuggestions([]);
+    };
 
-  const InputComponent = isTextarea ? Textarea : Input;
+    const InputComponent = isTextarea ? Textarea : Input;
 
-  return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-semibold">{label}</h3>
-      
-      {/* AI Suggestions */}
-      {isLoadingSuggestions && (
-        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <div className="flex items-center text-sm text-blue-800">
-            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-            Generating AI suggestions...
+    return (
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">{label}</h3>
+        {/* AI Suggestions */}
+        {isLoadingSuggestions && (
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+            <div className="flex items-center text-sm text-blue-800">
+              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+              Generating AI suggestions...
+            </div>
           </div>
-        </div>
-      )}
-      
-      {suggestions.length > 0 && suggestions[0] && (
-        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <div className="text-sm font-medium text-blue-800 mb-2">AI Suggestion:</div>
-          <div className="flex items-center justify-between bg-white p-2 rounded border">
-            <span className="text-sm text-gray-700 flex-1">{suggestions[0]}</span>
-            <Button
-              onClick={() => applySuggestion(suggestions[0])}
-              size="sm"
-              variant="outline"
-              className="ml-2 text-xs"
-            >
-              Use This
-            </Button>
+        )}
+        {suggestions.length > 0 && suggestions[0] && (
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+            <div className="text-sm font-medium text-blue-800 mb-2">AI Suggestion:</div>
+            <div className="flex items-center justify-between bg-white p-2 rounded border">
+              <span className="text-sm text-gray-700 flex-1">{suggestions[0]}</span>
+              <Button
+                onClick={() => applySuggestion(suggestions[0])}
+                size="sm"
+                variant="outline"
+                className="ml-2 text-xs"
+              >
+                Use This
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
-      
-      <InputComponent
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={handleInputFocus}
-        maxLength={maxLength}
-        className={isTextarea ? "min-h-[100px]" : ""}
-      />
-    </div>
-  );
-};
+        )}
+        <InputComponent
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={handleInputFocus}
+          maxLength={maxLength}
+          className={isTextarea ? "min-h-[100px]" : ""}
+        />
+      </div>
+    );
+  };
 
 interface EmailSignature {
   firstName: string;
@@ -443,6 +449,9 @@ const EnhancedICPWizard = () => {
     domain: "",
     differentiation: ""
   });
+  // Move state to top-level component
+  const [newCaseStudy, setNewCaseStudy] = useState({ url: '', marketSegment: '', title: '', description: '' });
+  const [newTestimonial, setNewTestimonial] = useState({ content: '', author: '', company: '', metrics: '', title: '' });
 
   const [icpData, setIcpData] = useState<EnhancedICPData>({
     adminAccess: {
@@ -482,9 +491,9 @@ const EnhancedICPWizard = () => {
     },
   });
 
+  // Merge Admin & Access and Domain into a single step
   const steps = [
-    { title: "Admin & Access", key: "adminAccess" },
-    { title: "Domain", key: "domain" },
+    { title: "Admin", key: "admin" },
     { title: "Product Understanding", key: "product" },
     { title: "Offer & Sales", key: "offerSales" },
     { title: "Social Proof", key: "socialProof" },
@@ -661,9 +670,8 @@ const EnhancedICPWizard = () => {
   // Validation functions
   const validateStep = (stepIndex: number): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
-    
     switch (stepIndex) {
-      case 0: // Admin & Access
+      case 0: // Admin (merged)
         if (icpData.adminAccess.emailSignatures.length === 0) {
           errors.push("At least one email signature is required");
         }
@@ -672,9 +680,6 @@ const EnhancedICPWizard = () => {
           if (!sig.lastName.trim()) errors.push(`Email signature ${index + 1}: Last name is required`);
           if (!sig.title.trim()) errors.push(`Email signature ${index + 1}: Title is required`);
         });
-        break;
-        
-      case 1: // Domain
         if (!icpData.domain.trim()) {
           errors.push("Company domain is required");
         }
@@ -684,9 +689,7 @@ const EnhancedICPWizard = () => {
         if (!icpData.product.valueProposition.trim()) {
           errors.push("Value proposition is required");
         }
-        if (icpData.product.valuePropositionVariations.length === 0) {
-          errors.push("At least one value proposition variation is required");
-        }
+        // No longer require value proposition variations, as the UI does not ask for it
         if (icpData.product.problemsWithRootCauses.length === 0) {
           errors.push("At least one problem with root cause is required");
         }
@@ -714,9 +717,6 @@ const EnhancedICPWizard = () => {
         }
         if (icpData.offerSales.clientTimeline.length === 0) {
           errors.push("At least one client timeline is required");
-        }
-        if (icpData.offerSales.roiRequirements.length === 0) {
-          errors.push("At least one ROI requirement is required");
         }
         if (icpData.offerSales.salesDeckUrl.length === 0) {
           errors.push("At least one sales deck URL is required");
@@ -871,38 +871,227 @@ const EnhancedICPWizard = () => {
   if (loading) return <LoadingPage />;
   if (!workspace) return <Navigate to="/login" />;
 
-  const renderAdminAccessStep = () => {
+  // Merged Admin + Domain step
+  const renderAdminDomainStep = () => {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div>
-          <h3 className="text-lg font-semibold mb-4">Email Signatures</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Enter email signature details and click "Add" to save each signature.
-          </p>
-          
-          {/* New signature form */}
-          <div className="space-y-3 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <h2 className="text-2xl font-bold mb-6">Admin</h2>
+          <div className="mb-6">
+            <div className="mb-4">
+              <span className="font-semibold">Service</span>
+              <div className="mt-2">
+                <Badge variant="secondary">Outbound</Badge>
+              </div>
+            </div>
+            <div className="mb-6">
+              <span className="font-semibold">Domain</span>
               <Input
-                placeholder="First Name"
-                value={newSignature.firstName}
-                onChange={(e) => setNewSignature(prev => ({ ...prev, firstName: e.target.value }))}
+                placeholder="example.com"
+                value={icpData.domain}
+                onChange={(e) => {
+                  setIcpData(prev => ({ ...prev, domain: e.target.value }));
+                }}
+                className={!icpData.domain.trim() && validationErrors.some(error => error.includes("Company domain")) ? "border-red-500" : ""}
               />
+            </div>
+            <div className="mb-6">
+              <span className="font-semibold">What should be the email signatures for each sender? <span className="text-red-500">*</span></span>
+              <div className="text-gray-500 text-sm mb-2">First Name, Last Name, Title</div>
+              <div className="space-y-3 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Input
+                    placeholder="First Name"
+                    value={newSignature.firstName}
+                    onChange={(e) => setNewSignature(prev => ({ ...prev, firstName: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Last Name"
+                    value={newSignature.lastName}
+                    onChange={(e) => setNewSignature(prev => ({ ...prev, lastName: e.target.value }))}
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Title"
+                      value={newSignature.title}
+                      onChange={(e) => setNewSignature(prev => ({ ...prev, title: e.target.value }))}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleAddSignature}
+                      disabled={!newSignature.firstName.trim() || !newSignature.lastName.trim() || !newSignature.title.trim()}
+                      className="bg-black text-white hover:bg-gray-800"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              {/* Display added signatures */}
+              {icpData.adminAccess.emailSignatures.length > 0 ? (
+                <div>
+                  <h5 className="font-medium mb-3">Added Email Signatures:</h5>
+                  {icpData.adminAccess.emailSignatures.map((signature, index) => (
+                    <div key={index} className="border p-3 rounded-lg mb-2 bg-gray-50">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">
+                          <strong>{signature.firstName} {signature.lastName}</strong> - {signature.title}
+                        </span>
+                        <Button variant="destructive" size="sm" onClick={() => removeEmailSignature(index)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <p>No email signatures added yet. Fill in the form above and click "Add" to get started.</p>
+                </div>
+              )}
+            </div>
+            <div className="mb-6">
+              <span className="font-semibold">Invite team@workflows.io to your product platform</span>
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox
+                  id="platform-access"
+                  checked={icpData.adminAccess.platformAccessGranted}
+                  onCheckedChange={(checked) => {
+                    setIcpData(prev => ({
+                      ...prev,
+                      adminAccess: { ...prev.adminAccess, platformAccessGranted: checked as boolean }
+                    }));
+                  }}
+                />
+                <label htmlFor="platform-access" className="text-sm">
+                  Check the box if you've invited us.
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProductStep = () => (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-xl font-bold mb-6">Product</h2>
+        {/* Value Proposition */}
+        <div className="mb-6">
+          <label className="font-semibold">Value Proposition <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Write your value proposition in 50 characters or less. You can give us several variations, especially if you have different offerings.</div>
+          <InputFieldWithAI
+            label=""
+            placeholder="Enter value proposition..."
+            value={icpData.product.valueProposition}
+            onChange={(value) => {
+              setIcpData(prev => ({ ...prev, product: { ...prev.product, valueProposition: value } }));
+            }}
+            fieldType="valueProposition"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+            maxLength={50}
+          />
+        </div>
+        {/* Problems */}
+        <div className="mb-6">
+          <label className="font-semibold">Problems <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Explain the problems you solve in bullet points. Mention the problems and the root causes of them.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a problem and its root cause..."
+            items={icpData.product.problemsWithRootCauses}
+            onAdd={(value) => addArrayItem("product.problemsWithRootCauses", value)}
+            onRemove={(index) => removeArrayItem("product.problemsWithRootCauses", index)}
+            fieldType="problemsWithRootCauses"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* Features */}
+        <div className="mb-6">
+          <label className="font-semibold">Features <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Describe the most noteworthy features of your solution.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a feature..."
+            items={icpData.product.keyFeatures}
+            onAdd={(value) => addArrayItem("product.keyFeatures", value)}
+            onRemove={(index) => removeArrayItem("product.keyFeatures", index)}
+            fieldType="keyFeatures"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* Solutions */}
+        <div className="mb-6">
+          <label className="font-semibold">Solutions <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Describe business outcomes (not features), and include metrics where possible.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a business outcome..."
+            items={icpData.product.businessOutcomes}
+            onAdd={(value) => addArrayItem("product.businessOutcomes", value)}
+            onRemove={(index) => removeArrayItem("product.businessOutcomes", index)}
+            fieldType="businessOutcomes"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* USPs */}
+        <div className="mb-6">
+          <label className="font-semibold">USPs <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Why should companies choose you over other options.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a USP..."
+            items={icpData.product.uniqueSellingPoints}
+            onAdd={(value) => addArrayItem("product.uniqueSellingPoints", value)}
+            onRemove={(index) => removeArrayItem("product.uniqueSellingPoints", index)}
+            fieldType="uniqueSellingPoints"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* Why now */}
+        <div className="mb-6">
+          <label className="font-semibold">Why now <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">What are the consequences for your prospects by not solving the problems.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a consequence..."
+            items={icpData.product.urgencyConsequences}
+            onAdd={(value) => addArrayItem("product.urgencyConsequences", value)}
+            onRemove={(index) => removeArrayItem("product.urgencyConsequences", index)}
+            fieldType="urgencyConsequences"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* Competitors */}
+        <div className="mb-6">
+          <label className="font-semibold">Competitors <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">List the domains of your main competitors and briefly explain your main differentiators.</div>
+          {/* New competitor form */}
+          <div className="space-y-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input
-                placeholder="Last Name"
-                value={newSignature.lastName}
-                onChange={(e) => setNewSignature(prev => ({ ...prev, lastName: e.target.value }))}
+                placeholder="competitor.com"
+                value={newCompetitor.domain}
+                onChange={(e) => setNewCompetitor(prev => ({ ...prev, domain: e.target.value }))}
               />
               <div className="flex gap-2">
                 <Input
-                  placeholder="Title"
-                  value={newSignature.title}
-                  onChange={(e) => setNewSignature(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="How you differentiate..."
+                  value={newCompetitor.differentiation}
+                  onChange={(e) => setNewCompetitor(prev => ({ ...prev, differentiation: e.target.value }))}
                   className="flex-1"
                 />
-                <Button 
-                  onClick={handleAddSignature}
-                  disabled={!newSignature.firstName.trim() || !newSignature.lastName.trim() || !newSignature.title.trim()}
+                <Button
+                  onClick={handleAddCompetitor}
+                  disabled={!newCompetitor.domain.trim() || !newCompetitor.differentiation.trim()}
                   className="bg-black text-white hover:bg-gray-800"
                 >
                   Add
@@ -910,18 +1099,17 @@ const EnhancedICPWizard = () => {
               </div>
             </div>
           </div>
-
-          {/* Display added signatures */}
-          {icpData.adminAccess.emailSignatures.length > 0 ? (
+          {/* Display added competitors */}
+          {icpData.product.competitorAnalysis.length > 0 ? (
             <div>
-              <h5 className="font-medium mb-3">Added Email Signatures:</h5>
-              {icpData.adminAccess.emailSignatures.map((signature, index) => (
+              <h5 className="font-medium mb-3">Added Competitors:</h5>
+              {icpData.product.competitorAnalysis.map((competitor, index) => (
                 <div key={index} className="border p-3 rounded-lg mb-2 bg-gray-50">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">
-                      <strong>{signature.firstName} {signature.lastName}</strong> - {signature.title}
+                      <strong>{competitor.domain}</strong> - {competitor.differentiation}
                     </span>
-                    <Button variant="destructive" size="sm" onClick={() => removeEmailSignature(index)}>
+                    <Button variant="destructive" size="sm" onClick={() => removeCompetitor(index)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -930,315 +1118,246 @@ const EnhancedICPWizard = () => {
             </div>
           ) : (
             <div className="text-center py-4 text-gray-500">
-              <p>No email signatures added yet. Fill in the form above and click "Add Email Signature" to get started.</p>
+              <p>No competitors added yet. Fill in the form above and click "Add" to get started.</p>
             </div>
           )}
         </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Platform Access</h3>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="platform-access"
-              checked={icpData.adminAccess.platformAccessGranted}
-              onCheckedChange={(checked) => {
-                setIcpData(prev => {
-                  const newData = {
-                    ...prev,
-                    adminAccess: { ...prev.adminAccess, platformAccessGranted: checked as boolean }
-                  };
-                  return newData;
-                });
-              }}
-            />
-            <label htmlFor="platform-access" className="text-sm">
-              Have you invited team@workflows.io to your product platform?
-            </label>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderDomainStep = () => (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Company Domain <span className="text-red-500">*</span></h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Provide the domain used by your company (without http:// or https://)
-        </p>
-        <Input
-          placeholder="example.com"
-          value={icpData.domain}
-          onChange={(e) => {
-            setIcpData(prev => {
-              const newData = { ...prev, domain: e.target.value };
-              return newData;
-            });
-          }}
-          className={!icpData.domain.trim() && validationErrors.some(error => error.includes("Company domain")) ? "border-red-500" : ""}
-        />
-        {icpData.domain && (
-          <div className="mt-2 text-xs text-gray-500">
-            Current value: <span className="font-mono">{icpData.domain}</span>
-          </div>
-        )}
-        <div className="mt-2 text-xs text-gray-400">
-          This will be used for email signatures and outbound messaging consistency.
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderProductStep = () => (
-    <div className="space-y-6">
-      <InputFieldWithAI
-        label="Product Description (Optional)"
-        placeholder="Describe your product or service..."
-        value={icpData.product.description}
-        onChange={(value) => {
-          setIcpData(prev => ({
-            ...prev,
-            product: { ...prev.product, description: value }
-          }));
-        }}
-        fieldType="description"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-        isTextarea={true}
-      />
-
-      <InputFieldWithAI
-        label="Product Category (Optional)"
-        placeholder="e.g., SaaS, Healthcare, Fintech, etc."
-        value={icpData.product.category}
-        onChange={(value) => {
-          setIcpData(prev => ({
-            ...prev,
-            product: { ...prev.product, category: value }
-          }));
-        }}
-        fieldType="category"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <InputFieldWithAI
-        label="Value Proposition *"
-        placeholder="Your main value proposition..."
-        value={icpData.product.valueProposition}
-        onChange={(value) => {
-          setIcpData(prev => ({
-            ...prev,
-            product: { ...prev.product, valueProposition: value }
-          }));
-        }}
-        fieldType="valueProposition"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-        maxLength={50}
-      />
-      <p className="text-xs text-gray-500 -mt-2">
-        {icpData.product.valueProposition.length}/50 characters
-      </p>
-
-      <ArrayFieldWithAI
-        label="Value Proposition Variations"
-        placeholder="Alternative value propositions..."
-        items={icpData.product.valuePropositionVariations}
-        onAdd={(value) => addArrayItem("product.valuePropositionVariations", value)}
-        onRemove={(index) => removeArrayItem("product.valuePropositionVariations", index)}
-        fieldType="valuePropositionVariations"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Problems Solved (with Root Causes)"
-        placeholder="Problem and its root cause..."
-        items={icpData.product.problemsWithRootCauses}
-        onAdd={(value) => addArrayItem("product.problemsWithRootCauses", value)}
-        onRemove={(index) => removeArrayItem("product.problemsWithRootCauses", index)}
-        fieldType="problemsWithRootCauses"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Key Features"
-        placeholder="Most noteworthy feature..."
-        items={icpData.product.keyFeatures}
-        onAdd={(value) => addArrayItem("product.keyFeatures", value)}
-        onRemove={(index) => removeArrayItem("product.keyFeatures", index)}
-        fieldType="keyFeatures"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Business Outcomes (with Metrics)"
-        placeholder="Business outcome with specific metrics..."
-        items={icpData.product.businessOutcomes}
-        onAdd={(value) => addArrayItem("product.businessOutcomes", value)}
-        onRemove={(index) => removeArrayItem("product.businessOutcomes", index)}
-        fieldType="businessOutcomes"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Use Cases"
-        placeholder="Specific use case or application..."
-        items={icpData.product.useCases}
-        onAdd={(value) => addArrayItem("product.useCases", value)}
-        onRemove={(index) => removeArrayItem("product.useCases", index)}
-        fieldType="useCases"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Unique Selling Points"
-        placeholder="What makes you unique..."
-        items={icpData.product.uniqueSellingPoints}
-        onAdd={(value) => addArrayItem("product.uniqueSellingPoints", value)}
-        onRemove={(index) => removeArrayItem("product.uniqueSellingPoints", index)}
-        fieldType="uniqueSellingPoints"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Urgency / Why Now (Consequences)"
-        placeholder="Consequence of not solving this problem..."
-        items={icpData.product.urgencyConsequences}
-        onAdd={(value) => addArrayItem("product.urgencyConsequences", value)}
-        onRemove={(index) => removeArrayItem("product.urgencyConsequences", index)}
-        fieldType="urgencyConsequences"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <div>
-        <h4 className="font-medium mb-4">Competitor Analysis</h4>
-        <p className="text-sm text-gray-600 mb-4">
-          List the domains of your main competitors and briefly explain how you differentiate from them.
-        </p>
-        
-        {/* New competitor form */}
-        <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Input
-              placeholder="competitor.com"
-              value={newCompetitor.domain}
-              onChange={(e) => setNewCompetitor(prev => ({ ...prev, domain: e.target.value }))}
-            />
-            <div className="flex gap-2">
-              <Input
-                placeholder="How you differentiate..."
-                value={newCompetitor.differentiation}
-                onChange={(e) => setNewCompetitor(prev => ({ ...prev, differentiation: e.target.value }))}
-                className="flex-1"
-              />
-              <Button 
-                onClick={handleAddCompetitor}
-                disabled={!newCompetitor.domain.trim() || !newCompetitor.differentiation.trim()}
-                className="bg-black text-white hover:bg-gray-800"
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Display added competitors */}
-        {icpData.product.competitorAnalysis.length > 0 ? (
-          <div>
-            <h5 className="font-medium mb-3">Added Competitors:</h5>
-            {icpData.product.competitorAnalysis.map((competitor, index) => (
-              <div key={index} className="border p-3 rounded-lg mb-2 bg-gray-50">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">
-                    <strong>{competitor.domain}</strong> - {competitor.differentiation}
-                  </span>
-                  <Button variant="destructive" size="sm" onClick={() => removeCompetitor(index)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-gray-500">
-            <p>No competitors added yet. Fill in the form above and click "Add" to get started.</p>
-          </div>
-        )}
       </div>
     </div>
   );
 
   const renderOfferSalesStep = () => (
-    <div className="space-y-6">
-      <ArrayFieldWithAI
-        label="Pricing Packages"
-        placeholder="Describe pricing tier (e.g., Starter Plan - $99/month for up to 10 users)..."
-        items={icpData.offerSales.pricingTiers}
-        onAdd={(value) => addArrayItem("offerSales.pricingTiers", value)}
-        onRemove={(index) => removeArrayItem("offerSales.pricingTiers", index)}
-        fieldType="pricingTiers"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="Client Timeline & ROI"
-        placeholder="e.g., Clients typically see 20% efficiency improvement within 30 days, full ROI within 6 months..."
-        items={icpData.offerSales.clientTimeline}
-        onAdd={(value) => addArrayItem("offerSales.clientTimeline", value)}
-        onRemove={(index) => removeArrayItem("offerSales.clientTimeline", index)}
-        fieldType="clientTimeline"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
-      <ArrayFieldWithAI
-        label="ROI Requirements"
-        placeholder="e.g., Client needs to dedicate 2 hours/week for initial setup, provide access to their current system, assign a point person for implementation..."
-        items={icpData.offerSales.roiRequirements}
-        onAdd={(value) => addArrayItem("offerSales.roiRequirements", value)}
-        onRemove={(index) => removeArrayItem("offerSales.roiRequirements", index)}
-        fieldType="roiRequirements"
-        domain={icpData.domain}
-        cumulativeData={getCumulativeProductData()}
-      />
-
+    <div className="space-y-8">
       <div>
-        <h4 className="font-medium mb-2">Sales Deck URLs <span className="text-red-500">*</span></h4>
-        <p className="text-sm text-gray-600 mb-4">
-          Include links to your sales decks (not pitch decks). These should show product features and benefits.
-        </p>
+        <h2 className="text-xl font-bold mb-6">Offer</h2>
+        {/* Packages */}
+        <div className="mb-6">
+          <label className="font-semibold">Packages <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Explain different pricing tiers.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a pricing tier..."
+            items={icpData.offerSales.pricingTiers}
+            onAdd={(value) => addArrayItem("offerSales.pricingTiers", value)}
+            onRemove={(index) => removeArrayItem("offerSales.pricingTiers", index)}
+            fieldType="pricingTiers"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* Timeline */}
+        <div className="mb-6">
+          <label className="font-semibold">Timeline <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">How soon can your clients get ROI and what's needed on their end.</div>
+          <ArrayFieldWithAI
+            label=""
+            placeholder="Add a timeline or ROI milestone..."
+            items={icpData.offerSales.clientTimeline}
+            onAdd={(value) => addArrayItem("offerSales.clientTimeline", value)}
+            onRemove={(index) => removeArrayItem("offerSales.clientTimeline", index)}
+            fieldType="clientTimeline"
+            domain={icpData.domain}
+            cumulativeData={getCumulativeProductData()}
+          />
+        </div>
+        {/* Sales Deck URL */}
+        <div className="mb-6">
+          <label className="font-semibold">Sales Deck URL <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Include your sales deck (not pitch deck).</div>
+          <ArrayField
+            label=""
+            placeholder="https://docs.google.com/presentation/d/..."
+            items={icpData.offerSales.salesDeckUrl}
+            onAdd={(value) => addArrayItem("offerSales.salesDeckUrl", value)}
+            onRemove={(index) => removeArrayItem("offerSales.salesDeckUrl", index)}
+          />
+        </div>
       </div>
-
-      <ArrayField
-        label=""
-        placeholder="https://docs.google.com/presentation/d/..."
-        items={icpData.offerSales.salesDeckUrl}
-        onAdd={(value) => addArrayItem("offerSales.salesDeckUrl", value)}
-        onRemove={(index) => removeArrayItem("offerSales.salesDeckUrl", index)}
-      />
     </div>
   );
 
   const renderSocialProofStep = () => (
-    <SocialProofStep
-      socialProof={icpData.socialProof}
-      onUpdate={(socialProof) => {
-        setIcpData(prev => {
-          const newData = { ...prev, socialProof };
-          return newData;
-        });
-      }}
-    />
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-xl font-bold mb-6">Social Proof</h2>
+        {/* Case Studies */}
+        <div className="mb-8">
+          <label className="font-semibold">Case Studies <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">Link case studies per market segment.</div>
+          <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <Input
+                placeholder="Link (URL)"
+                value={newCaseStudy.url}
+                onChange={e => setNewCaseStudy(cs => ({ ...cs, url: e.target.value }))}
+                className="w-full"
+              />
+              <Input
+                placeholder="Market Segment"
+                value={newCaseStudy.marketSegment}
+                onChange={e => setNewCaseStudy(cs => ({ ...cs, marketSegment: e.target.value }))}
+                className="w-full"
+              />
+              <Input
+                placeholder="Title"
+                value={newCaseStudy.title}
+                onChange={e => setNewCaseStudy(cs => ({ ...cs, title: e.target.value }))}
+                className="w-full"
+              />
+            </div>
+            <Textarea
+              placeholder="Description"
+              value={newCaseStudy.description}
+              onChange={e => setNewCaseStudy(cs => ({ ...cs, description: e.target.value }))}
+              className="min-h-[80px] mb-4"
+            />
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  if (newCaseStudy.url.trim()) {
+                    setIcpData(prev => ({
+                      ...prev,
+                      socialProof: {
+                        ...prev.socialProof,
+                        caseStudies: [...prev.socialProof.caseStudies, { ...newCaseStudy }]
+                      }
+                    }));
+                    setNewCaseStudy({ url: '', marketSegment: '', title: '', description: '' });
+                  }
+                }}
+                disabled={!newCaseStudy.url.trim()}
+                className="bg-black text-white hover:bg-gray-800 px-6 py-2 rounded-md shadow"
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+          {/* Display added case studies */}
+          {icpData.socialProof.caseStudies.length > 0 ? (
+            <div>
+              <h5 className="font-medium mb-3">Added Case Studies:</h5>
+              <div className="space-y-2">
+                {icpData.socialProof.caseStudies.map((cs, idx) => (
+                  <div key={idx} className="border p-3 rounded-lg bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div>
+                      <div className="font-medium text-base">{cs.title || cs.url}</div>
+                      <div className="text-xs text-gray-500">{cs.marketSegment}</div>
+                      <div className="text-xs text-gray-500 whitespace-pre-line">{cs.description}</div>
+                      <a href={cs.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">{cs.url}</a>
+                    </div>
+                    <Button variant="destructive" size="sm" onClick={() => {
+                      setIcpData(prev => ({
+                        ...prev,
+                        socialProof: {
+                          ...prev.socialProof,
+                          caseStudies: prev.socialProof.caseStudies.filter((_, i) => i !== idx)
+                        }
+                      }));
+                    }}>Remove</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>No case studies added yet. Fill in the form above and click "Add" to get started.</p>
+            </div>
+          )}
+        </div>
+        {/* Testimonials */}
+        <div className="mb-8">
+          <label className="font-semibold">Testimonials <span className="text-red-500">*</span></label>
+          <div className="text-gray-500 text-sm mb-2">List notable testimonials, ideally with metrics.</div>
+          <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <Textarea
+                placeholder="Testimonial Content"
+                value={newTestimonial.content}
+                onChange={e => setNewTestimonial(t => ({ ...t, content: e.target.value }))}
+                className="w-full min-h-[70px]"
+              />
+              <Textarea
+                placeholder="Metrics (optional)"
+                value={newTestimonial.metrics}
+                onChange={e => setNewTestimonial(t => ({ ...t, metrics: e.target.value }))}
+                className="w-full min-h-[60px]"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <Input
+                placeholder="Author"
+                value={newTestimonial.author}
+                onChange={e => setNewTestimonial(t => ({ ...t, author: e.target.value }))}
+                className="w-full"
+              />
+              <Input
+                placeholder="Company"
+                value={newTestimonial.company}
+                onChange={e => setNewTestimonial(t => ({ ...t, company: e.target.value }))}
+                className="w-full"
+              />
+              <Input
+                placeholder="Title (optional)"
+                value={newTestimonial.title}
+                onChange={e => setNewTestimonial(t => ({ ...t, title: e.target.value }))}
+                className="w-full"
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  if (newTestimonial.content.trim()) {
+                    setIcpData(prev => ({
+                      ...prev,
+                      socialProof: {
+                        ...prev.socialProof,
+                        testimonials: [...prev.socialProof.testimonials, { ...newTestimonial }]
+                      }
+                    }));
+                    setNewTestimonial({ content: '', author: '', company: '', metrics: '', title: '' });
+                  }
+                }}
+                disabled={!newTestimonial.content.trim()}
+                className="bg-black text-white hover:bg-gray-800 px-6 py-2 rounded-md shadow"
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+          {/* Display added testimonials */}
+          {icpData.socialProof.testimonials.length > 0 ? (
+            <div>
+              <h5 className="font-medium mb-3">Added Testimonials:</h5>
+              <div className="space-y-2">
+                {icpData.socialProof.testimonials.map((t, idx) => (
+                  <div key={idx} className="border p-3 rounded-lg bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div>
+                      <div className="font-medium text-base whitespace-pre-line">{t.content}</div>
+                      <div className="text-xs text-gray-500">{t.author} {t.company && `(${t.company})`}</div>
+                      {t.metrics && <div className="text-xs text-gray-500 whitespace-pre-line">{t.metrics}</div>}
+                      {t.title && <div className="text-xs text-gray-500">{t.title}</div>}
+                    </div>
+                    <Button variant="destructive" size="sm" onClick={() => {
+                      setIcpData(prev => ({
+                        ...prev,
+                        socialProof: {
+                          ...prev.socialProof,
+                          testimonials: prev.socialProof.testimonials.filter((_, i) => i !== idx)
+                        }
+                      }));
+                    }}>Remove</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>No testimonials added yet. Fill in the form above and click "Add" to get started.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 
   const renderSegmentsStep = () => (
@@ -1287,13 +1406,12 @@ const EnhancedICPWizard = () => {
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 0: return renderAdminAccessStep();
-      case 1: return renderDomainStep();
-      case 2: return renderProductStep();
-      case 3: return renderOfferSalesStep();
-      case 4: return renderSocialProofStep();
-      case 5: return renderSegmentsStep();
-      case 6: return renderOutboundStep();
+      case 0: return renderAdminDomainStep();
+      case 1: return renderProductStep();
+      case 2: return renderOfferSalesStep();
+      case 3: return renderSocialProofStep();
+      case 4: return renderSegmentsStep();
+      case 5: return renderOutboundStep();
       default: return null;
     }
   };
