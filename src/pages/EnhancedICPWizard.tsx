@@ -357,8 +357,8 @@ interface Testimonial {
 }
 
 interface Persona {
-  title: string;
-  jobTitles?: string[]; // Multiple job titles for the persona
+  title: string[];
+  jobTitles?: string[]; // Multiple job titles for the persona (deprecated, use title)
   seniority: string;
   department?: string;
   decisionInfluence: 'Decision Maker' | 'Champion' | 'End User';
@@ -756,13 +756,16 @@ const EnhancedICPWizard = () => {
             errors.push(`Segment ${index + 1}: At least one persona is required`);
           } else {
             segment.personas.forEach((persona, pIndex) => {
-              if (!persona.title.trim()) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Title is required`);
-              if (!persona.seniority.trim()) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Seniority is required`);
+              // Validate title as array of strings ONLY
+              const titleIsValid = Array.isArray(persona.title) && persona.title.some(t => typeof t === 'string' && t.trim());
+              if (!titleIsValid) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: At least one job title is required`);
+
+              if (!persona.seniority || typeof persona.seniority !== 'string' || !persona.seniority.trim()) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Seniority is required`);
               if (!persona.decisionInfluence) errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: Decision influence is required`);
-              if (!persona.primaryResponsibilities || persona.primaryResponsibilities.filter(r => r.trim()).length === 0) {
+              if (!persona.primaryResponsibilities || !Array.isArray(persona.primaryResponsibilities) || persona.primaryResponsibilities.filter(r => typeof r === 'string' && r.trim()).length === 0) {
                 errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: At least one responsibility is required`);
               }
-              if (!persona.challenges || persona.challenges.filter(c => c.trim()).length === 0) {
+              if (!persona.challenges || !Array.isArray(persona.challenges) || persona.challenges.filter(c => typeof c === 'string' && c.trim()).length === 0) {
                 errors.push(`Segment ${index + 1}, Persona ${pIndex + 1}: At least one challenge is required`);
               }
             });
@@ -1376,31 +1379,34 @@ const EnhancedICPWizard = () => {
 
   const renderOutboundStep = () => (
     <div className="space-y-6">
+      <h3 className="text-xl font-semibold mb-4">Previous Outbound Experience</h3>
       <ArrayField
-        label="Successful Outbound Emails/DMs"
-        placeholder="Email or DM template that performed well (include subject line and key message)..."
+        label={null}
+        placeholder=""
         items={icpData.outboundExperience.successfulEmails}
         onAdd={(value) => addArrayItem("outboundExperience.successfulEmails", value)}
         onRemove={(index) => removeArrayItem("outboundExperience.successfulEmails", index)}
+        renderInput={({ inputProps }) => (
+          <div>
+            <label className="block text-md font-medium mb-2">Do you have any outbound emails / DMs that have performed well? <span className="text-red-500">*</span></label>
+            <input {...inputProps} className="w-full p-3 border rounded-md" />
+          </div>
+        )}
       />
 
       <ArrayField
-        label="Successful Cold Call Scripts"
-        placeholder="Call script or opener that worked well (include opening line and key talking points)..."
+        label={null}
+        placeholder=""
         items={icpData.outboundExperience.successfulCallScripts}
         onAdd={(value) => addArrayItem("outboundExperience.successfulCallScripts", value)}
         onRemove={(index) => removeArrayItem("outboundExperience.successfulCallScripts", index)}
+        renderInput={({ inputProps }) => (
+          <div>
+            <label className="block text-md font-medium mb-2">Do you have any outbound cold call scripts that have worked well? <span className="text-red-500">*</span></label>
+            <input {...inputProps} className="w-full p-3 border rounded-md" />
+          </div>
+        )}
       />
-      
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h4 className="font-medium text-blue-900 mb-2">Tips for better outbound content:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Include specific metrics or results when possible</li>
-          <li>• Note the context where this worked (industry, role, etc.)</li>
-          <li>• Mention response rates if you have them</li>
-          <li>• Include both the message and any follow-up sequences</li>
-        </ul>
-      </div>
     </div>
   );
 

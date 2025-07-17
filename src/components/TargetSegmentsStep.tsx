@@ -1,19 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRef } from "react";
 import { X, Loader2 } from "lucide-react";
 import { enhancedICPApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-// Enhanced Array field component with AI suggestions
-const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cumulativeData }: {
+// Enhanced Array field component with AI suggestions, with usedSuggestions filtering
+const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cumulativeData, usedSuggestions = [], onSuggestionUsed }: {
   values: string[];
   onChange: (values: string[]) => void;
   placeholder?: string;
   fieldType: string;
   domain: string;
   cumulativeData: any;
+  usedSuggestions?: string[];
+  onSuggestionUsed?: (suggestion: string) => void;
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -21,16 +24,28 @@ const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cu
   const [hasFetched, setHasFetched] = useState(false);
   const { toast } = useToast();
 
+  // Ensure values is always an array
+  const safeValues = Array.isArray(values) ? values : (values ? [values] : []);
+
+  // Reset AI suggestion state when cumulativeData changes (i.e. persona changes)
+  // This ensures suggestions reload for each persona
+  useEffect(() => {
+    setHasFetched(false);
+    setIsLoadingSuggestions(false);
+    setSuggestions([]);
+  }, [cumulativeData]);
+
   const addItem = () => {
-    if (inputValue.trim() && !values.includes(inputValue.trim())) {
-      onChange([...values, inputValue.trim()]);
+    if (inputValue.trim() && !safeValues.includes(inputValue.trim())) {
+      onChange([...safeValues, inputValue.trim()]);
+      if (onSuggestionUsed) onSuggestionUsed(inputValue.trim());
       setInputValue("");
     }
-  };
+  } 
 
   const removeItem = (index: number) => {
-    onChange(values.filter((_, i) => i !== index));
-  };
+    onChange(safeValues.filter((_, i) => i !== index));
+  } 
 
   const generateSuggestions = async () => {
     if (!domain.trim() || hasFetched || isLoadingSuggestions) return;
@@ -71,10 +86,10 @@ const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cu
           }
         }
         
-        // Ensure we have an array and filter out empty items
+        // Ensure we have an array and filter out empty items and used suggestions
         const finalSuggestions = Array.isArray(processedSuggestions) 
-          ? processedSuggestions.filter(s => s && s.trim()) 
-          : [processedSuggestions].filter(s => s && s.trim());
+          ? processedSuggestions.filter(s => s && s.trim() && !usedSuggestions.includes(s.trim())) 
+          : [processedSuggestions].filter(s => s && s.trim() && !usedSuggestions.includes(s.trim()));
           
         setSuggestions(finalSuggestions);
       } else {
@@ -85,20 +100,21 @@ const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cu
     } finally {
       setIsLoadingSuggestions(false);
     }
-  };
+  } 
 
   const handleInputFocus = () => {
     if (domain.trim() && !hasFetched && !isLoadingSuggestions) {
       generateSuggestions();
     }
-  };
+  } 
 
   const applySuggestion = (suggestion: string) => {
-    if (!values.includes(suggestion.trim())) {
-      onChange([...values, suggestion.trim()]);
+    if (!safeValues.includes(suggestion.trim())) {
+      onChange([...safeValues, suggestion.trim()]);
+      if (onSuggestionUsed) onSuggestionUsed(suggestion.trim());
       setSuggestions(prev => prev.filter(s => s !== suggestion));
     }
-  };
+  } 
 
   return (
     <div className="space-y-2">
@@ -157,7 +173,7 @@ const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cu
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
-        {values.map((item, index) => (
+        {safeValues.map((item, index) => (
           <span key={index} className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
             {item}
             <button
@@ -173,8 +189,8 @@ const ArrayFieldWithAI = ({ values, onChange, placeholder, fieldType, domain, cu
   );
 };
 
-// Enhanced Input field component with AI suggestions
-const InputFieldWithAI = ({ value, onChange, placeholder, fieldType, domain, cumulativeData, label }: {
+// Enhanced Input field component with AI suggestions, with usedSuggestions filtering
+const InputFieldWithAI = ({ value, onChange, placeholder, fieldType, domain, cumulativeData, label, usedSuggestions = [], onSuggestionUsed }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -182,6 +198,8 @@ const InputFieldWithAI = ({ value, onChange, placeholder, fieldType, domain, cum
   domain: string;
   cumulativeData: any;
   label?: string;
+  usedSuggestions?: string[];
+  onSuggestionUsed?: (suggestion: string) => void;
 }) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -209,9 +227,10 @@ const InputFieldWithAI = ({ value, onChange, placeholder, fieldType, domain, cum
           }
         }
         
+        // Filter out used suggestions
         const finalSuggestions = Array.isArray(processedSuggestions) 
-          ? processedSuggestions.filter(s => s && s.trim()) 
-          : [processedSuggestions].filter(s => s && s.trim());
+          ? processedSuggestions.filter(s => s && s.trim() && !usedSuggestions.includes(s.trim())) 
+          : [processedSuggestions].filter(s => s && s.trim() && !usedSuggestions.includes(s.trim()));
           
         setSuggestions(finalSuggestions);
       } else {
@@ -232,6 +251,7 @@ const InputFieldWithAI = ({ value, onChange, placeholder, fieldType, domain, cum
 
   const applySuggestion = (suggestion: string) => {
     onChange(suggestion);
+    if (onSuggestionUsed) onSuggestionUsed(suggestion);
     setSuggestions([]);
   };
 
@@ -342,14 +362,17 @@ const ArrayField = ({ values, onChange, placeholder }: {
 };
 
 interface Persona {
-  title: string;
+  title: string[];
   seniority: string;
   decisionInfluence: 'Decision Maker' | 'Champion' | 'End User';
   primaryResponsibilities: string[];
-  okrs?: string[]; // Objectives and key results they're responsible for
+  okrs?: string[];
   challenges: string[];
   painPoints?: string[];
   goals?: string[];
+  department?: string[];
+  valueProp?: string[];
+  cta?: string[];
 }
 
 interface Segment {
@@ -382,28 +405,42 @@ interface TargetSegmentsStepProps {
 }
 
 export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulativeData }: TargetSegmentsStepProps) {
+  // Track all used suggestions across segments/personas/fields
+  const [usedSuggestions, setUsedSuggestions] = useState<string[]>([]);
   // Initialize with one segment if none exist
-  const currentSegments = segments.length > 0 ? segments : [{
-    name: "",
-    industry: "",
-    companySize: "",
-    geography: "",
-    awarenessLevel: "" as const,
-    personas: [{
-      title: "",
-      seniority: "",
-      decisionInfluence: "Decision Maker" as const,
-      primaryResponsibilities: [],
-      okrs: [],
-      challenges: [],
-      painPoints: [],
-      goals: []
-    }]
-  }];
+  const personaTemplate = (type: 'Decision Maker' | 'Champion' | 'End User'): Persona => ({
+    title: [],
+    seniority: '',
+    decisionInfluence: type,
+    primaryResponsibilities: [],
+    okrs: [],
+    challenges: [],
+    painPoints: [],
+    goals: [],
+    department: [],
+    valueProp: [],
+    cta: [],
+  });
 
-  // Update segments whenever currentSegments changes
-  if (segments.length === 0 && currentSegments.length > 0) {
-    onUpdate(currentSegments);
+  let currentSegments = segments;
+  // Always show three personas by default for each segment
+  if (segments.length === 0) {
+    currentSegments = [{
+      name: "",
+      industry: "",
+      companySize: "",
+      geography: "",
+      awarenessLevel: "" as const,
+      personas: [
+        personaTemplate('Decision Maker'),
+        personaTemplate('Champion'),
+        personaTemplate('End User'),
+      ]
+    }];
+    // Only call onUpdate once, on initial mount
+    if (typeof window !== 'undefined' && typeof onUpdate === 'function') {
+      setTimeout(() => onUpdate(currentSegments), 0);
+    }
   }
 
   const addSegment = () => {
@@ -413,16 +450,11 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
       companySize: "",
       geography: "",
       awarenessLevel: "",
-      personas: [{
-        title: "",
-        seniority: "",
-        decisionInfluence: "Decision Maker" as const,
-        primaryResponsibilities: [],
-        okrs: [],
-        challenges: [],
-        painPoints: [],
-        goals: []
-      }]
+      personas: [
+        personaTemplate('Decision Maker'),
+        personaTemplate('Champion'),
+        personaTemplate('End User'),
+      ]
     };
     onUpdate([...currentSegments, newSegment]);
   };
@@ -439,22 +471,13 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
     onUpdate(updatedSegments);
   };
 
-  const addPersonaToSegment = (segmentIndex: number) => {
+  const addPersonaToSegment = (segmentIndex: number, type: 'Decision Maker' | 'Champion' | 'End User' = 'Decision Maker') => {
     const updatedSegments = [...currentSegments];
     updatedSegments[segmentIndex] = {
       ...updatedSegments[segmentIndex],
       personas: [
         ...(updatedSegments[segmentIndex].personas || []),
-        {
-          title: "",
-          seniority: "",
-          decisionInfluence: "Decision Maker" as const,
-          primaryResponsibilities: [],
-          okrs: [],
-          challenges: [],
-          painPoints: [],
-          goals: []
-        }
+        personaTemplate(type)
       ]
     };
     onUpdate(updatedSegments);
@@ -485,6 +508,11 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
       };
     }
     onUpdate(updatedSegments);
+  };
+
+  // Helper to add used suggestion
+  const handleSuggestionUsed = (suggestion: string) => {
+    setUsedSuggestions(prev => prev.includes(suggestion) ? prev : [...prev, suggestion]);
   };
 
   return (
@@ -521,6 +549,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentName"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
             <div>
@@ -532,6 +562,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentIndustry"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
           </div>
@@ -546,6 +578,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentCompanySize"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
             <div>
@@ -557,6 +591,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentGeography"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
           </div>
@@ -575,6 +611,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                   fieldType="segmentEmployees"
                   domain={domain}
                   cumulativeData={cumulativeData}
+                  usedSuggestions={usedSuggestions}
+                  onSuggestionUsed={handleSuggestionUsed}
                 />
               </div>
               <div>
@@ -586,6 +624,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                   fieldType="segmentLocations"
                   domain={domain}
                   cumulativeData={cumulativeData}
+                  usedSuggestions={usedSuggestions}
+                  onSuggestionUsed={handleSuggestionUsed}
                 />
               </div>
             </div>
@@ -599,6 +639,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentSignals"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
           </div>
@@ -615,6 +657,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentBenefits"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
           </div>
@@ -647,6 +691,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentCTA"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
           </div>
@@ -667,6 +713,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentTier1Criteria"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
 
@@ -682,6 +730,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentLookalikeURL"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
 
@@ -697,6 +747,8 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                 fieldType="segmentDisqualifying"
                 domain={domain}
                 cumulativeData={cumulativeData}
+                usedSuggestions={usedSuggestions}
+                onSuggestionUsed={handleSuggestionUsed}
               />
             </div>
           </div>
@@ -705,18 +757,29 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h5 className="font-medium text-lg">Personas for this segment</h5>
-              <Button 
-                onClick={() => addPersonaToSegment(segmentIndex)}
-                className="bg-black text-white hover:bg-gray-800"
-              >
-                Add Persona
-              </Button>
+              <div className="flex gap-2 items-center">
+                <Select
+                  onValueChange={type => addPersonaToSegment(segmentIndex, type as any)}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Add Another Persona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Decision Maker">Decision Maker</SelectItem>
+                    <SelectItem value="Champion">Champion</SelectItem>
+                    <SelectItem value="End User">End User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            {(segment.personas || []).map((persona, personaIndex) => (
+            {(segment.personas || []).map((persona, personaIndex) => {
+              // Only allow removal for personas after the first three
+              const isDefaultPersona = personaIndex < 3;
+              return (
                 <div key={personaIndex} className="border-2 border-dashed border-gray-200 p-4 rounded-lg bg-blue-50/30">
                   <div className="flex justify-between items-center mb-4">
-                    <h6 className="font-medium text-blue-900">Persona {personaIndex + 1}</h6>
-                    {(segment.personas || []).length > 1 && (
+                    <h6 className="font-medium text-blue-900">{persona.decisionInfluence} (Segment {segmentIndex + 1})</h6>
+                    {!isDefaultPersona && (
                       <Button 
                         variant="destructive" 
                         size="sm" 
@@ -726,52 +789,63 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                       </Button>
                     )}
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Job Title/Role <span className="text-red-500">*</span></label>
-                      <InputFieldWithAI
-                        placeholder="e.g., VP of Engineering, IT Director"
-                        value={persona.title}
-                        onChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'title', value)}
-                        fieldType="personaTitle"
-                        domain={domain}
-                        cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize}}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Seniority Level <span className="text-red-500">*</span></label>
-                      <InputFieldWithAI
-                        placeholder="e.g., Senior, Director, VP, C-level"
-                        value={persona.seniority}
-                        onChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'seniority', value)}
-                        fieldType="personaSeniority"
-                        domain={domain}
-                        cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Decision Influence <span className="text-red-500">*</span></label>
-                      <Select 
-                        value={persona.decisionInfluence} 
-                        onValueChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'decisionInfluence', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select decision influence level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Decision Maker">Decision Maker</SelectItem>
-                          <SelectItem value="Champion">Champion</SelectItem>
-                          <SelectItem value="End User">End User</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium mb-2">
-                      Primary Responsibilities <span className="text-red-500">*</span>
-                    </label>
+                  <div className="mb-2 p-3 bg-white rounded shadow-sm">
+                  <div className="font-semibold">Department:</div>
+                  <ArrayFieldWithAI
+                    values={persona.department || []}
+                    onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'department', values)}
+                    placeholder="Department"
+                    fieldType="personaDepartment"
+                    domain={domain}
+                    cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize}}
+                    usedSuggestions={usedSuggestions}
+                    onSuggestionUsed={handleSuggestionUsed}
+                  />
+                  <div className="font-semibold">Job Titles:</div>
+                  <ArrayFieldWithAI
+                    values={persona.title || []}
+                    onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'title', values)}
+                    placeholder="e.g., VP of Engineering, IT Director"
+                    fieldType="personaTitle"
+                    domain={domain}
+                    cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize}}
+                    usedSuggestions={usedSuggestions}
+                    onSuggestionUsed={handleSuggestionUsed}
+                  />
+                  <div className="font-semibold mt-2">Value proposition specific to their job function:</div>
+                  <ArrayFieldWithAI
+                    values={persona.valueProp || []}
+                    onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'valueProp', values)}
+                    placeholder="Value proposition for this persona"
+                    fieldType="personaValueProp"
+                    domain={domain}
+                    cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize}}
+                    usedSuggestions={usedSuggestions}
+                    onSuggestionUsed={handleSuggestionUsed}
+                  />
+                  <div className="font-semibold">Specific CTA:</div>
+                  <ArrayFieldWithAI
+                    values={persona.cta || []}
+                    onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'cta', values)}
+                    placeholder="Call to action for this persona"
+                    fieldType="personaCTA"
+                    domain={domain}
+                    cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize}}
+                    usedSuggestions={usedSuggestions}
+                    onSuggestionUsed={handleSuggestionUsed}
+                  />
+                    <div className="font-semibold mt-4">Seniority Level <span className="text-red-500">*</span></div>
+                    <InputFieldWithAI
+                      placeholder="e.g., Senior, Director, VP, C-level"
+                      value={persona.seniority}
+                      onChange={(value) => updatePersonaInSegment(segmentIndex, personaIndex, 'seniority', value)}
+                      fieldType="personaSeniority"
+                      domain={domain}
+                      cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
+                      usedSuggestions={usedSuggestions}
+                      onSuggestionUsed={handleSuggestionUsed}
+                    />
+                    <div className="font-semibold mt-4">Primary Responsibilities <span className="text-red-500">*</span></div>
                     <ArrayFieldWithAI
                       values={persona.primaryResponsibilities}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'primaryResponsibilities', values)}
@@ -779,13 +853,10 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                       fieldType="personaResponsibilities"
                       domain={domain}
                       cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
+                      usedSuggestions={usedSuggestions}
+                      onSuggestionUsed={handleSuggestionUsed}
                     />
-                  </div>
-
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium mb-2">
-                      OKRs (Objectives & Key Results)
-                    </label>
+                    <div className="font-semibold mt-4">OKRs (Objectives & Key Results)</div>
                     <ArrayFieldWithAI
                       values={persona.okrs || []}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'okrs', values)}
@@ -793,13 +864,10 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                       fieldType="personaOKRs"
                       domain={domain}
                       cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
+                      usedSuggestions={usedSuggestions}
+                      onSuggestionUsed={handleSuggestionUsed}
                     />
-                  </div>
-
-                  <div className="mt-3">
-                    <label className="block text-sm font-medium mb-2">
-                      Challenges/Pain Points <span className="text-red-500">*</span>
-                    </label>
+                    <div className="font-semibold mt-4">Challenges/Pain Points <span className="text-red-500">*</span></div>
                     <ArrayFieldWithAI
                       values={persona.challenges}
                       onChange={(values) => updatePersonaInSegment(segmentIndex, personaIndex, 'challenges', values)}
@@ -807,18 +875,20 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
                       fieldType="personaChallenges"
                       domain={domain}
                       cumulativeData={{...cumulativeData, segmentIndustry: segment.industry, segmentCompanySize: segment.companySize, personaTitle: persona.title}}
+                      usedSuggestions={usedSuggestions}
+                      onSuggestionUsed={handleSuggestionUsed}
                     />
                   </div>
                 </div>
-              ))}
-              
-              {/* Show message if no personas */}
-              {(!segment.personas || segment.personas.length === 0) && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No personas added yet. Click "Add Persona" to get started.</p>
-                </div>
-              )}
-            </div>
+              );
+            })}
+            {/* Show message if no personas */}
+            {(!segment.personas || segment.personas.length === 0) && (
+              <div className="text-center py-8 text-gray-500">
+                <p>No personas added yet. Use the dropdown above to get started.</p>
+              </div>
+            )}
+          </div>
         </div>
       ))}
 
