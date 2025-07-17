@@ -270,7 +270,7 @@ const Products = () => {
 
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900 mb-1">
+            <h1 className="text-lg font-medium text-slate-900 mb-1">
               Products & Solutions
             </h1>
             <p className="text-xs text-slate-500">
@@ -279,7 +279,7 @@ const Products = () => {
           </div>
           <div className="flex items-center space-x-4">
             {canEdit() && (
-              <Button size="sm" variant="outline" className="text-xs" onClick={() => setAddProductModalOpen(true)}>
+              <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => setAddProductModalOpen(true)}>
                 <Plus className="w-3 h-3 mr-1" />
                 Add Product
               </Button>
@@ -290,12 +290,12 @@ const Products = () => {
         {/* Search and Filter Bar */}
         <div className="flex items-center space-x-4 mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground w-3 h-3" />
             <Input
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 text-xs"
+              className="pl-7 text-xs h-8 border-slate-200"
             />
           </div>
         </div>
@@ -311,16 +311,16 @@ const Products = () => {
                 navigate(`/workspace/${slug}/product`);
               }}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-base font-semibold text-slate-800">
+              <CardHeader className="pb-2 px-4 pt-4">
+                <div className="flex items-center justify-between mb-1">
+                  <CardTitle className="text-sm font-medium text-slate-800">
                     {product.name}
                   </CardTitle>
                   {canEdit() && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditProduct(product);
@@ -332,16 +332,16 @@ const Products = () => {
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
-                <div className="space-y-3">
+              <CardContent className="pt-0 px-4 pb-4">
+                <div className="space-y-2">
                   {product.valueProposition && (
-                    <p className="text-sm text-slate-600 line-clamp-3">
+                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
                       {product.valueProposition}
                     </p>
                   )}
                   
                   {/* Product Stats */}
-                  <div className="flex items-center space-x-4 text-xs text-slate-500">
+                  <div className="flex items-center space-x-3 text-xs text-slate-500">
                     {product.keyFeatures?.length > 0 && (
                       <span>Features: {product.keyFeatures.length}</span>
                     )}
@@ -357,13 +357,13 @@ const Products = () => {
 
         {/* Empty State */}
         {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <div className="bg-white rounded-lg border p-8 max-w-md mx-auto">
-              <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">
+          <div className="text-center py-8">
+            <div className="bg-white rounded-lg border p-6 max-w-sm mx-auto">
+              <Building2 className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-sm font-medium text-slate-800 mb-1">
                 {searchTerm ? 'No products found' : 'No products yet'}
               </h3>
-              <p className="text-xs text-slate-600 mb-4">
+              <p className="text-xs text-slate-600 mb-3">
                 {searchTerm 
                   ? 'Try adjusting your search terms' 
                   : 'Start building your product portfolio'
@@ -372,6 +372,8 @@ const Products = () => {
               {canEdit() && !searchTerm && (
                 <Button 
                   variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
                   onClick={() => setAddProductModalOpen(true)}
                 >
                   <Plus className="w-3 h-3 mr-1" />
@@ -384,27 +386,27 @@ const Products = () => {
 
         {/* Show metrics only when there are products */}
         {filteredProducts.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
             {/* Products Overview */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-700 flex items-center space-x-2">
-                  <Building2 className="w-4 h-4" />
+            <Card className="shadow-sm border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-2 px-4 pt-3">
+                <CardTitle className="text-xs font-medium text-slate-700 flex items-center space-x-2">
+                  <Building2 className="w-3 h-3" />
                   <span>Products Overview</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="px-4 pb-3">
+                <div className="space-y-2">
                   {[
                     { metric: 'Total Products', value: filteredProducts.length.toString(), icon: '📦' },
                     { metric: 'With Value Props', value: filteredProducts.filter(p => p.valueProposition?.length > 0).length.toString(), icon: '💡' }
                   ].map((item) => (
                     <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center space-x-2">
-                        <span className="text-base">{item.icon}</span>
+                        <span className="text-xs">{item.icon}</span>
                         <span className="text-xs font-medium text-slate-700">{item.metric}</span>
                       </div>
-                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                      <span className="text-xs font-semibold text-slate-900">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -412,25 +414,25 @@ const Products = () => {
             </Card>
 
             {/* Features & USPs */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-700 flex items-center space-x-2">
-                  <Target className="w-4 h-4" />
+            <Card className="shadow-sm border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-2 px-4 pt-3">
+                <CardTitle className="text-xs font-medium text-slate-700 flex items-center space-x-2">
+                  <Target className="w-3 h-3" />
                   <span>Features & USPs</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="px-4 pb-3">
+                <div className="space-y-2">
                   {[
                     { metric: 'Total Features', value: filteredProducts.reduce((sum, p) => sum + (p.keyFeatures?.length || 0), 0).toString(), icon: '⚡' },
                     { metric: 'Total USPs', value: filteredProducts.reduce((sum, p) => sum + (p.uniqueSellingPoints?.length || 0), 0).toString(), icon: '🎯' }
                   ].map((item) => (
                     <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center space-x-2">
-                        <span className="text-base">{item.icon}</span>
+                        <span className="text-xs">{item.icon}</span>
                         <span className="text-xs font-medium text-slate-700">{item.metric}</span>
                       </div>
-                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                      <span className="text-xs font-semibold text-slate-900">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -438,25 +440,25 @@ const Products = () => {
             </Card>
 
             {/* Solutions & Outcomes */}
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-slate-700 flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4" />
+            <Card className="shadow-sm border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="pb-2 px-4 pt-3">
+                <CardTitle className="text-xs font-medium text-slate-700 flex items-center space-x-2">
+                  <TrendingUp className="w-3 h-3" />
                   <span>Solutions & Outcomes</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="px-4 pb-3">
+                <div className="space-y-2">
                   {[
                     { metric: 'Problems Solved', value: filteredProducts.reduce((sum, p) => sum + (p.problemsWithRootCauses?.length || 0), 0).toString(), icon: '🔧' },
                     { metric: 'Business Outcomes', value: filteredProducts.reduce((sum, p) => sum + (p.businessOutcomes?.length || 0), 0).toString(), icon: '📈' }
                   ].map((item) => (
                     <div key={item.metric} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center space-x-2">
-                        <span className="text-base">{item.icon}</span>
+                        <span className="text-xs">{item.icon}</span>
                         <span className="text-xs font-medium text-slate-700">{item.metric}</span>
                       </div>
-                      <span className="text-sm font-bold text-slate-900">{item.value}</span>
+                      <span className="text-xs font-semibold text-slate-900">{item.value}</span>
                     </div>
                   ))}
                 </div>

@@ -107,33 +107,33 @@ const ProductPage = () => {
           <ChevronRight className="w-3 h-3" />
           <span className="text-foreground font-medium">Product</span>
         </nav>
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Product</h1>
-            <p className="text-sm text-slate-600 mt-1">Product Details & Specifications</p>
+            <h1 className="text-lg font-medium text-slate-800">Product</h1>
+            <p className="text-xs text-slate-600 mt-1">Product Details & Specifications</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
             <Card className="border border-gray-200 bg-white">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                  <Building2 className="w-5 h-5 text-blue-600" />
+              <CardHeader className="pb-3 px-4 pt-4">
+                <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                  <Building2 className="w-4 h-4 text-blue-600" />
                   <span>Product Overview</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-gray-700 leading-relaxed">
+              <CardContent className="space-y-3 px-4 pb-4">
+                <div className="text-xs text-gray-700 leading-relaxed">
                   {product.valueProposition || 'No value proposition available'}
                 </div>
                 {product.valuePropositionVariations?.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Value Proposition Variations</h4>
-                    <div className="space-y-3">
+                    <h4 className="text-xs font-medium text-gray-900 mb-2">Value Proposition Variations</h4>
+                    <div className="space-y-2">
                       {product.valuePropositionVariations.map((variation: string, idx: number) => (
-                        <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                          <p className="text-sm text-gray-700 leading-relaxed">{variation}</p>
+                        <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                          <p className="text-xs text-gray-700 leading-relaxed">{variation}</p>
                         </div>
                       ))}
                     </div>
@@ -143,18 +143,18 @@ const ProductPage = () => {
             </Card>
             {product.problemsWithRootCauses?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Target className="w-5 h-5 text-red-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <Target className="w-4 h-4 text-red-600" />
                     <span>Problems We Solve</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
                     {product.problemsWithRootCauses.map((problem: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{problem}</p>
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-red-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{problem}</p>
                       </div>
                     ))}
                   </div>
@@ -163,18 +163,18 @@ const ProductPage = () => {
             )}
             {product.businessOutcomes?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
                     <span>Business Outcomes</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
                     {product.businessOutcomes.map((outcome: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{outcome}</p>
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{outcome}</p>
                       </div>
                     ))}
                   </div>
@@ -183,18 +183,18 @@ const ProductPage = () => {
             )}
             {product.keyFeatures?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Building2 className="w-5 h-5 text-blue-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <Building2 className="w-4 h-4 text-blue-600" />
                     <span>Key Features</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
                     {product.keyFeatures.map((feature: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{feature}</p>
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{feature}</p>
                       </div>
                     ))}
                   </div>
@@ -203,18 +203,18 @@ const ProductPage = () => {
             )}
             {product.uniqueSellingPoints?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Target className="w-5 h-5 text-purple-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <Target className="w-4 h-4 text-purple-600" />
                     <span>Unique Selling Points</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
                     {product.uniqueSellingPoints.map((usp: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{usp}</p>
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{usp}</p>
                       </div>
                     ))}
                   </div>
@@ -223,18 +223,18 @@ const ProductPage = () => {
             )}
             {product.urgencyConsequences?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Target className="w-5 h-5 text-orange-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <Target className="w-4 h-4 text-orange-600" />
                     <span>Urgency Consequences</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
                     {product.urgencyConsequences.map((consequence: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{consequence}</p>
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-orange-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{consequence}</p>
                       </div>
                     ))}
                   </div>
@@ -243,13 +243,13 @@ const ProductPage = () => {
             )}
             {product.competitorAnalysis?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Competitor Analysis</CardTitle>
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="text-sm font-medium">Competitor Analysis</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-1">
                     {product.competitorAnalysis.map((competitor: any, idx: number) => (
-                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                      <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                         <strong>{competitor.domain}:</strong> {competitor.differentiation}
                       </div>
                     ))}
@@ -259,13 +259,13 @@ const ProductPage = () => {
             )}
             {product.useCases?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Use Cases</CardTitle>
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="text-sm font-medium">Use Cases</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-1">
                     {product.useCases.map((useCase: string, idx: number) => (
-                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">• {useCase}</div>
+                      <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">• {useCase}</div>
                     ))}
                   </div>
                 </CardContent>
@@ -273,18 +273,18 @@ const ProductPage = () => {
             )}
             {icpData.offerSales?.pricingTiers?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
                     <span>Pricing Tiers</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
                     {icpData.offerSales.pricingTiers.map((tier: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{tier}</p>
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{tier}</p>
                       </div>
                     ))}
                   </div>
@@ -293,22 +293,22 @@ const ProductPage = () => {
             )}
             {(icpData.offerSales?.clientTimeline?.length > 0 || icpData.offerSales?.roiRequirements?.length > 0) && (
               <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                    <Target className="w-5 h-5 text-blue-600" />
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <Target className="w-4 h-4 text-blue-600" />
                     <span>Client Timeline & ROI</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-3">
                     {icpData.offerSales.clientTimeline?.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Client Timeline</h4>
-                        <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-gray-900 mb-1">Client Timeline</h4>
+                        <div className="space-y-1">
                           {icpData.offerSales.clientTimeline.map((timeline: string, idx: number) => (
-                            <div key={idx} className="flex items-start space-x-3 p-2 bg-blue-50 rounded-lg">
-                              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                              <p className="text-sm text-gray-700 leading-relaxed">{timeline}</p>
+                            <div key={idx} className="flex items-start space-x-2 p-2 bg-blue-50 rounded-lg">
+                              <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                              <p className="text-xs text-gray-700 leading-relaxed">{timeline}</p>
                             </div>
                           ))}
                         </div>
@@ -316,12 +316,12 @@ const ProductPage = () => {
                     )}
                     {icpData.offerSales.roiRequirements?.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">ROI Requirements</h4>
-                        <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-gray-900 mb-1">ROI Requirements</h4>
+                        <div className="space-y-1">
                           {icpData.offerSales.roiRequirements.map((requirement: string, idx: number) => (
-                            <div key={idx} className="flex items-start space-x-3 p-2 bg-green-50 rounded-lg">
-                              <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                              <p className="text-sm text-gray-700 leading-relaxed">{requirement}</p>
+                            <div key={idx} className="flex items-start space-x-2 p-2 bg-green-50 rounded-lg">
+                              <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                              <p className="text-xs text-gray-700 leading-relaxed">{requirement}</p>
                             </div>
                           ))}
                         </div>
@@ -332,31 +332,25 @@ const ProductPage = () => {
               </Card>
             )}
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             <Card className="border border-gray-200 bg-white">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
-                  <Building2 className="w-5 h-5 text-purple-600" />
+              <CardHeader className="pb-3 px-4 pt-4">
+                <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                  <Building2 className="w-4 h-4 text-purple-600" />
                   <span>Related Pages</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Link to={`/workspace/${slug}/product`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
-                      <Building2 className="w-4 h-4 mr-2" />
-                      Product
-                    </Button>
-                  </Link>
+              <CardContent className="px-4 pb-4">
+                <div className="space-y-2">
                   <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
-                      <Target className="w-4 h-4 mr-2" />
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-7">
+                      <Target className="w-3 h-3 mr-2" />
                       View Segments
                     </Button>
                   </Link>
                   <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-sm">
-                      <Users className="w-4 h-4 mr-2" />
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-7">
+                      <Users className="w-3 h-3 mr-2" />
                       View Personas
                     </Button>
                   </Link>
@@ -364,21 +358,21 @@ const ProductPage = () => {
               </CardContent>
             </Card>
             <Card className="border border-gray-200 bg-white">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold">Quick Summary</CardTitle>
+              <CardHeader className="pb-3 px-4 pt-4">
+                <CardTitle className="text-sm font-medium">Quick Summary</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-4 pb-4">
+                <div className="space-y-3">
                   {product.category && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">Category</h4>
-                      <p className="text-sm text-gray-600">{product.category}</p>
+                      <h4 className="text-xs font-medium text-gray-900 mb-1">Category</h4>
+                      <p className="text-xs text-gray-600">{product.category}</p>
                     </div>
                   )}
                   {product.description && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">Description</h4>
-                      <p className="text-sm text-gray-600">{product.description}</p>
+                      <h4 className="text-xs font-medium text-gray-900 mb-1">Description</h4>
+                      <p className="text-xs text-gray-600">{product.description}</p>
                     </div>
                   )}
                 </div>

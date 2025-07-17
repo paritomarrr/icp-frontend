@@ -77,7 +77,7 @@ const WorkspaceLayout = () => {
 
   const sidebarItems = [
     { icon: Home, label: 'Home', path: `/workspace/${slug}/home` },
-    { icon: ShoppingBag, label: 'Products', path: `/workspace/${slug}/products` },
+    { icon: ShoppingBag, label: 'Product', path: `/workspace/${slug}/product` },
     { icon: Building2, label: 'Segments', path: `/workspace/${slug}/segments` },
     { icon: Users, label: 'Personas', path: `/workspace/${slug}/personas` },
     { icon: Target, label: 'Pre-Sales Outbound Plays', path: `/workspace/${slug}/outbound-plays` },
