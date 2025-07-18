@@ -218,7 +218,7 @@ const SegmentDetails = () => {
         </div>
 
         {/* Main Content - Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Firmographics */}
@@ -230,7 +230,7 @@ const SegmentDetails = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-8">
                   <div>
                     <p className="text-xs font-medium text-gray-900 mb-1">Industry</p>
                     <p className="text-xs text-gray-600">{segmentData.firmographics?.industry || 'Not specified'}</p>

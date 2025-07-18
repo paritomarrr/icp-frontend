@@ -98,6 +98,7 @@ const ProductPage = () => {
   }
 
   const product = icpData.product;
+  const offerSales = icpData.offerSales;
 
   return (
     <div className="p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
@@ -155,26 +156,6 @@ const ProductPage = () => {
                       <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
                         <div className="w-1.5 h-1.5 bg-red-600 rounded-full mt-1.5 flex-shrink-0"></div>
                         <p className="text-xs text-gray-700 leading-relaxed">{problem}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            {product.businessOutcomes?.length > 0 && (
-              <Card className="border border-gray-200 bg-white">
-                <CardHeader className="pb-3 px-4 pt-4">
-                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Business Outcomes</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <div className="space-y-2">
-                    {product.businessOutcomes.map((outcome: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
-                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></div>
-                        <p className="text-xs text-gray-700 leading-relaxed">{outcome}</p>
                       </div>
                     ))}
                   </div>
@@ -241,6 +222,26 @@ const ProductPage = () => {
                 </CardContent>
               </Card>
             )}
+             {product.businessOutcomes?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span>Business Outcomes</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
+                    {product.businessOutcomes.map((outcome: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed">{outcome}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {product.competitorAnalysis?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-3 px-4 pt-4">
@@ -271,12 +272,14 @@ const ProductPage = () => {
                 </CardContent>
               </Card>
             )}
-            {icpData.offerSales?.pricingTiers?.length > 0 && (
+          </div>
+          <div className="space-y-4">
+          {icpData.offerSales?.pricingTiers?.length > 0 && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-3 px-4 pt-4">
                   <CardTitle className="flex items-center space-x-2 text-sm font-medium">
                     <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span>Pricing Tiers</span>
+                    <span>Package & Pricing</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
@@ -291,19 +294,19 @@ const ProductPage = () => {
                 </CardContent>
               </Card>
             )}
-            {(icpData.offerSales?.clientTimeline?.length > 0 || icpData.offerSales?.roiRequirements?.length > 0) && (
+          {(icpData.offerSales?.clientTimeline?.length > 0 || icpData.offerSales?.roiRequirements?.length > 0) && (
               <Card className="border border-gray-200 bg-white">
                 <CardHeader className="pb-3 px-4 pt-4">
                   <CardTitle className="flex items-center space-x-2 text-sm font-medium">
                     <Target className="w-4 h-4 text-blue-600" />
-                    <span>Client Timeline & ROI</span>
+                    <span>Timeline</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <div className="space-y-3">
                     {icpData.offerSales.clientTimeline?.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-gray-900 mb-1">Client Timeline</h4>
+                        {/* <h4 className="text-xs font-medium text-gray-900 mb-1">Client Timeline</h4> */}
                         <div className="space-y-1">
                           {icpData.offerSales.clientTimeline.map((timeline: string, idx: number) => (
                             <div key={idx} className="flex items-start space-x-2 p-2 bg-blue-50 rounded-lg">
@@ -331,8 +334,50 @@ const ProductPage = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
-          <div className="space-y-4">
+          {icpData.offerSales?.salesDeckUrl?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4 text-yellow-600" />
+                    <span>Sales Deck</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
+                    {icpData.offerSales.salesDeckUrl.map((tier: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-yellow-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <p className="text-xs text-gray-700 leading-relaxed"><Link target='_blank' to={tier}>{tier}</Link></p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {icpData.socialProof?.caseStudies?.length > 0 && (
+              <Card className="border border-gray-200 bg-white">
+                <CardHeader className="pb-3 px-4 pt-4">
+                  <CardTitle className="flex items-center space-x-2 text-sm font-medium">
+                    <Target className="w-4 h-4 text-red-600" />
+                    <span>Case Studies</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2">
+                    {icpData.socialProof.caseStudies.map(({ url, marketSegment, title, description }: { url: string; marketSegment: string; title: string; description: string; }, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-1.5 h-1.5 bg-red-600 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <div className='flex flex-col'>
+                        <p className="text-md bold text-gray-700 leading-relaxed"><Link target='_blank' to={url}>{title}</Link></p>
+                        <p className="text-xs text-gray-500 leading-relaxed">{marketSegment}</p>
+                        <p className="text-xs text-gray-700 leading-relaxed">{description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <Card className="border border-gray-200 bg-white">
               <CardHeader className="pb-3 px-4 pt-4">
                 <CardTitle className="flex items-center space-x-2 text-sm font-medium">
@@ -343,38 +388,17 @@ const ProductPage = () => {
               <CardContent className="px-4 pb-4">
                 <div className="space-y-2">
                   <Link to={`/workspace/${slug}/segments`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-7">
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-10 mb-2">
                       <Target className="w-3 h-3 mr-2" />
                       View Segments
                     </Button>
                   </Link>
                   <Link to={`/workspace/${slug}/personas`}>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-7">
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-10">
                       <Users className="w-3 h-3 mr-2" />
                       View Personas
                     </Button>
                   </Link>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border border-gray-200 bg-white">
-              <CardHeader className="pb-3 px-4 pt-4">
-                <CardTitle className="text-sm font-medium">Quick Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="space-y-3">
-                  {product.category && (
-                    <div>
-                      <h4 className="text-xs font-medium text-gray-900 mb-1">Category</h4>
-                      <p className="text-xs text-gray-600">{product.category}</p>
-                    </div>
-                  )}
-                  {product.description && (
-                    <div>
-                      <h4 className="text-xs font-medium text-gray-900 mb-1">Description</h4>
-                      <p className="text-xs text-gray-600">{product.description}</p>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
