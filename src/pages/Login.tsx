@@ -55,7 +55,7 @@ const Login = () => {
             <Logo size="2xl" />
           </div>
           <CardTitle className="text-2xl font-bold text-octave-dark-3">
-          Log in to ICP Wizard
+          Log in to ICP Model
           </CardTitle>
           <CardDescription className="text-octave-dark-1">
           Your personalized customer profile and strategy workspace          </CardDescription>

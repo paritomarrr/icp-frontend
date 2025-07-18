@@ -27,7 +27,7 @@ const SignUp = () => {
       await authService.signup(formData);
       toast({
         title: "Account created successfully!",
-        description: "Welcome to ICP Wizard",
+        description: "Welcome to ICP Model",
       });
       navigate('/dashboard');
     } catch (error) {
@@ -56,7 +56,7 @@ const SignUp = () => {
           <Logo size="2xl" />
         </div>
         <CardTitle className="text-2xl font-bold text-octave-dark-3">
-          Create your ICP Wizard account
+          Create your ICP Model account
         </CardTitle>
         <CardDescription className="text-octave-dark-1">
           Start building better customer profiles today

@@ -124,7 +124,7 @@ const WorkspaceLayout = () => {
         <div className="p-6 border-b border-octave-light-2/30 flex-shrink-0 bg-gradient-to-r from-octave-light-1 to-white">
           <Link to="/dashboard" className="flex items-center space-x-3">
             <Logo size="lg" />
-            <span className="font-semibold text-octave-dark-3 text-base">ICP Wizard</span>
+            <span className="font-semibold text-octave-dark-3 text-base">ICP Model</span>
           </Link>
           {workspace && (
             <div className="mt-5">

@@ -521,7 +521,7 @@ export const icpWizardApi = {
   },
 };
 
-// Enhanced ICP Wizard API
+// Enhanced ICP Model API
 export const enhancedICPApi = {
   async saveEnhancedICP(workspaceId: string, icpData: EnhancedICPData) {
     try {

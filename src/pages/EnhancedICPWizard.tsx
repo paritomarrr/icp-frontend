@@ -1421,7 +1421,7 @@ const EnhancedICPWizard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Enhanced ICP Wizard - {steps[currentStep].title}</span>
+              <span>Enhanced ICP Model - {steps[currentStep].title}</span>
               <span className="text-sm text-gray-500">
                 Step {currentStep + 1} of {steps.length}
               </span>
@@ -1468,7 +1468,7 @@ const EnhancedICPWizard = () => {
                       Saving...
                     </>
                   ) : (
-                    "Complete ICP Wizard"
+                    "Complete ICP Model"
                   )}
                 </Button>
               ) : (

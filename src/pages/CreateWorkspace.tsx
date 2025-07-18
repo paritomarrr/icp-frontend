@@ -83,7 +83,7 @@ const CreateWorkspace = () => {
       localStorage.setItem("workspaceSlug", data.slug);
 
   
-      // Navigate to the Enhanced ICP wizard step
+      // Navigate to the Enhanced ICP model step
       navigate(`/workspace/${data.slug}/enhanced-icp-wizard`);
     } catch (error) {
       toast({

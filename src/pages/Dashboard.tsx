@@ -75,7 +75,7 @@ const Dashboard = () => {
         // Redirect to product page/home page if products or personas exist
         navigate(`/workspace/${workspaceSlug}/product`);
       } else {
-        // Redirect to enhanced ICP wizard if setup is required
+        // Redirect to enhanced ICP model if setup is required
         navigate(`/workspace/${workspaceSlug}/enhanced-icp-wizard`);
       }
     } catch (error) {

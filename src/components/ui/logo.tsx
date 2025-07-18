@@ -29,7 +29,7 @@ const Logo: React.FC<LogoProps> = ({
       />
       {showText && (
         <span className="text-octave-dark-3 font-semibold text-lg">
-          ICP Wizard
+          ICP Model
         </span>
       )}
     </div>
