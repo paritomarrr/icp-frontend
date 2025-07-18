@@ -343,7 +343,7 @@ const ProductPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2 overflow-hidden">
                     {icpData.offerSales.salesDeckUrl.map((tier: string, idx: number) => (
                       <div key={idx} className="flex items-start space-x-2 p-2 bg-gray-50 rounded-lg">
                         <div className="w-1.5 h-1.5 bg-yellow-600 rounded-full mt-1.5 flex-shrink-0"></div>
