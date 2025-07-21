@@ -29,7 +29,11 @@ export const storageService = {
   getUserWorkspaces: (userId: string): Workspace[] => {
     const workspaces = JSON.parse(localStorage.getItem(WORKSPACES_KEY) || '[]');
     return workspaces.filter((w: Workspace) =>
-      w.creatorId === userId || w.collaborators.includes(userId)
+      // Check ownerId first (backend schema), then fallback to creatorId (legacy)
+      (w.ownerId && w.ownerId === userId) || 
+      (w.creatorId === userId) ||
+      // Check if user is in collaborators array
+      (w.collaborators && Array.isArray(w.collaborators) && w.collaborators.includes(userId))
     );
   },
 
@@ -121,13 +125,26 @@ export const storageService = {
     if (workspace) {
       // Get current user to check if they're the owner
       const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-      if (currentUser && (workspace.creatorId === currentUser.id || workspace.ownerId === currentUser.id)) {
-        // Owner has all permissions
-        return true;
+      if (currentUser) {
+        // Check against backend schema: ownerId first, then fallback to creatorId for backwards compatibility
+        const isOwner = (workspace.ownerId && workspace.ownerId === currentUser.id) || 
+                       (workspace.creatorId === currentUser.id);
+        
+        if (isOwner) {
+          // Owner has all permissions
+          return true;
+        }
+        
+        // Check if user ID is in collaborators array (backend simple approach)
+        if (workspace.collaborators && Array.isArray(workspace.collaborators) && 
+            workspace.collaborators.includes(currentUser.id)) {
+          // For now, collaborators in the simple array have view/edit permissions
+          return permission === 'canView' || permission === 'canEdit';
+        }
       }
     }
     
-    // If not owner, check collaborator permissions
+    // If not owner or simple collaborator, check detailed collaborator permissions (frontend system)
     const permissions = storageService.getCollaboratorPermissions(workspaceId, userEmail);
     return permissions ? permissions[permission] : false;
   }

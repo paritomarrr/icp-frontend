@@ -12,9 +12,10 @@ export interface Workspace {
   companyName: string; 
   companyUrl: string; 
   creatorId: string;
+  ownerId?: string; // Added to match backend schema
   collaborators: string[];
   createdAt: string;
-  domain: string; // Added field
+  domain: string; // Added field 
   companyDescription: string; // Added field
   companyValueAndMissionSummary: string; // Added field
 

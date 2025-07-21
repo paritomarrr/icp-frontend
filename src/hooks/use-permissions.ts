@@ -9,7 +9,9 @@ export const usePermissions = () => {
   const isOwner = () => {
     if (!slug || !user) return false;
     const workspace = storageService.getWorkspace(slug);
-    return workspace?.creatorId === user.id || workspace?.ownerId === user.id;
+    // Prioritize ownerId (backend schema) over creatorId (legacy)
+    return (workspace?.ownerId && workspace.ownerId === user.id) || 
+           (workspace?.creatorId === user.id);
   };
 
   const hasPermission = (permission: 'canView' | 'canEdit' | 'canInvite' | 'canDelete') => {

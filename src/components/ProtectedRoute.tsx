@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children, requiredPermission }: ProtectedRouteProps) =
     const workspace = storageService.getWorkspace(slug);
     
     // If user is the workspace owner, they have all permissions
-    if (workspace && (workspace.creatorId === user.id || workspace.ownerId === user.id)) {
+    if (workspace && ((workspace.ownerId && workspace.ownerId === user.id) || workspace.creatorId === user.id)) {
       return <>{children}</>;
     }
 

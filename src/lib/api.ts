@@ -578,4 +578,113 @@ export const enhancedICPApi = {
       };
     }
   },
+};
+
+// ==================== COLLABORATOR MANAGEMENT ====================
+export const collaboratorApi = {
+  async addCollaborator(workspaceId: string, email: string): Promise<{ success: boolean; workspace?: any; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspaces/add-collaborator`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+        body: JSON.stringify({
+          workspaceId,
+          collaboratorEmail: email,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add collaborator');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Add collaborator error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
+
+  async removeCollaborator(workspaceId: string, collaboratorId: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspaces/remove-collaborator`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+        body: JSON.stringify({
+          workspaceId,
+          collaboratorId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove collaborator');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Remove collaborator error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
+
+  async getCollaborators(workspaceId: string): Promise<{ success: boolean; collaborators?: any[]; owner?: any; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/workspaces/get-collaborators/${workspaceId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get collaborators');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get collaborators error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
+
+  async searchUsers(query: string): Promise<{ success: boolean; users?: any[]; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/search?q=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authService.getToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to search users');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Search users error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  },
 }; 
