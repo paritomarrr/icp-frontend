@@ -110,7 +110,7 @@ const SegmentDetails = () => {
 
   // Get segments directly from MongoDB structure
   const segments = Array.isArray(icpData?.segments) ? icpData.segments : [];
-  
+
   // Find segment by _id
   const currentSegment = segments.find((segment: any) => {
     const segId = typeof segment._id === 'object' && segment._id.$oid ? segment._id.$oid : segment._id;
@@ -125,7 +125,7 @@ const SegmentDetails = () => {
             <Target className="w-16 h-16 text-slate-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-slate-800 mb-2">Segment Not Found</h2>
             <p className="text-slate-600">The requested segment could not be found.</p>
-            <Button 
+            <Button
               onClick={() => navigate(`/workspace/${slug}/segments`)}
               className="mt-4"
             >
@@ -284,10 +284,16 @@ const SegmentDetails = () => {
                   <span>Awareness Level</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-xs text-gray-600">
-                  {segmentData.awarenessLevel || 'Not specified'}
-                </p>
+              <CardContent >
+                <div className="flex flex-wrap gap-2">
+                  {
+                    segmentData.awarenessLevel?.map((level: string, idx: number) => (
+                      <div key={idx} className="flex items-start space-x-3 text-xs bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 px-2 py-1">{level.charAt(0).toUpperCase() + level.slice(1)}</p>
+                      </div>
+                    ))
+                  }
+                </div>
               </CardContent>
             </Card>
 

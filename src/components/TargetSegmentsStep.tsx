@@ -380,7 +380,7 @@ interface Segment {
   industry: string;
   companySize: string;
   geography: string;
-  awarenessLevel: "Unaware" | "Problem Aware" | "Solution Aware" | "Product Aware" | "Brand Aware" | "";
+  awarenessLevel: ("Unaware" | "Problem Aware" | "Solution Aware" | "Product Aware" | "Brand Aware")[];
   // Firmographics
   employees?: string;
   locations?: string[];
@@ -430,7 +430,7 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
       industry: "",
       companySize: "",
       geography: "",
-      awarenessLevel: "" as const,
+      awarenessLevel: [],
       personas: [
         personaTemplate('Decision Maker'),
         personaTemplate('Champion'),
@@ -449,7 +449,7 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
       industry: "",
       companySize: "",
       geography: "",
-      awarenessLevel: "",
+      awarenessLevel: [],
       personas: [
         personaTemplate('Decision Maker'),
         personaTemplate('Champion'),
@@ -667,8 +667,13 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
             <label className="block text-sm font-medium mb-2">Awareness Level <span className="text-red-500">*</span></label>
             <select
               className="w-full p-2 border rounded-md"
-              value={segment.awarenessLevel}
-              onChange={(e) => updateSegment(segmentIndex, 'awarenessLevel', e.target.value)}
+              value=""
+              onChange={(e) => {
+                const selectedValue = e.target.value;
+                if (selectedValue && !segment.awarenessLevel.includes(selectedValue as any)) {
+                  updateSegment(segmentIndex, 'awarenessLevel', [...segment.awarenessLevel, selectedValue]);
+                }
+              }}
             >
               <option value="">Select awareness level</option>
               <option value="Unaware">Unaware - Don't know they have a problem</option>
@@ -677,6 +682,26 @@ export default function TargetSegmentsStep({ segments, onUpdate, domain, cumulat
               <option value="Product Aware">Product Aware - Know your product exists</option>
               <option value="Brand Aware">Brand Aware - Familiar with your brand</option>
             </select>
+            
+            {/* Display selected options */}
+            {segment.awarenessLevel.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {segment.awarenessLevel.map((level, index) => (
+                  <span key={index} className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                    {level}
+                    <button
+                      onClick={() => {
+                        const updatedLevels = segment.awarenessLevel.filter((_, i) => i !== index);
+                        updateSegment(segmentIndex, 'awarenessLevel', updatedLevels);
+                      }}
+                      className="ml-1 text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CTA Options Section */}

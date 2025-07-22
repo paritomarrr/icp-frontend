@@ -174,6 +174,11 @@ const Personas = () => {
                 <CardTitle className="text-sm font-semibold text-slate-800 mb-2">
                   {persona.title}
                 </CardTitle>
+                {persona.segmentName && (
+                  <div className="text-xs bg-gray-100 rounded-full px-2 py-1 w-fit">
+                    {persona.segmentName}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
