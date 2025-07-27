@@ -15,6 +15,7 @@ import { axiosInstance } from '@/lib/axios';
 import { icpWizardApi } from '@/lib/api';
 import { usePermissions } from '@/hooks/use-permissions';
 import { EditPersonaModal } from '@/components/modals';
+import { removeQuotes } from '@/lib/utils';
 
 const PersonaDetails = () => {
   const { slug, personaId } = useParams();
@@ -306,7 +307,7 @@ const PersonaDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-xs text-gray-700 leading-relaxed">
-                  {displayPersona.description || displayPersona.summary || 'No description available'}
+                  {removeQuotes(displayPersona.description || displayPersona.summary || 'No description available')}
                 </div>
                 <div className="flex items-center space-x-2 flex-wrap">
                   {displayPersona.influence && (
@@ -318,7 +319,7 @@ const PersonaDetails = () => {
                 {displayPersona.title && (
                   <div>
                     <h4 className="text-xs font-medium text-gray-900 mb-1">Job Title</h4>
-                    <p className="text-xs text-gray-600">{displayPersona.title}</p>
+                    <p className="text-xs text-gray-600">{removeQuotes(displayPersona.title)}</p>
                   </div>
                 )}
                 {displayPersona.seniority && (
@@ -545,7 +546,7 @@ const PersonaDetails = () => {
                   <div className="space-y-2">
                     {displayPersona.jobTitles.map((title: string, idx: number) => (
                       <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                        {title}
+                        {removeQuotes(title)}
                       </div>
                     ))}
                   </div>

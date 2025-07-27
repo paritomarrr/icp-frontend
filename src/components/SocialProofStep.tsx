@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
+import { removeQuotes } from "@/lib/utils";
 
 interface CaseStudy {
   url: string;
@@ -228,10 +229,10 @@ export default function SocialProofStep({ socialProof, onUpdate }: SocialProofSt
               <div key={index} className="border p-3 rounded-lg mb-2 bg-white">
                 <div className="flex justify-between items-start">
                   <div className="text-sm flex-1">
-                    <div className="text-gray-700 mb-2">"{testimonial.content}"</div>
-                    <div><strong>{testimonial.author}</strong></div>
-                    {testimonial.title && <div className="text-gray-600">{testimonial.title}</div>}
-                    {testimonial.company && <div className="text-gray-600">{testimonial.company}</div>}
+                    <div className="text-gray-700 mb-2">"{removeQuotes(testimonial.content)}"</div>
+                    <div><strong>{removeQuotes(testimonial.author)}</strong></div>
+                    {testimonial.title && <div className="text-gray-600">{removeQuotes(testimonial.title)}</div>}
+                    {testimonial.company && <div className="text-gray-600">{removeQuotes(testimonial.company)}</div>}
                     {testimonial.metrics && <div className="text-blue-600 font-medium">{testimonial.metrics}</div>}
                   </div>
                   <Button variant="destructive" size="sm" onClick={() => removeTestimonial(index)}>

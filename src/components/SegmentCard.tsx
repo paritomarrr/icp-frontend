@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { useNavigate, useParams } from 'react-router-dom';
 import React from 'react';
+import { removeQuotes } from '@/lib/utils';
 
 interface SegmentCardProps {
   segment: any;
@@ -16,15 +17,15 @@ const SegmentCard: React.FC<SegmentCardProps> = ({ segment }) => {
       onClick={() => navigate(`/workspace/${slug}/segments/${segment._id?.$oid || segment._id || segment.id}`)}
     >
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-slate-900">{segment.name}</CardTitle>
+        <CardTitle className="text-sm font-medium text-slate-900">{removeQuotes(segment.name)}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-2">
           {/* Core segment info */}
           <div className="text-xs text-slate-600 space-y-1">
-            {segment.industry && <div><span className="font-medium">Industry:</span> {segment.industry}</div>}
-            {segment.companySize && <div><span className="font-medium">Size:</span> {segment.companySize}</div>}
-            {segment.geography && <div><span className="font-medium">Geography:</span> {segment.geography}</div>}
+            {segment.industry && <div><span className="font-medium">Industry:</span> {segment.industry.replace(/"/g, '')}</div>}
+            {segment.companySize && <div><span className="font-medium">Size:</span> {segment.companySize.replace(/"/g, '')}</div>}
+            {segment.geography && <div><span className="font-medium">Geography:</span> {segment.geography.replace(/"/g, '')}</div>}
           </div>
           
           {/* Simple metrics */}

@@ -14,6 +14,7 @@ import LoadingPage from "@/components/LoadingPage";
 import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 import SocialProofStep from "@/components/SocialProofStep";
 import TargetSegmentsStep from "@/components/TargetSegmentsStep";
+import { removeQuotes } from "@/lib/utils";
 
 // Separate component for array fields to avoid hooks issues
 const ArrayField = ({ label, placeholder, items, onAdd, onRemove }: {
@@ -279,11 +280,7 @@ const ArrayFieldWithAI = ({ label, placeholder, items, onAdd, onRemove, fieldTyp
     };
 
     const applySuggestion = (suggestion: string) => {
-      // Remove surrounding quotes if present
-      let clean = suggestion;
-      if (typeof clean === 'string' && clean.length > 1 && ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'")))) {
-        clean = clean.slice(1, -1);
-      }
+      const clean = removeQuotes(suggestion);
       onChange(clean);
       setSuggestions([]);
     };
@@ -1365,7 +1362,10 @@ const EnhancedICPWizard = () => {
 
   const renderSegmentsStep = () => (
     <TargetSegmentsStep
-      segments={icpData.targetAccountSegments}
+      segments={icpData.targetAccountSegments.map(segment => ({
+        ...segment,
+        awarenessLevel: segment.awarenessLevel.map(level => level as "Unaware" | "Problem Aware" | "Solution Aware" | "Product Aware" | "Brand Aware")
+      }))}
       onUpdate={(segments) => {
         setIcpData(prev => {
           const newData = { ...prev, targetAccountSegments: segments };

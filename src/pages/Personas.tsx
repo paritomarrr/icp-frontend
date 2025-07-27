@@ -10,6 +10,7 @@ import { ICPData } from '@/types';
 import { Users, Search, Plus, Building2 } from 'lucide-react';
 import { AddPersonaModal } from '@/components/modals';
 import { icpWizardApi, PersonaData } from '@/lib/api';
+import { removeQuotes } from '@/lib/utils';
 
 const Personas = () => {
   const { slug } = useParams();
@@ -81,7 +82,7 @@ const Personas = () => {
     return {
       id: persona._id?.$oid || persona._id || index + 1,
       title: persona.name || persona.title || `Persona ${index + 1}`,
-      summary: `${persona.name || 'Unknown Name'} - ${persona.title || 'Unknown Title'}${persona.segmentName ? ` (${persona.segmentName} segment)` : ''}`,
+      summary: `${persona.title || 'Unknown Title'}${persona.segmentName ? ` (${persona.segmentName} segment)` : ''}`,
       created: persona.createdAt ? new Date(persona.createdAt).toLocaleDateString() : 'Jul 12, 2025',
       status: persona.status || 'active',
       priority: persona.priority || 'medium',
@@ -172,11 +173,11 @@ const Personas = () => {
             >
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-slate-800 mb-2">
-                  {persona.title}
+                  {removeQuotes(persona.title)}
                 </CardTitle>
                 {persona.segmentName && (
-                  <div className="text-xs bg-gray-100 rounded-full px-2 py-1 w-fit">
-                    {persona.segmentName}
+                  <div className="text-xs bg-gray-100 rounded-md px-2 py-1 w-fit">
+                    {removeQuotes(persona.segmentName)}
                   </div>
                 )}
               </CardHeader>

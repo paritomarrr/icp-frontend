@@ -13,6 +13,7 @@ import { axiosInstance } from '@/lib/axios';
 import { usePermissions } from '@/hooks/use-permissions';
 import { AddProductModal, EditProductModal } from '@/components/modals';
 import { icpWizardApi, ProductData } from '@/lib/api';
+import { removeQuotes } from '@/lib/utils';
 
 const Products = () => {
   const { slug } = useParams();
@@ -336,7 +337,7 @@ const Products = () => {
                 <div className="space-y-2">
                   {product.valueProposition && (
                     <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                      {product.valueProposition}
+                      {removeQuotes(product.valueProposition)}
                     </p>
                   )}
                   

@@ -7,6 +7,7 @@ import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
 import { Building2, Target, TrendingUp, Users, ChevronRight, Edit } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
+import { removeQuotes } from '@/lib/utils';
 
 const ProductPage = () => {
   const { slug } = useParams();
@@ -125,7 +126,7 @@ const ProductPage = () => {
               </CardHeader>
               <CardContent className="space-y-3 px-4 pb-4">
                 <div className="text-xs text-gray-700 leading-relaxed">
-                  {product.valueProposition || 'No value proposition available'}
+                  {removeQuotes(product.valueProposition) || 'No value proposition available'}
                 </div>
                 {product.valuePropositionVariations?.length > 0 && (
                   <div>

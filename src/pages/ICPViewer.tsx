@@ -7,6 +7,7 @@ import { authService } from '@/lib/auth';
 import { storageService } from '@/lib/storage';
 import { ICPData } from '@/types';
 import { ChevronLeft, ChevronRight, Sparkles, Edit } from 'lucide-react';
+import { removeQuotes } from '@/lib/utils';
 
 const ICPViewer = () => {
   const { id } = useParams();
@@ -173,7 +174,7 @@ const ICPViewer = () => {
           <CardContent>
             <div className="prose max-w-none">
               <div className="text-slate-700 whitespace-pre-wrap leading-relaxed">
-                {getSectionContent()}
+                {removeQuotes(getSectionContent())}
               </div>
             </div>
           </CardContent>
